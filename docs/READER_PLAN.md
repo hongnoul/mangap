@@ -1,7 +1,16 @@
-# Plan: all-Go TUI manga reader (mangal + pdfpane's design)
+# Plan: mangaz, an all-Go TUI manga reader (mangal + pdfpane's design)
 
 Supersedes the Go + Swift plan (commit cd3bf9a). Decision: one Go binary,
 every OS. pdfpane is the reference design, not linked code.
+
+## Decisions (locked 2026-11-21)
+
+| Question | Decision |
+|---|---|
+| Name | **mangaz**: binary, module path, config dir, env prefix (`MANGAZ_*`) |
+| External viewers | **None.** The built-in reader is the only way to read. A terminal without kitty graphics gets a clear error, not a fallback |
+| Reading direction | **Right-to-left** by default, per-manga override |
+| Tone | **Dark** by default, `d` toggles light |
 
 ## Goal
 
@@ -80,15 +89,37 @@ over unchanged: **only the loop goroutine writes to stdout.**
 - **Direct mode**: cursor-positioned `a=T` placement for terminals without
   placeholder support (verify wezterm).
 - Pick the mode from env detection (pdfpane's `hostSupportsKittyGraphics`
-  logic plus `TMUX`/`GWAE`), with an override `MANGAL_KITTY_MODE`.
+  logic plus `TMUX`/`GWAE`), with an override `MANGAZ_KITTY_MODE`.
+- No kitty support detected: `mangaz` refuses to open the reader and says
+  which terminals work (`MANGAZ_KITTY_GRAPHICS=1` forces it on).
+
+### Removed (no external viewers)
+
+- `downloader/read.go` external path: `open.RunWith`, read-in-browser.
+- Config keys `reader.pdf`, `reader.cbz`, `reader.zip`, `reader.plain`,
+  `reader.folder`, `reader.browser`, `reader.read_in_browser` (`key/keys.go`,
+  `config/default.go`). Configs that still set them get a one-time warning.
+- The "open downloads folder" key in `tui/update.go`.
+- Converters stay **for downloads only** (`mangaz` can still export
+  pdf/cbz/zip/plain to disk). Reading never converts.
+- Kept: `open.Start` for "open this manga's web page" and the Anilist OAuth
+  login. Those are links, not viewers.
 
 ## Phases
 
+### Phase 0: become mangaz (half a day)
+- New repo `hongnoul/mangaz` seeded from this fork (history kept). Module
+  path `github.com/hongnoul/mangaz`, `constant.Mangal` to `"mangaz"`,
+  `MANGAL_*` env vars to `MANGAZ_*`, binary and completions renamed.
+- Config migration: if `~/.config/mangal` exists and `~/.config/mangaz`
+  doesn't, copy it once (sources, history, anilist).
+- Check: `go build`, `go test ./...`, the existing TUI runs under the new name.
+
 ### Phase 1: spike + benchmark gate (1-2 days)
-Standalone `cmd/mangaview <dir|cbz>`: decode, fit, gray PNG, kitty placeholder
+Standalone `mangaz view <dir|cbz>`: decode, fit, gray PNG, kitty placeholder
 transport, `j`/`k`/`q`, with a basic prefetch pool.
 - **Gate:** port `tests/scroll_bench.py` (it measures from keypress to the end
-  of the DEC 2026 frame). Same manga chapter as a folder of images: mangaview
+  of the DEC 2026 frame). Same manga chapter as a folder of images: mangaz view
   vs pdfpane on a pdfcpu PDF of it. Pass = cached flip p50 under 30 ms and
   held `j` at 15 Hz presenting at least 10 fps.
 - If it fails: profile decode, scale, encode. Remedies in order: `f=32` raw
@@ -97,10 +128,10 @@ transport, `j`/`k`/`q`, with a basic prefetch pool.
   the last resort, behind a build tag.
 
 ### Phase 2: in-TUI integration (1-2 days)
-- `reader.Read(chapter)` implements `tea.ExecCommand`. Add `reader.use: tui`
-  config (default when a kitty terminal is detected, else today's external
-  reader).
-- Use mangal's downloaded/temp pages directly, with no converter step.
+- `reader.Read(chapter)` implements `tea.ExecCommand` and replaces
+  `downloader.Read` entirely. Delete the external-viewer code and config keys
+  listed above in the same PR.
+- Use the downloaded/temp pages directly, with no converter step.
 - Check: MangaDex search, read, `q`, back in the chapter list with the TUI
   intact, in kitty, ghostty, wezterm and gwae.
 
@@ -113,10 +144,17 @@ transport, `j`/`k`/`q`, with a basic prefetch pool.
 - Check: time to first page on a cold chapter, before vs after.
 
 ### Phase 4: manga features (ongoing)
-- RTL by default with per-manga override. Spread view with the cover alone,
-  pairs ordered RTL.
-- Tones: `light` (default for manga), `dim` (85% brightness, no inversion),
-  `invert`. Skip pdfpane's smart tone: photo detection doesn't apply to manga.
+- RTL by default (`reader.direction: rtl|ltr`, per-manga override saved with
+  history). In RTL, `h`/left goes to the next page and `l`/right to the
+  previous one, matching the physical book. `j`/`k` stay next/prev in both modes.
+  Spread view puts the cover alone, then pairs with the earlier page on the
+  right.
+- Tones: `dark` (default), `light`, `dim`. `dark` is a plain inversion with
+  ink landing at soft gray (pdfpane's 224/255 cap), so it doesn't glare.
+  Color pages get pdfpane's hue-preserving flip. Skip photo detection: manga
+  pages are a single image, so there are no embedded photos to exempt.
+  Config: `reader.tone`, `d` cycles at runtime.
+- Rotation moves off `h`/`l` (taken by RTL paging) to `r`/`R`.
 - Page-level history: `{manga, chapter, page}` stored on every flip, plus a
   "continue" entry in the history view.
 - Webtoon mode: slice tall strips into pane-height tiles and scroll by tile.
@@ -125,11 +163,11 @@ transport, `j`/`k`/`q`, with a basic prefetch pool.
 ### Phase 5: cross-platform hardening + ship
 - CI matrix: macOS, Linux and Windows builds. A PTY protocol test (port
   `tests/protocol_test.py` to Go using `creack/pty`) on macOS and Linux.
-- Windows: verify in wezterm. Detect Windows Terminal and fall back with a clear
-  message (sixel is out of scope until requested).
+- Windows: verify in wezterm. Windows Terminal gets the "unsupported
+  terminal" error (sixel is out of scope until requested).
 - Separate PR: bump Go 1.18 to current, bubbletea 0.23 to current. Prune dead
   scrapers.
-- Rename, README, `go install`, goreleaser for binaries.
+- README, `go install`, goreleaser for binaries.
 
 ## Risks
 
@@ -140,8 +178,4 @@ transport, `j`/`k`/`q`, with a basic prefetch pool.
 | Raw mode left on after a crash | Restore on `defer`, signal handler and panic recovery. Bubbletea re-inits on return |
 | Upstream mangal unmaintained, old deps | Dependency bumps isolated in their own PR |
 | Some scrapers return unusual formats (AVIF) | Skip with a visible notice. Add a decoder only if a used source needs it |
-
-## Open questions
-1. App name.
-2. Keep mangal's external-reader path for non-kitty terminals, or drop it?
-3. Defaults: RTL plus light tone?
+| No fallback means non-kitty users can't read at all | Accepted on purpose. The error names working terminals. Sixel can be added later as a second transport |
