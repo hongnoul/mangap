@@ -127,6 +127,29 @@ transport, `j`/`k`/`q`, with a basic prefetch pool.
   stretch), a faster PNG encoder, more lanes. A CoreGraphics cgo backend is
   the last resort, behind a build tag.
 
+**Result (2026-11-21): PASSED.** Fixture: Chainsaw Man ch. 1 from
+Mangadex, 53 pages at 891x1300 (gray PNG, gray-palette PNG, 4 color
+pages), vs pdfpane on the same chapter as a PDF. Pane 160x50 cells,
+3200x1800 px. Medians of 3 runs (`tests/scroll_bench.py`):
+
+| metric | mangaz | pdfpane |
+|---|---|---|
+| boot to first frame | 86 ms | 122 ms |
+| flip p50 / p90 / max (30 Hz) | 15 / 30 / 54 ms | 26 / 55 / 90 ms |
+| held key 30 Hz fps | 29.6 | 28.9 |
+| flip p50 (60 Hz) | 24 ms | 55 ms |
+| held key 60 Hz fps | 46.9 | 47.7 |
+| held key 15 Hz fps (gate) | 14.8, every key framed | |
+
+What got it there without cgo: native-density rasters (never upscale
+a 1300 px scan to 3600 px, let the terminal stretch), neutral detection
+so gray and gray-palette pages ship 1-channel PNG, a single-filter (Up)
+PNG encoder instead of image/png's 5-way trial, and RGB instead of RGBA
+for color frames (12% smaller, 35% faster deflate). Color pages remain
+the slow case (~2 MB frames, first frame 85 ms on the cover); the
+prefetcher hides them during reading. No remedy from the list above was
+needed.
+
 ### Phase 2: in-TUI integration (1-2 days)
 - `reader.Read(chapter)` implements `tea.ExecCommand` and replaces
   `downloader.Read` entirely. Delete the external-viewer code and config keys

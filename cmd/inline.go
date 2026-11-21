@@ -69,7 +69,8 @@ Chapter selectors:
 
 When using the json flag manga selector could be omitted. That way, it will select all mangas`,
 
-	Example: "https://github.com/hongnoul/mangaz/wiki/Inline-mode",
+	Example: `mangaz inline -S Mangadex -q "chainsaw man" -m first -c 0 -d
+mangaz inline -S Mangadex -q "chainsaw man" -m first -j`,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		json, _ := cmd.Flags().GetBool("json")
 
