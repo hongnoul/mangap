@@ -101,7 +101,7 @@ func (f *Field) Pretty() string {
 
 func (f *Field) Env() string {
 	env := strings.ToUpper(EnvKeyReplacer.Replace(f.Key))
-	appPrefix := strings.ToUpper(constant.Mangal + "_")
+	appPrefix := strings.ToUpper(constant.App + "_")
 
 	if strings.HasPrefix(env, appPrefix) {
 		return env
@@ -132,7 +132,7 @@ var defaults = [key.DefinedFieldsCount]Field{
 		`Where to download manga
 Absolute or relative.
 You can also use tilde (~) to refer to your home directory or use env variables.
-Examples: ~/... or $HOME/... or ${MANGA_PATH}-mangal`,
+Examples: ~/... or $HOME/... or ${MANGA_PATH}-mangaz`,
 	},
 	{
 		key.DownloaderChapterNameTemplate,
@@ -179,7 +179,7 @@ Do no turn it off unless you have some issues`,
 		[]string{},
 		`Default sources to use.
 Will prompt if not set.
-Type "mangal sources list" to show available sources`,
+Type "mangaz sources list" to show available sources`,
 	},
 	{
 		key.DownloaderStopOnError,
@@ -411,7 +411,7 @@ panic, fatal, error, warn, info, debug, trace`,
 	},
 	{
 		key.CliVersionCheck,
-		true,
+		false,
 		"Check for a new version of the CLI occasionally",
 	},
 }

@@ -18,7 +18,7 @@ var versionCacher = gache.New[string](&gache.Options{
 	FileSystem: &filesystem.GacheFs{},
 })
 
-// Latest returns the latest version of mangal.
+// Latest returns the latest version of mangaz.
 // It will fetch the latest version from the GitHub API.
 func Latest() (version string, err error) {
 	ver, expired, err := versionCacher.Get()
@@ -30,12 +30,17 @@ func Latest() (version string, err error) {
 		return ver, nil
 	}
 
-	resp, err := http.Get("https://api.github.com/repos/metafates/mangal/releases/latest")
+	resp, err := http.Get("https://api.github.com/repos/hongnoul/mangaz/releases/latest")
 	if err != nil {
 		return
 	}
 
 	defer util.Ignore(resp.Body.Close)
+
+	if resp.StatusCode != http.StatusOK {
+		err = errors.New("version check: " + resp.Status)
+		return
+	}
 
 	var release struct {
 		TagName string `json:"tag_name"`

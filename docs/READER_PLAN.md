@@ -107,7 +107,7 @@ over unchanged: **only the loop goroutine writes to stdout.**
 
 ## Phases
 
-### Phase 0: become mangaz (half a day)
+### Phase 0: become mangaz (half a day) -- DONE 2026-11-21
 - New repo `hongnoul/mangaz` seeded from this fork (history kept). Module
   path `github.com/hongnoul/mangaz`, `constant.Mangal` to `"mangaz"`,
   `MANGAL_*` env vars to `MANGAZ_*`, binary and completions renamed.
