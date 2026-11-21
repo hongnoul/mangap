@@ -1,11 +1,11 @@
 package provider
 
 import (
-	"github.com/metafates/mangal/filesystem"
-	"github.com/metafates/mangal/provider/custom"
-	"github.com/metafates/mangal/source"
-	"github.com/metafates/mangal/util"
-	"github.com/metafates/mangal/where"
+	"github.com/hongnoul/mangaz/filesystem"
+	"github.com/hongnoul/mangaz/provider/custom"
+	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangaz/where"
 	"github.com/samber/lo"
 	"os"
 	"path/filepath"

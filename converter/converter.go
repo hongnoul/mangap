@@ -2,12 +2,12 @@ package converter
 
 import (
 	"fmt"
-	"github.com/metafates/mangal/constant"
-	"github.com/metafates/mangal/converter/cbz"
-	"github.com/metafates/mangal/converter/pdf"
-	"github.com/metafates/mangal/converter/plain"
-	"github.com/metafates/mangal/converter/zip"
-	"github.com/metafates/mangal/source"
+	"github.com/hongnoul/mangaz/constant"
+	"github.com/hongnoul/mangaz/converter/cbz"
+	"github.com/hongnoul/mangaz/converter/pdf"
+	"github.com/hongnoul/mangaz/converter/plain"
+	"github.com/hongnoul/mangaz/converter/zip"
+	"github.com/hongnoul/mangaz/source"
 	"github.com/samber/lo"
 	"strings"
 )

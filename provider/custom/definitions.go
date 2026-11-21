@@ -1,6 +1,6 @@
 package custom
 
-import "github.com/metafates/mangal/constant"
+import "github.com/hongnoul/mangaz/constant"
 
 var mustHave = []string{
 	constant.SearchMangaFn,

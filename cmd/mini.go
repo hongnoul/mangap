@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/metafates/mangal/converter"
-	"github.com/metafates/mangal/key"
-	"github.com/metafates/mangal/mini"
+	"github.com/hongnoul/mangaz/converter"
+	"github.com/hongnoul/mangaz/key"
+	"github.com/hongnoul/mangaz/mini"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

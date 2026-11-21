@@ -1,13 +1,13 @@
 package history
 
 import (
+	"github.com/hongnoul/mangaz/filesystem"
+	"github.com/hongnoul/mangaz/integration"
+	"github.com/hongnoul/mangaz/key"
+	"github.com/hongnoul/mangaz/log"
+	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangaz/where"
 	"github.com/metafates/gache"
-	"github.com/metafates/mangal/filesystem"
-	"github.com/metafates/mangal/integration"
-	"github.com/metafates/mangal/key"
-	"github.com/metafates/mangal/log"
-	"github.com/metafates/mangal/source"
-	"github.com/metafates/mangal/where"
 	"github.com/spf13/viper"
 )
 

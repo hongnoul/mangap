@@ -2,7 +2,7 @@ package open
 
 import (
 	"fmt"
-	"github.com/metafates/mangal/constant"
+	"github.com/hongnoul/mangaz/constant"
 	"os"
 	"os/exec"
 	"path/filepath"

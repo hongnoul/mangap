@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/metafates/mangal/color"
-	"github.com/metafates/mangal/constant"
-	"github.com/metafates/mangal/key"
-	"github.com/metafates/mangal/tui"
-	"github.com/metafates/mangal/util"
+	"github.com/hongnoul/mangaz/color"
+	"github.com/hongnoul/mangaz/constant"
+	"github.com/hongnoul/mangaz/key"
+	"github.com/hongnoul/mangaz/tui"
+	"github.com/hongnoul/mangaz/util"
 	"github.com/spf13/viper"
 	"os"
 	"os/user"
@@ -14,11 +14,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/metafates/mangal/filesystem"
-	"github.com/metafates/mangal/icon"
-	"github.com/metafates/mangal/provider"
-	"github.com/metafates/mangal/style"
-	"github.com/metafates/mangal/where"
+	"github.com/hongnoul/mangaz/filesystem"
+	"github.com/hongnoul/mangaz/icon"
+	"github.com/hongnoul/mangaz/provider"
+	"github.com/hongnoul/mangaz/style"
+	"github.com/hongnoul/mangaz/where"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 )

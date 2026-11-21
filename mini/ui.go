@@ -2,8 +2,8 @@ package mini
 
 import (
 	"fmt"
-	"github.com/metafates/mangal/color"
-	"github.com/metafates/mangal/style"
+	"github.com/hongnoul/mangaz/color"
+	"github.com/hongnoul/mangaz/style"
 	"github.com/samber/lo"
 	"os"
 	"strconv"

@@ -2,15 +2,15 @@ package downloader
 
 import (
 	"fmt"
-	"github.com/metafates/mangal/color"
-	"github.com/metafates/mangal/constant"
-	"github.com/metafates/mangal/converter"
-	"github.com/metafates/mangal/history"
-	"github.com/metafates/mangal/key"
-	"github.com/metafates/mangal/log"
-	"github.com/metafates/mangal/open"
-	"github.com/metafates/mangal/source"
-	"github.com/metafates/mangal/style"
+	"github.com/hongnoul/mangaz/color"
+	"github.com/hongnoul/mangaz/constant"
+	"github.com/hongnoul/mangaz/converter"
+	"github.com/hongnoul/mangaz/history"
+	"github.com/hongnoul/mangaz/key"
+	"github.com/hongnoul/mangaz/log"
+	"github.com/hongnoul/mangaz/open"
+	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangaz/style"
 	"github.com/spf13/viper"
 )
 

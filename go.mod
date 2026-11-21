@@ -1,4 +1,4 @@
-module github.com/metafates/mangal
+module github.com/hongnoul/mangaz
 
 go 1.18
 

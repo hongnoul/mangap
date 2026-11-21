@@ -1,16 +1,16 @@
 package cmd
 
 import (
-	"github.com/metafates/mangal/color"
-	"github.com/metafates/mangal/style"
-	"github.com/metafates/mangal/version"
+	"github.com/hongnoul/mangaz/color"
+	"github.com/hongnoul/mangaz/style"
+	"github.com/hongnoul/mangaz/version"
 	"github.com/samber/lo"
 	"os"
 	"runtime"
 	"strings"
 	"text/template"
 
-	"github.com/metafates/mangal/constant"
+	"github.com/hongnoul/mangaz/constant"
 	"github.com/spf13/cobra"
 )
 

@@ -2,9 +2,9 @@ package inline
 
 import (
 	"encoding/json"
-	"github.com/metafates/mangal/anilist"
-	"github.com/metafates/mangal/key"
-	"github.com/metafates/mangal/source"
+	"github.com/hongnoul/mangaz/anilist"
+	"github.com/hongnoul/mangaz/key"
+	"github.com/hongnoul/mangaz/source"
 	"github.com/spf13/viper"
 )
 

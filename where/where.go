@@ -1,9 +1,9 @@
 package where
 
 import (
-	"github.com/metafates/mangal/constant"
-	"github.com/metafates/mangal/filesystem"
-	"github.com/metafates/mangal/key"
+	"github.com/hongnoul/mangaz/constant"
+	"github.com/hongnoul/mangaz/filesystem"
+	"github.com/hongnoul/mangaz/key"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
 	"os"

@@ -2,13 +2,13 @@ package tui
 
 import (
 	"fmt"
-	"github.com/metafates/mangal/anilist"
-	"github.com/metafates/mangal/history"
-	"github.com/metafates/mangal/icon"
-	"github.com/metafates/mangal/installer"
-	"github.com/metafates/mangal/provider"
-	"github.com/metafates/mangal/source"
-	"github.com/metafates/mangal/style"
+	"github.com/hongnoul/mangaz/anilist"
+	"github.com/hongnoul/mangaz/history"
+	"github.com/hongnoul/mangaz/icon"
+	"github.com/hongnoul/mangaz/installer"
+	"github.com/hongnoul/mangaz/provider"
+	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangaz/style"
 	"strings"
 )
 

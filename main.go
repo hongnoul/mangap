@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/metafates/mangal/cmd"
-	"github.com/metafates/mangal/config"
-	"github.com/metafates/mangal/log"
+	"github.com/hongnoul/mangaz/cmd"
+	"github.com/hongnoul/mangaz/config"
+	"github.com/hongnoul/mangaz/log"
 	"github.com/samber/lo"
 )
 

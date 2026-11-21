@@ -1,9 +1,9 @@
 package query
 
 import (
+	"github.com/hongnoul/mangaz/filesystem"
+	"github.com/hongnoul/mangaz/where"
 	"github.com/metafates/gache"
-	"github.com/metafates/mangal/filesystem"
-	"github.com/metafates/mangal/where"
 )
 
 type queryRecord struct {
