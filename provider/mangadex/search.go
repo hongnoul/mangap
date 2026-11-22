@@ -1,19 +1,25 @@
 package mangadex
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/darylhjd/mangodex"
 	"github.com/hongnoul/mangap/key"
 	"github.com/hongnoul/mangap/source"
 	"github.com/spf13/viper"
-	"log"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
 )
 
 func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
+	return m.SearchContext(context.Background(), query)
+}
+
+// SearchContext is Search that ctx can cancel (abandoned live searches).
+func (m *Mangadex) SearchContext(ctx context.Context, query string) ([]*source.Manga, error) {
 	language := viper.GetString(key.MangadexLanguage)
 	cacheKey := query + "|" + language
 	if cached, ok := m.cache.mangas.Get(cacheKey).Get(); ok {
@@ -47,9 +53,8 @@ func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
 	// Embed cover_art relationships so cover file names come back inline.
 	params.Add("includes[]", mangodex.CoverArtRel)
 
-	mangaList, err := m.client.Manga.GetMangaList(params)
+	mangaList, err := m.client.Manga.GetMangaListContext(ctx, params)
 	if err != nil {
-		log.Fatalln(err)
 		return nil, err
 	}
 
@@ -69,6 +74,7 @@ func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
 			m.Metadata.Cover.Large = cover + ".512.jpg"
 			m.Metadata.Cover.Medium = cover + ".256.jpg"
 		}
+		m.Metadata.Synonyms = altTitles(&manga, m.Name)
 
 		mangas = append(mangas, &m)
 	}
@@ -78,6 +84,40 @@ func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
 }
 
 var langCodeRe = regexp.MustCompile(`^[a-z]{2}(-[a-z]{2})?$`)
+
+// altTitles collects every other title so local matching finds the manga by
+// its romaji or English name as well.
+func altTitles(manga *mangodex.Manga, name string) []string {
+	seen := map[string]bool{name: true}
+	var out []string
+	add := func(s string) {
+		if s != "" && !seen[s] {
+			seen[s] = true
+			out = append(out, s)
+		}
+	}
+	for _, t := range manga.Attributes.Title.Values {
+		add(t)
+	}
+	for _, t := range manga.Attributes.AltTitles.Values {
+		add(t)
+	}
+	return out
+}
+
+// Warm opens the API connection ahead of the first search. mangodex uses
+// the default transport, so the warmed connection is the one it reuses.
+func (m *Mangadex) Warm(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, mangodex.BaseAPI+"/ping", nil)
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	return resp.Body.Close()
+}
 
 // filterLanguage reports whether lang is a real MangaDex language code to
 // filter by. "any", empty and malformed values disable filtering.

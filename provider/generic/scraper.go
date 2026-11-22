@@ -1,21 +1,30 @@
 package generic
 
 import (
-	"github.com/gocolly/colly/v2"
+	"sync"
+
 	"github.com/hongnoul/mangap/source"
 )
 
-// Scraper is a generic scraper downloads html pages and parses them
+// Scraper is a generic scraper downloads html pages and parses them.
+// It is safe for concurrent use: live search, chapter prefetch and the
+// downloader may all call it at once.
 type Scraper struct {
-	mangasCollector   *colly.Collector
-	chaptersCollector *colly.Collector
-	pagesCollector    *colly.Collector
-
-	mangas   map[string][]*source.Manga
+	mu       sync.Mutex
+	searches map[string]searchEntry
 	chapters map[string][]*source.Chapter
 	pages    map[string][]*source.Page
+	// inflight dedupes concurrent ChaptersOf calls for the same manga
+	// (a hover prefetch and the user pressing enter).
+	inflight map[string]*chapterCall
 
 	config *Configuration
+}
+
+type chapterCall struct {
+	done     chan struct{}
+	chapters []*source.Chapter
+	err      error
 }
 
 // Name of the scraper

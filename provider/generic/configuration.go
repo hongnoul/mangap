@@ -17,6 +17,9 @@ type Extractor struct {
 	Volume func(*goquery.Selection) string
 	// Cover function to get cover from element found by selector. Used by manga extractor
 	Cover func(*goquery.Selection) string
+	// AltNames returns alternative titles (optional, manga extractors only).
+	// The TUI's local catalog matches typed text against them too.
+	AltNames func(*goquery.Selection) []string
 }
 
 // Configuration is a generic scraper configuration that defines behavior of the scraper
@@ -36,6 +39,12 @@ type Configuration struct {
 	// GenerateSearchURL function to create search URL from the query.
 	// E.g. "one piece" -> "https://example.com/search?q=one+piece"
 	GenerateSearchURL func(query string) string
+
+	// QuickSearchURL, if set, is a lighter search endpoint (an autocomplete
+	// fragment, for example) tried before GenerateSearchURL. Its results
+	// are parsed with QuickMangaExtractor.
+	QuickSearchURL      func(query string) string
+	QuickMangaExtractor *Extractor
 
 	// MangaExtractor is responsible for finding manga elements and extracting required data from them
 	MangaExtractor,
