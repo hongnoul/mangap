@@ -25,6 +25,7 @@ or gwae.
 Keys:
   j / space / down   next page        k / up        previous page
                      (past the last/first page: next/previous chapter)
+  ctrl-j / ctrl-k    next / previous chapter (from any page)
   h / left           page to the left l / right     page to the right
                      (right-to-left: left is the next page)
   g / G              first / last     f <digits>    go to page

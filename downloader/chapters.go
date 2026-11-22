@@ -67,6 +67,14 @@ func (n *Neighbors) Title(pos int) (string, bool) {
 	return c.Name, true
 }
 
+// Number implements reader.Chapters: the place in reading order.
+func (n *Neighbors) Number(pos int) (int, int, bool) {
+	if n.get(pos) == nil {
+		return 0, 0, false
+	}
+	return n.at + pos + 1, len(n.list), true
+}
+
 // Load implements reader.Chapters.
 func (n *Neighbors) Load(pos int) (pages.Source, error) {
 	return Prepare(n.get(pos), func(string) {})

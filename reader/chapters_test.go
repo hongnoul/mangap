@@ -29,6 +29,13 @@ func (f *fakeChapters) Title(pos int) (string, bool) {
 	return "Ch " + string(rune('A'+pos+5)), true
 }
 
+func (f *fakeChapters) Number(pos int) (int, int, bool) {
+	if pos < f.min || pos > f.max {
+		return 0, 0, false
+	}
+	return pos - f.min + 1, f.max - f.min + 1, true
+}
+
 func (f *fakeChapters) Load(pos int) (pages.Source, error) {
 	time.Sleep(f.delay)
 	f.mu.Lock()
@@ -59,7 +66,7 @@ func TestCrossIntoNextChapterAndBack(t *testing.T) {
 	h.waitFrames(2)
 	time.Sleep(100 * time.Millisecond) // next chapter preloads meanwhile
 	h.press("j")                       // cross
-	h.waitFor(func(s string) bool { return strings.Contains(s, "Ch G") })
+	h.waitFor(func(s string) bool { return strings.Contains(s, "Chapter 3/3  Ch G") })
 	h.press("j")
 	time.Sleep(100 * time.Millisecond)
 	h.quit()
@@ -91,7 +98,7 @@ func TestCrossPendingWhileLoadingThenCancel(t *testing.T) {
 	h.press("j")
 	h.waitFrames(2)
 	h.press("j") // edge: loading toast
-	h.waitFor(func(s string) bool { return strings.Contains(s, "Loading Ch G") })
+	h.waitFor(func(s string) bool { return strings.Contains(s, "Loading Chapter 2/2  Ch G") })
 	h.press("k") // change of mind: stays in chapter 0
 	time.Sleep(500 * time.Millisecond)
 	h.quit()
@@ -123,5 +130,22 @@ func TestStateEdges(t *testing.T) {
 	s.GoTo(3)
 	if s.SheetsLeft(1) != 1 || s.SheetsLeft(-1) != 2 {
 		t.Fatalf("spread sheets left %d/%d", s.SheetsLeft(1), s.SheetsLeft(-1))
+	}
+}
+
+func TestCtrlJKJumpsChaptersFromAnyPage(t *testing.T) {
+	fc := &fakeChapters{min: -1, max: 1, pages: 4}
+	h := start(t, 5, Options{Chapters: fc})
+	h.waitFrames(1)
+	h.press("j\n") // page 1, then ctrl-j: next chapter at its first page
+	h.waitFor(func(s string) bool { return strings.Contains(s, "Chapter 3/3") })
+	h.press("j")
+	time.Sleep(100 * time.Millisecond)
+	h.press("\x0b") // ctrl-k: back to chapter 0, first page
+	h.waitFor(func(s string) bool { return strings.Count(s, "Chapter 2/3") >= 1 })
+	time.Sleep(100 * time.Millisecond)
+	h.quit()
+	if h.res.Chapter != 0 || h.res.Page != 0 {
+		t.Fatalf("stopped at chapter %d page %d, want 0/0", h.res.Chapter, h.res.Page)
 	}
 }

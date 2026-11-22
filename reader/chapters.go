@@ -16,6 +16,9 @@ type Chapters interface {
 	// Title names chapter pos, or reports false when there is none. It is
 	// called on the terminal-owning goroutine and must not block.
 	Title(pos int) (string, bool)
+	// Number is chapter pos's 1-based place in the manga and the chapter
+	// count, for the "Chapter n/m" label. ok is false when unknown.
+	Number(pos int) (n, total int, ok bool)
 	// Load prepares chapter pos (download, open). It runs on a background
 	// goroutine; the reader owns and closes the returned source.
 	Load(pos int) (pages.Source, error)
@@ -122,6 +125,36 @@ func (s *session) title(pos int) string {
 	return fmt.Sprintf("chapter %+d", pos)
 }
 
+// label is the toast for chapter pos: "Chapter n/m", plus the chapter's
+// own name when it says more than its number.
+func (s *session) label(pos int) string {
+	if s.opt.Chapters == nil {
+		return s.title(pos)
+	}
+	n, total, ok := s.opt.Chapters.Number(pos)
+	if !ok {
+		return s.title(pos)
+	}
+	l := fmt.Sprintf("Chapter %d/%d", n, total)
+	if t, ok := s.opt.Chapters.Title(pos); ok && t != "" && t != fmt.Sprintf("Chapter %d", n) {
+		l += "  " + t
+	}
+	return l
+}
+
+// jumpChapter (ctrl-j / ctrl-k) goes to the start of the neighbor
+// chapter from any page.
+func (s *session) jumpChapter(dir int) {
+	if s.pendingCross != 0 {
+		if dir != s.pendingCross {
+			s.pendingCross = 0
+			s.clearToast()
+		}
+		return
+	}
+	s.crossTo(dir, 1)
+}
+
 // neighborState is the view state chapter c opens with when entered by
 // a flip in direction dir: the first sheet going forward, the last going
 // back, with the reader's layout carried over.
@@ -152,12 +185,16 @@ func (s *session) flip(dir int) {
 		s.state.Flip(dir)
 		return
 	}
-	s.cross(dir)
+	s.crossTo(dir, dir)
 }
 
-// cross enters chapter cur+dir: instantly when it is loaded, otherwise
-// after it loads (with a toast meanwhile).
-func (s *session) cross(dir int) {
+// cross enters chapter cur+dir at the edge a page flip would reach.
+func (s *session) cross(dir int) { s.crossTo(dir, s.pendingEntry) }
+
+// crossTo enters chapter cur+dir: instantly when it is loaded, otherwise
+// after it loads (with a toast meanwhile). entry > 0 opens at the first
+// page, entry < 0 at the last.
+func (s *session) crossTo(dir, entry int) {
 	pos := s.cur + dir
 	c, ok := s.chapters[pos]
 	if !ok {
@@ -180,14 +217,15 @@ func (s *session) cross(dir int) {
 		}
 		s.ensureLoad(pos)
 		s.pendingCross = dir
-		s.setToast("Loading "+s.title(pos)+"...", 0)
+		s.pendingEntry = entry
+		s.setToast("Loading "+s.label(pos)+"...", 0)
 		return
 	}
 
 	if old := s.chapters[s.cur]; old != nil {
 		old.pf.ClearAwait()
 	}
-	s.state = s.neighborState(pos, c, dir)
+	s.state = s.neighborState(pos, c, entry)
 	s.pf = c.pf
 	s.cur = pos
 	s.awaiting = ""
@@ -198,7 +236,7 @@ func (s *session) cross(dir int) {
 		}
 	}
 	s.trace("cross -> chapter %d", pos)
-	s.setToast(s.title(pos), 1500*time.Millisecond)
+	s.setToast(s.label(pos), 2*time.Second)
 	if s.opt.Chapters != nil {
 		s.opt.Chapters.Entered(pos)
 	}

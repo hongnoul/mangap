@@ -106,6 +106,7 @@ type session struct {
 	ready        chan struct{}
 	done         chan struct{}
 	pendingCross int
+	pendingEntry int
 	toast        string
 	toastT       *time.Timer
 	repaint      bool
@@ -217,6 +218,9 @@ func (s *session) run() (res Result, err error) {
 	}()
 
 	var parser input.Parser
+	if s.opt.Chapters != nil {
+		s.setToast(s.label(0), 2*time.Second)
+	}
 	s.present()
 	for {
 		select {
@@ -294,6 +298,10 @@ func (s *session) apply(ks []input.Key) bool {
 			s.flip(s.state.PhysicalDelta(true))
 		case input.Right:
 			s.flip(s.state.PhysicalDelta(false))
+		case input.NextChapter:
+			s.jumpChapter(1)
+		case input.PrevChapter:
+			s.jumpChapter(-1)
 		case input.First:
 			st.GoTo(0)
 		case input.Last:

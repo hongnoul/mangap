@@ -26,6 +26,10 @@ const (
 	Digit
 	Backspace
 	Enter
+	// NextChapter and PrevChapter jump to the neighbor chapter's start
+	// (ctrl-j / ctrl-k).
+	NextChapter
+	PrevChapter
 )
 
 // Key is a parsed key: an action, plus the digit for Digit.
@@ -153,8 +157,12 @@ func single(c byte) Key {
 		return Key{Action: Direction}
 	case 'f':
 		return Key{Action: Goto}
-	case '\r', '\n':
+	case '\r':
 		return Key{Action: Enter}
+	case '\n': // ctrl-j (raw mode: Enter sends \r)
+		return Key{Action: NextChapter}
+	case 0x0b: // ctrl-k
+		return Key{Action: PrevChapter}
 	case 0x7f, 0x08:
 		return Key{Action: Backspace}
 	}

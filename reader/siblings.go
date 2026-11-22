@@ -72,6 +72,14 @@ func (s *Siblings) Title(pos int) (string, bool) {
 	return strings.TrimSuffix(filepath.Base(p), filepath.Ext(p)), true
 }
 
+// Number implements Chapters.
+func (s *Siblings) Number(pos int) (int, int, bool) {
+	if _, ok := s.get(pos); !ok {
+		return 0, 0, false
+	}
+	return s.at + pos + 1, len(s.paths), true
+}
+
 // Load implements Chapters.
 func (s *Siblings) Load(pos int) (pages.Source, error) {
 	p, ok := s.get(pos)
