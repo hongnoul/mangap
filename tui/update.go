@@ -578,6 +578,11 @@ func (b *statefulBubble) updateRead(msg tea.Msg) (tea.Model, tea.Cmd) {
 		downloader.SaveReadHistory(msg.chapter)
 		opt, nb := downloader.ReaderOptionsFor(msg.chapter)
 		rc := reader.NewCommand(msg.src, opt)
+		// Mute now, not in mutedExec.Run: tea.Exec's ReleaseTerminal leaves
+		// the alt screen before Run starts, and a renderer flush in that
+		// window (the loader keeps ticking) paints this Reading frame onto
+		// the main screen, where it survives quitting the TUI.
+		b.thumbs.out.setMuted(true)
 		return b, tea.Exec(
 			&mutedExec{ExecCommand: rc, out: b.thumbs.out},
 			func(err error) tea.Msg {
