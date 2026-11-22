@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"github.com/hongnoul/mangaz/reader/term"
+	xterm "golang.org/x/term"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -51,5 +53,23 @@ func Run(options *Options) error {
 	bubble.preview.send = p.Send
 	defer bubble.preview.Clear()
 	defer bubble.thumbs.Clear()
+
+	// bubbletea only watches SIGWINCH when its output is an *os.File, and
+	// syncOut is not, so forward resizes ourselves. Without this the TUI
+	// keeps its startup width and wraps when the pane shrinks.
+	resizes, stop := term.Resizes()
+	defer stop()
+	go func() {
+		for range resizes {
+			if w, h, err := xterm.GetSize(int(os.Stdout.Fd())); err == nil {
+				p.Send(tea.WindowSizeMsg{Width: w, Height: h})
+			}
+		}
+	}()
+	go func() {
+		if w, h, err := xterm.GetSize(int(os.Stdout.Fd())); err == nil {
+			p.Send(tea.WindowSizeMsg{Width: w, Height: h})
+		}
+	}()
 	return p.Start()
 }
