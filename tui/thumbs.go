@@ -69,6 +69,19 @@ func (s *syncOut) setMuted(m bool) {
 	s.muted = m
 	s.mu.Unlock()
 }
+
+// unmuteAlt switches to the alt screen and unmutes atomically, so no
+// write can slip onto the main screen in between.
+func (s *syncOut) unmuteAlt() {
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	_, _ = s.f.Write([]byte("\x1b[?1049h\x1b[2J\x1b[H"))
+	s.muted = false
+	s.mu.Unlock()
+}
+
 func (s *syncOut) Read(p []byte) (int, error) { return s.f.Read(p) }
 func (s *syncOut) Fd() uintptr                { return s.f.Fd() }
 
@@ -108,8 +121,11 @@ const (
 // queue ahead of prefetches.
 type thumbs struct {
 	enabled bool
-	out     *syncOut
-	send    func(tea.Msg)
+	// fill center-crops images to the cell box instead of letterboxing
+	// (list rows); the preview pane keeps the whole page.
+	fill bool
+	out  *syncOut
+	send func(tea.Msg)
 
 	mu    sync.Mutex
 	state map[string]*thumbState
@@ -323,7 +339,7 @@ func (t *thumbs) sendLow(st *thumbState, img image.Image) {
 	cols, rows := t.cols, t.rows
 	t.mu.Unlock()
 	w, h := t.pixels(cols, rows, true)
-	res, err := render.Render(render.Job{Pages: []image.Image{img}, W: w, H: h})
+	res, err := render.Render(render.Job{Pages: []image.Image{t.fit(img, w, h)}, W: w, H: h})
 	if err != nil {
 		return
 	}
@@ -342,7 +358,7 @@ func (t *thumbs) sendFull(st *thumbState, img image.Image) {
 	cols, rows := t.cols, t.rows
 	t.mu.Unlock()
 	w, h := t.pixels(cols, rows, false)
-	res, err := render.Render(render.Job{Pages: []image.Image{img}, W: w, H: h})
+	res, err := render.Render(render.Job{Pages: []image.Image{t.fit(img, w, h)}, W: w, H: h})
 	if err != nil {
 		return
 	}
@@ -355,6 +371,38 @@ func (t *thumbs) sendFull(st *thumbState, img image.Image) {
 	st.level = 2
 	t.mu.Unlock()
 	t.write(buf)
+}
+
+func (t *thumbs) fit(img image.Image, w, h int) image.Image {
+	if !t.fill {
+		return img
+	}
+	return cropToFill(img, w, h)
+}
+
+// cropToFill center-crops img to the w:h aspect so the fitted raster fills
+// the whole thumbnail box (no letterbox bars next to the row highlight).
+func cropToFill(img image.Image, w, h int) image.Image {
+	sub, ok := img.(interface {
+		SubImage(image.Rectangle) image.Image
+	})
+	b := img.Bounds()
+	if !ok || w <= 0 || h <= 0 || b.Dx() <= 0 || b.Dy() <= 0 {
+		return img
+	}
+	if b.Dx()*h > b.Dy()*w {
+		// Too wide: trim the sides.
+		nw := b.Dy() * w / h
+		x := b.Min.X + (b.Dx()-nw)/2
+		return sub.SubImage(image.Rect(x, b.Min.Y, x+nw, b.Max.Y))
+	}
+	if b.Dx()*h < b.Dy()*w {
+		// Too tall: trim top and bottom.
+		nh := b.Dx() * h / w
+		y := b.Min.Y + (b.Dy()-nh)/2
+		return sub.SubImage(image.Rect(b.Min.X, y, b.Max.X, y+nh))
+	}
+	return img
 }
 
 // appendLow appends st's low-res raster at the current span. Caller holds mu.
@@ -475,8 +523,13 @@ type mutedExec struct {
 
 func (m *mutedExec) Run() error {
 	m.out.setMuted(true)
-	defer m.out.setMuted(false)
-	return m.ExecCommand.Run()
+	err := m.ExecCommand.Run()
+	// Unmuting happens before bubbletea's RestoreTerminal re-enters the
+	// alt screen, so a repaint in that window would land on the main
+	// screen and survive exit. Re-enter the alt screen first (bubbletea
+	// doing it again is harmless).
+	m.out.unmuteAlt()
+	return err
 }
 
 // Retain marks keep as hot (full-res) and swaps every other full raster
