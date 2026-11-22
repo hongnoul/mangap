@@ -56,11 +56,11 @@ func (s *Session) Restore(extra []byte) {
 }
 
 // SupportsKittyGraphics mirrors gwae's host_supports_kitty_graphics
-// (and pdfpane's): MANGAZ_KITTY_GRAPHICS override, then KITTY_WINDOW_ID,
+// (and pdfpane's): MANGAP_KITTY_GRAPHICS override, then KITTY_WINDOW_ID,
 // then TERM/TERM_PROGRAM. Inside gwae the pane env still carries the outer
 // terminal's TERM, so this stays accurate in the mux.
 func SupportsKittyGraphics() bool {
-	if v, ok := os.LookupEnv("MANGAZ_KITTY_GRAPHICS"); ok {
+	if v, ok := os.LookupEnv("MANGAP_KITTY_GRAPHICS"); ok {
 		switch strings.ToLower(strings.TrimSpace(v)) {
 		case "1", "true", "yes", "on":
 			return true

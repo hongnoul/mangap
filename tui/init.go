@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/provider"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/provider"
 	"github.com/spf13/viper"
 )
 

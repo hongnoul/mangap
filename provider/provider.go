@@ -1,11 +1,11 @@
 package provider
 
 import (
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/provider/custom"
-	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/util"
-	"github.com/hongnoul/mangaz/where"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/provider/custom"
+	"github.com/hongnoul/mangap/source"
+	"github.com/hongnoul/mangap/util"
+	"github.com/hongnoul/mangap/where"
 	"github.com/samber/lo"
 	"os"
 	"path/filepath"

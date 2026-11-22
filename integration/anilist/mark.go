@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/hongnoul/mangaz/anilist"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/log"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/anilist"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/log"
+	"github.com/hongnoul/mangap/source"
 	"github.com/spf13/viper"
 	"net/http"
 	"strconv"
@@ -81,7 +81,7 @@ func (a *Anilist) MarkRead(chapter *source.Chapter) error {
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return fmt.Errorf("anilist session expired, run `mangaz integration anilist` to log in again")
+		return fmt.Errorf("anilist session expired, run `mangap integration anilist` to log in again")
 	}
 
 	if resp.StatusCode != http.StatusOK {

@@ -36,7 +36,7 @@ const (
 	ReaderDirection = "reader.direction"
 )
 
-// RemovedReaderKeys configured external viewers. mangaz reads chapters
+// RemovedReaderKeys configured external viewers. mangap reads chapters
 // itself, so these are ignored; configs that set them get a warning.
 var RemovedReaderKeys = []string{
 	"reader.pdf",

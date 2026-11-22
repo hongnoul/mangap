@@ -2,12 +2,12 @@ package source
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/anilist"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/log"
-	"github.com/hongnoul/mangaz/util"
-	"github.com/hongnoul/mangaz/where"
+	"github.com/hongnoul/mangap/anilist"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/log"
+	"github.com/hongnoul/mangap/util"
+	"github.com/hongnoul/mangap/where"
 	"github.com/samber/lo"
 	"github.com/samber/mo"
 	"github.com/spf13/viper"

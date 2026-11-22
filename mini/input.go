@@ -3,8 +3,8 @@ package mini
 import (
 	"bufio"
 	"fmt"
-	"github.com/hongnoul/mangaz/color"
-	"github.com/hongnoul/mangaz/style"
+	"github.com/hongnoul/mangap/color"
+	"github.com/hongnoul/mangap/style"
 	"os"
 	"strconv"
 	"strings"

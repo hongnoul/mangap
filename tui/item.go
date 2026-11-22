@@ -2,13 +2,13 @@ package tui
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/history"
-	"github.com/hongnoul/mangaz/icon"
-	"github.com/hongnoul/mangaz/installer"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/provider"
-	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/style"
+	"github.com/hongnoul/mangap/history"
+	"github.com/hongnoul/mangap/icon"
+	"github.com/hongnoul/mangap/installer"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/provider"
+	"github.com/hongnoul/mangap/source"
+	"github.com/hongnoul/mangap/style"
 	"github.com/spf13/viper"
 	"strings"
 )

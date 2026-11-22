@@ -1,9 +1,9 @@
 package update
 
 import (
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/log"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/log"
 	"os"
 	"path/filepath"
 )

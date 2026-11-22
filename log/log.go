@@ -3,9 +3,9 @@ package log
 import (
 	"errors"
 	"fmt"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/where"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/where"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"

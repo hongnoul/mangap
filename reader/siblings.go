@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hongnoul/mangaz/reader/pages"
+	"github.com/hongnoul/mangap/reader/pages"
 )
 
 // Siblings crosses between chapters stored side by side on disk: the

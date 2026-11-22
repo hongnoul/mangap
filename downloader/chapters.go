@@ -1,14 +1,14 @@
 package downloader
 
 import (
-	"github.com/hongnoul/mangaz/history"
+	"github.com/hongnoul/mangap/history"
 	"regexp"
 	"sort"
 	"strconv"
 
-	"github.com/hongnoul/mangaz/reader"
-	"github.com/hongnoul/mangaz/reader/pages"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/reader"
+	"github.com/hongnoul/mangap/reader/pages"
+	"github.com/hongnoul/mangap/source"
 )
 
 // Neighbors lets the reader cross into the chapters around the one it

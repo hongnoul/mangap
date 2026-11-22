@@ -5,12 +5,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hongnoul/mangaz/history"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/log"
-	"github.com/hongnoul/mangaz/reader"
-	"github.com/hongnoul/mangaz/reader/pages"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/history"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/log"
+	"github.com/hongnoul/mangap/reader"
+	"github.com/hongnoul/mangap/reader/pages"
+	"github.com/hongnoul/mangap/source"
 	"github.com/spf13/viper"
 )
 
@@ -70,7 +70,7 @@ func ReaderOptions() reader.Options {
 		opt.RTL = &rtl
 	}
 
-	if os.Getenv("MANGAZ_TRACE") == "1" {
+	if os.Getenv("MANGAP_TRACE") == "1" {
 		opt.Trace = os.Stderr
 	}
 

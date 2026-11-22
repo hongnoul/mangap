@@ -3,7 +3,7 @@ package mangadex
 import (
 	"bytes"
 	"errors"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/source"
 	"path/filepath"
 )
 

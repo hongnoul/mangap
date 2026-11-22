@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/source"
 )
 
 type SavedChapter struct {

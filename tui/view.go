@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hongnoul/mangaz/color"
-	"github.com/hongnoul/mangaz/icon"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/style"
-	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangap/color"
+	"github.com/hongnoul/mangap/icon"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/source"
+	"github.com/hongnoul/mangap/style"
+	"github.com/hongnoul/mangap/util"
 	"github.com/muesli/reflow/truncate"
 	"github.com/muesli/reflow/wrap"
 	"github.com/spf13/viper"
@@ -337,7 +337,7 @@ func (b *statefulBubble) renderLines(addHelp bool, lines []string) string {
 func randomPlot() string {
 	plots := []string{
 		"The universe is a dangerous place. There are many things that can go wrong. This is one of them:",
-		"Fighting an endless army of errors and bugs mangaz died a hero. Their last words were:",
+		"Fighting an endless army of errors and bugs mangap died a hero. Their last words were:",
 		"I used to download stuff without any errors, then I took an arrow to the knee. By arrow I mean this:",
 	}
 

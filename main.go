@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/hongnoul/mangaz/cmd"
-	"github.com/hongnoul/mangaz/config"
-	"github.com/hongnoul/mangaz/log"
+	"github.com/hongnoul/mangap/cmd"
+	"github.com/hongnoul/mangap/config"
+	"github.com/hongnoul/mangap/log"
 	"github.com/samber/lo"
 )
 

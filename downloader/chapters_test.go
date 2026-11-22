@@ -3,7 +3,7 @@ package downloader
 import (
 	"testing"
 
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/source"
 )
 
 func names(cs []*source.Chapter) (out []string) {

@@ -10,8 +10,8 @@ import fcntl, os, pty, select, struct, subprocess, sys, termios, time
 END = b"\x1b[?2026l"
 master, slave = pty.openpty()
 fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 50, 160, 3200, 1800))
-env = dict(os.environ, MANGAZ_KITTY_GRAPHICS="1", PDFPANE_KITTY_GRAPHICS="1")
-env.setdefault("MANGAZ_CONFIG_PATH", os.path.join(os.environ.get("TMPDIR", "/tmp"), "mangaz-bench-config"))
+env = dict(os.environ, MANGAP_KITTY_GRAPHICS="1", PDFPANE_KITTY_GRAPHICS="1")
+env.setdefault("MANGAP_CONFIG_PATH", os.path.join(os.environ.get("TMPDIR", "/tmp"), "mangap-bench-config"))
 t0 = time.time()
 p = subprocess.Popen(sys.argv[1:], stdin=slave, stdout=slave, stderr=subprocess.DEVNULL, env=env)
 buf, scanned, first_byte = bytearray(), 0, None

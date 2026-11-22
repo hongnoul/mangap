@@ -1,16 +1,16 @@
 package cmd
 
 import (
-	"github.com/hongnoul/mangaz/color"
-	"github.com/hongnoul/mangaz/style"
-	"github.com/hongnoul/mangaz/version"
+	"github.com/hongnoul/mangap/color"
+	"github.com/hongnoul/mangap/style"
+	"github.com/hongnoul/mangap/version"
 	"github.com/samber/lo"
 	"os"
 	"runtime"
 	"strings"
 	"text/template"
 
-	"github.com/hongnoul/mangaz/constant"
+	"github.com/hongnoul/mangap/constant"
 	"github.com/spf13/cobra"
 )
 
@@ -22,8 +22,8 @@ func init() {
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version number of mangaz",
-	Long:  `All software has versions. This is mangaz's`,
+	Short: "Print the version number of mangap",
+	Long:  `All software has versions. This is mangap's`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if lo.Must(cmd.Flags().GetBool("short")) {
 			cmd.Println(constant.Version)

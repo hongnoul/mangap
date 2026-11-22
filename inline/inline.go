@@ -1,10 +1,10 @@
 package inline
 
 import (
-	"github.com/hongnoul/mangaz/downloader"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/log"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/downloader"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/log"
+	"github.com/hongnoul/mangap/source"
 	"github.com/spf13/viper"
 	"os"
 )

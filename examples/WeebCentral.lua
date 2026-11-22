@@ -85,7 +85,7 @@ function MangaChapters(mangaURL)
 		})
 	end)
 
-	-- Site lists newest first; mangaz expects oldest first.
+	-- Site lists newest first; mangap expects oldest first.
 	local ordered = {}
 	for i = #chapters, 1, -1 do table.insert(ordered, chapters[i]) end
 	return ordered

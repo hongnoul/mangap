@@ -15,14 +15,14 @@ import (
 	"unicode/utf8"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/network"
-	"github.com/hongnoul/mangaz/provider/generic"
-	"github.com/hongnoul/mangaz/reader/kitty"
-	"github.com/hongnoul/mangaz/reader/render"
-	"github.com/hongnoul/mangaz/reader/term"
-	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/where"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/network"
+	"github.com/hongnoul/mangap/provider/generic"
+	"github.com/hongnoul/mangap/reader/kitty"
+	"github.com/hongnoul/mangap/reader/render"
+	"github.com/hongnoul/mangap/reader/term"
+	"github.com/hongnoul/mangap/source"
+	"github.com/hongnoul/mangap/where"
 )
 
 // Thumbnail image ids start well above the reader's 10..249 range and are

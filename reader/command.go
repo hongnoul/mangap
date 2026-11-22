@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/hongnoul/mangaz/reader/pages"
+	"github.com/hongnoul/mangap/reader/pages"
 )
 
 // Command reads a chapter as a bubbletea ExecCommand (tea.Exec): the TUI

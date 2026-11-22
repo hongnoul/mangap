@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/hongnoul/mangaz/converter"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/mini"
+	"github.com/hongnoul/mangap/converter"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/mini"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -21,7 +21,7 @@ func init() {
 var miniCmd = &cobra.Command{
 	Use:   "mini",
 	Short: "Launch in the mini mode",
-	Long: `Launch mangaz in the mini mode.
+	Long: `Launch mangap in the mini mode.
 Will try to mimic ani-cli.`,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		if _, err := converter.Get(viper.GetString(key.FormatsUse)); err != nil {

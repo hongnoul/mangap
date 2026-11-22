@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/icon"
-	"github.com/hongnoul/mangaz/util"
-	"github.com/hongnoul/mangaz/where"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/icon"
+	"github.com/hongnoul/mangap/util"
+	"github.com/hongnoul/mangap/where"
 	"github.com/samber/lo"
 	"github.com/samber/mo"
 	"github.com/spf13/cobra"

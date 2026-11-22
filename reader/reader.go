@@ -16,19 +16,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hongnoul/mangaz/reader/input"
-	"github.com/hongnoul/mangaz/reader/kitty"
-	"github.com/hongnoul/mangaz/reader/pages"
-	"github.com/hongnoul/mangaz/reader/render"
-	"github.com/hongnoul/mangaz/reader/term"
-	"github.com/hongnoul/mangaz/reader/viewer"
+	"github.com/hongnoul/mangap/reader/input"
+	"github.com/hongnoul/mangap/reader/kitty"
+	"github.com/hongnoul/mangap/reader/pages"
+	"github.com/hongnoul/mangap/reader/render"
+	"github.com/hongnoul/mangap/reader/term"
+	"github.com/hongnoul/mangap/reader/viewer"
 	"github.com/muesli/cancelreader"
 )
 
 // ErrNoKittyGraphics is returned when the terminal does not advertise the
-// kitty graphics protocol. mangaz has no fallback viewer by design.
+// kitty graphics protocol. mangap has no fallback viewer by design.
 var ErrNoKittyGraphics = errors.New("this terminal does not support the kitty graphics protocol. " +
-	"Run mangaz in kitty, ghostty, wezterm, or gwae (or force it with MANGAZ_KITTY_GRAPHICS=1)")
+	"Run mangap in kitty, ghostty, wezterm, or gwae (or force it with MANGAP_KITTY_GRAPHICS=1)")
 
 // Options configures a reading session.
 type Options struct {

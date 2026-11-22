@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hongnoul/mangaz/anilist"
-	"github.com/hongnoul/mangaz/converter"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/inline"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/provider"
-	"github.com/hongnoul/mangaz/query"
-	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/update"
+	"github.com/hongnoul/mangap/anilist"
+	"github.com/hongnoul/mangap/converter"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/inline"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/provider"
+	"github.com/hongnoul/mangap/query"
+	"github.com/hongnoul/mangap/source"
+	"github.com/hongnoul/mangap/update"
 	"github.com/invopop/jsonschema"
 	"github.com/samber/lo"
 	"github.com/samber/mo"
@@ -69,8 +69,8 @@ Chapter selectors:
 
 When using the json flag manga selector could be omitted. That way, it will select all mangas`,
 
-	Example: `mangaz inline -S Mangadex -q "chainsaw man" -m first -c 0 -d
-mangaz inline -S Mangadex -q "chainsaw man" -m first -j`,
+	Example: `mangap inline -S Mangadex -q "chainsaw man" -m first -c 0 -d
+mangap inline -S Mangadex -q "chainsaw man" -m first -j`,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		json, _ := cmd.Flags().GetBool("json")
 

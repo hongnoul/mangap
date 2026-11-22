@@ -1,14 +1,14 @@
 package tui
 
 import (
-	"github.com/hongnoul/mangaz/reader/term"
+	"github.com/hongnoul/mangap/reader/term"
 	xterm "golang.org/x/term"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hongnoul/mangaz/provider"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/provider"
+	"github.com/hongnoul/mangap/source"
 	"github.com/muesli/termenv"
 )
 

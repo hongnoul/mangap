@@ -1,9 +1,9 @@
 package custom
 
 import (
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/util"
-	"github.com/hongnoul/mangaz/where"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/util"
+	"github.com/hongnoul/mangap/where"
 	"github.com/metafates/gache"
 	"github.com/samber/mo"
 	"path/filepath"

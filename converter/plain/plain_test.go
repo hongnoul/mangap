@@ -2,9 +2,9 @@ package plain
 
 import (
 	"bytes"
-	"github.com/hongnoul/mangaz/config"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/config"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/source"
 	"github.com/samber/lo"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/fs"

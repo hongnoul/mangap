@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hongnoul/mangaz/reader/pages"
-	"github.com/hongnoul/mangaz/reader/viewer"
+	"github.com/hongnoul/mangap/reader/pages"
+	"github.com/hongnoul/mangap/reader/viewer"
 )
 
 // Chapters lets the reader cross chapter edges without leaving: j on the

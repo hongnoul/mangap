@@ -6,7 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/source"
 	"github.com/muesli/reflow/truncate"
 )
 

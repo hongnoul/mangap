@@ -5,8 +5,8 @@ var (
 	BuiltBy  = "Unknown"
 	Revision = "Unknown"
 
-	// AnilistClientID is the public AniList API client bundled with mangaz.
+	// AnilistClientID is the public AniList API client bundled with mangap.
 	// Its redirect URL is http://localhost:47563/callback. Override at build
-	// time with -X github.com/hongnoul/mangaz/constant.AnilistClientID=<id>.
+	// time with -X github.com/hongnoul/mangap/constant.AnilistClientID=<id>.
 	AnilistClientID = "57796"
 )

@@ -3,7 +3,7 @@ package installer
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangap/util"
 	"io"
 	"net/http"
 )

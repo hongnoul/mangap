@@ -89,7 +89,7 @@ type State struct {
 	LastDir int
 }
 
-// NewState starts at page 0 with the mangaz default: RTL.
+// NewState starts at page 0 with the mangap default: RTL.
 func NewState(pages int) *State {
 	return &State{Pages: pages, RTL: true, LastDir: 1}
 }

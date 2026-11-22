@@ -1,8 +1,8 @@
 MAKEFLAGS += --silent
 
-ldflags := -X 'github.com/hongnoul/mangaz/constant.BuiltAt=$(shell date -u)'
-ldflags += -X 'github.com/hongnoul/mangaz/constant.BuiltBy=$(shell whoami)'
-ldflags += -X 'github.com/hongnoul/mangaz/constant.Revision=$(shell git rev-parse --short HEAD)'
+ldflags := -X 'github.com/hongnoul/mangap/constant.BuiltAt=$(shell date -u)'
+ldflags += -X 'github.com/hongnoul/mangap/constant.BuiltBy=$(shell whoami)'
+ldflags += -X 'github.com/hongnoul/mangap/constant.Revision=$(shell git rev-parse --short HEAD)'
 ldflags += -s
 ldflags += -w
 
@@ -14,9 +14,9 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "  build        Build the mangaz binary"
-	@echo "  install      Install the mangaz binary"
-	@echo "  uninstall    Uninstall the mangaz binary"
+	@echo "  build        Build the mangap binary"
+	@echo "  install      Install the mangap binary"
+	@echo "  uninstall    Uninstall the mangap binary"
 	@echo "  completions  Regenerate shell completions"
 	@echo "  test         Run the tests"
 	@echo "  help         Show this help message"
@@ -29,13 +29,13 @@ build:
 	@go build "$(build_flags)"
 
 completions: build
-	@./mangaz completion bash > completions/mangaz.bash
-	@./mangaz completion zsh > completions/mangaz.zsh
-	@./mangaz completion fish > completions/mangaz.fish
-	@./mangaz completion powershell > completions/mangaz.ps1
+	@./mangap completion bash > completions/mangap.bash
+	@./mangap completion zsh > completions/mangap.zsh
+	@./mangap completion fish > completions/mangap.fish
+	@./mangap completion powershell > completions/mangap.ps1
 
 test:
 	@go test ./...
 
 uninstall:
-	@rm -f "$(shell go env GOPATH)/bin/mangaz"
+	@rm -f "$(shell go env GOPATH)/bin/mangap"

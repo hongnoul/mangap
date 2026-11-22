@@ -1,7 +1,7 @@
 package query
 
 import (
-	"github.com/hongnoul/mangaz/key"
+	"github.com/hongnoul/mangap/key"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/samber/lo"
 	"github.com/samber/mo"

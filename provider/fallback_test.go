@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/source"
 )
 
 type fake struct {

@@ -3,8 +3,8 @@ package mangadex
 import (
 	"fmt"
 	"github.com/darylhjd/mangodex"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/source"
 	"github.com/spf13/viper"
 	"log"
 	"net/url"

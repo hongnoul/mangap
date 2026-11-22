@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/color"
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/tui"
-	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangap/color"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/tui"
+	"github.com/hongnoul/mangap/util"
 	"github.com/spf13/viper"
 	"os"
 	"os/user"
@@ -14,11 +14,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/icon"
-	"github.com/hongnoul/mangaz/provider"
-	"github.com/hongnoul/mangaz/style"
-	"github.com/hongnoul/mangaz/where"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/icon"
+	"github.com/hongnoul/mangap/provider"
+	"github.com/hongnoul/mangap/style"
+	"github.com/hongnoul/mangap/where"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 )

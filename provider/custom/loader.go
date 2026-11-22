@@ -2,9 +2,9 @@ package custom
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/source"
+	"github.com/hongnoul/mangap/util"
 	libs "github.com/metafates/mangal-lua-libs"
 	lua "github.com/yuin/gopher-lua"
 	"github.com/yuin/gopher-lua/parse"

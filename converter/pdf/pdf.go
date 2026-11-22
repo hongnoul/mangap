@@ -1,10 +1,10 @@
 package pdf
 
 import (
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/source"
+	"github.com/hongnoul/mangap/util"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/log"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"

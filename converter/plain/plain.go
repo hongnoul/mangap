@@ -1,8 +1,8 @@
 package plain
 
 import (
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/source"
 	"io"
 	"os"
 	"path/filepath"

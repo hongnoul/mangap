@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hongnoul/mangaz/reader/pages"
-	"github.com/hongnoul/mangaz/reader/render"
+	"github.com/hongnoul/mangap/reader/pages"
+	"github.com/hongnoul/mangap/reader/render"
 )
 
 // Prefetcher renders frames on worker goroutines so the terminal-owning

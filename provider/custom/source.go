@@ -2,7 +2,7 @@ package custom
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/source"
 	lua "github.com/yuin/gopher-lua"
 )
 

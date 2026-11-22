@@ -1,8 +1,8 @@
 package installer
 
 import (
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/util"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
 	"path/filepath"

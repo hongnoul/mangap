@@ -3,10 +3,10 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hongnoul/mangaz/color"
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/style"
+	"github.com/hongnoul/mangap/color"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/style"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
 	"reflect"
@@ -132,7 +132,7 @@ var defaults = [key.DefinedFieldsCount]Field{
 		`Where to download manga
 Absolute or relative.
 You can also use tilde (~) to refer to your home directory or use env variables.
-Examples: ~/... or $HOME/... or ${MANGA_PATH}-mangaz`,
+Examples: ~/... or $HOME/... or ${MANGA_PATH}-mangap`,
 	},
 	{
 		key.DownloaderChapterNameTemplate,
@@ -179,7 +179,7 @@ Do no turn it off unless you have some issues`,
 		[]string{},
 		`Default sources to use.
 Will prompt if not set.
-Type "mangaz sources list" to show available sources`,
+Type "mangap sources list" to show available sources`,
 	},
 	{
 		key.DownloaderStopOnError,
@@ -351,7 +351,7 @@ panic, fatal, error, warn, info, debug, trace`,
 	{
 		key.AnilistToken,
 		"",
-		"Anilist access token, set by `mangaz integration anilist`",
+		"Anilist access token, set by `mangap integration anilist`",
 	},
 	{
 		key.AnilistID,

@@ -1,8 +1,8 @@
 package icon
 
 import (
-	"github.com/hongnoul/mangaz/color"
-	"github.com/hongnoul/mangaz/style"
+	"github.com/hongnoul/mangap/color"
+	"github.com/hongnoul/mangap/style"
 )
 
 type Icon int

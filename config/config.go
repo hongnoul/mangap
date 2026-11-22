@@ -2,10 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/where"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/where"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
 	"os"
@@ -50,7 +50,7 @@ func warnRemovedKeys() {
 		}
 	}
 	if len(set) > 0 {
-		fmt.Fprintf(os.Stderr, "mangaz: ignoring %s in config: chapters open in the built-in reader now\n", strings.Join(set, ", "))
+		fmt.Fprintf(os.Stderr, "mangap: ignoring %s in config: chapters open in the built-in reader now\n", strings.Join(set, ", "))
 	}
 }
 

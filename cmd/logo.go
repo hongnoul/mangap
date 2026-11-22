@@ -3,8 +3,8 @@ package cmd
 import (
 	"strings"
 
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/style"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/style"
 )
 
 // coloredLogo renders the ascii logo with the shared gradient.

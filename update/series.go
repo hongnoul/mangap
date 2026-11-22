@@ -3,8 +3,8 @@ package update
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/source"
 	"path/filepath"
 )
 

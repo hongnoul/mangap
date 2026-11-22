@@ -4,12 +4,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/integration"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/log"
-	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/where"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/integration"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/log"
+	"github.com/hongnoul/mangap/source"
+	"github.com/hongnoul/mangap/where"
 	"github.com/metafates/gache"
 	"github.com/spf13/viper"
 )

@@ -1,10 +1,10 @@
 package provider
 
 import (
-	"github.com/hongnoul/mangaz/provider/generic"
-	"github.com/hongnoul/mangaz/provider/mangadex"
-	"github.com/hongnoul/mangaz/provider/mangapill"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/provider/generic"
+	"github.com/hongnoul/mangap/provider/mangadex"
+	"github.com/hongnoul/mangap/provider/mangapill"
+	"github.com/hongnoul/mangap/source"
 )
 
 const CustomProviderExtension = ".lua"

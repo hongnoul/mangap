@@ -2,12 +2,12 @@ package version
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/color"
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/icon"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/style"
-	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangap/color"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/icon"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/style"
+	"github.com/hongnoul/mangap/util"
 	"github.com/spf13/viper"
 )
 
@@ -36,7 +36,7 @@ func Notify() {
 		style.Fg(color.Green)("▇▇▇"),
 		style.Bold(version),
 		style.Faint(fmt.Sprintf("(You're on %s)", constant.Version)),
-		style.Faint("https://github.com/hongnoul/mangaz/releases/tag/v"+version),
+		style.Faint("https://github.com/hongnoul/mangap/releases/tag/v"+version),
 	)
 
 }

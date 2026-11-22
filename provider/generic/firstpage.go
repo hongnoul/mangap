@@ -6,9 +6,9 @@ import (
 	"net/url"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/network"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/network"
+	"github.com/hongnoul/mangap/source"
 )
 
 // FirstPageURL returns the image URL of a chapter's first page with one

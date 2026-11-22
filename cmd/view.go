@@ -3,7 +3,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/hongnoul/mangaz/reader"
+	"github.com/hongnoul/mangap/reader"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 )
@@ -33,9 +33,9 @@ Keys:
   r / R              rotate clockwise / counterclockwise
   q / ctrl-c         quit
 
-MANGAZ_TRACE=1 writes timing lines to stderr.`,
+MANGAP_TRACE=1 writes timing lines to stderr.`,
 	Args:    cobra.ExactArgs(1),
-	Example: "  mangaz view ./Chainsaw_Man/ch1\n  mangaz view chapter.cbz --page 5",
+	Example: "  mangap view ./Chainsaw_Man/ch1\n  mangap view chapter.cbz --page 5",
 	Run: func(cmd *cobra.Command, args []string) {
 		opt := reader.Options{
 			Start: lo.Must(cmd.Flags().GetInt("page")) - 1,
@@ -45,7 +45,7 @@ MANGAZ_TRACE=1 writes timing lines to stderr.`,
 			rtl := false
 			opt.RTL = &rtl
 		}
-		if os.Getenv("MANGAZ_TRACE") == "1" {
+		if os.Getenv("MANGAP_TRACE") == "1" {
 			opt.Trace = os.Stderr
 		}
 		if s := reader.NewSiblings(args[0]); s != nil {

@@ -2,8 +2,8 @@ package util
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/filesystem"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/filesystem"
 	"github.com/samber/lo"
 	"golang.org/x/exp/constraints"
 	"golang.org/x/term"

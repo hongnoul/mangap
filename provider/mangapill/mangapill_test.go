@@ -1,7 +1,7 @@
 package mangapill
 
 import (
-	"github.com/hongnoul/mangaz/provider/generic"
+	"github.com/hongnoul/mangap/provider/generic"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )

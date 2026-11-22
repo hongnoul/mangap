@@ -1,8 +1,8 @@
 package integration
 
 import (
-	"github.com/hongnoul/mangaz/integration/anilist"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/integration/anilist"
+	"github.com/hongnoul/mangap/source"
 )
 
 // Integrator is the interface that wraps the basic integration methods.

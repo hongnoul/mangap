@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Capture what mangaz view actually transmits, for eyeballing and checks.
+"""Capture what mangap view actually transmits, for eyeballing and checks.
 
 Runs the viewer in a PTY, presses the given keys, and writes every image
 transferred to OUTDIR/frame-N.png (decoded from the kitty APC chunks) plus
 the stderr trace. Exits nonzero if the stream breaks the gwae contract
 (continuation chunks with extra keys, chunks over 4096 bytes).
 
-usage: capture_frames.py <mangaz> <chapter> <outdir> [keys] [--winsize R,C,PX,PY]
+usage: capture_frames.py <mangap> <chapter> <outdir> [keys] [--winsize R,C,PX,PY]
 """
 import base64, fcntl, os, pty, re, select, struct, subprocess, sys, termios, time
 
@@ -20,8 +20,8 @@ os.makedirs(OUT, exist_ok=True)
 
 master, slave = pty.openpty()
 fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, px, py))
-env = dict(os.environ, MANGAZ_KITTY_GRAPHICS="1", MANGAZ_TRACE="1")
-env.setdefault("MANGAZ_CONFIG_PATH", os.path.join(os.environ.get("TMPDIR", "/tmp"), "mangaz-bench-config"))
+env = dict(os.environ, MANGAP_KITTY_GRAPHICS="1", MANGAP_TRACE="1")
+env.setdefault("MANGAP_CONFIG_PATH", os.path.join(os.environ.get("TMPDIR", "/tmp"), "mangap-bench-config"))
 trace = open(os.path.join(OUT, "trace.txt"), "w")
 p = subprocess.Popen([BIN, "view", DOC], stdin=slave, stdout=slave, stderr=trace, env=env)
 buf = bytearray()

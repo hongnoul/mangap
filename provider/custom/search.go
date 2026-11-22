@@ -1,8 +1,8 @@
 package custom
 
 import (
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/source"
 	lua "github.com/yuin/gopher-lua"
 	"strconv"
 )

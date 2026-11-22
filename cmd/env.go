@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"github.com/hongnoul/mangaz/color"
-	"github.com/hongnoul/mangaz/config"
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/style"
-	"github.com/hongnoul/mangaz/where"
+	"github.com/hongnoul/mangap/color"
+	"github.com/hongnoul/mangap/config"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/style"
+	"github.com/hongnoul/mangap/where"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/slices"

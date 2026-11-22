@@ -1,7 +1,7 @@
 package generic
 
 import (
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/source"
 )
 
 // Search for mangas by given title

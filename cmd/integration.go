@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hongnoul/mangaz/icon"
-	"github.com/hongnoul/mangaz/integration/anilist"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/log"
-	"github.com/hongnoul/mangaz/open"
+	"github.com/hongnoul/mangap/icon"
+	"github.com/hongnoul/mangap/integration/anilist"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/log"
+	"github.com/hongnoul/mangap/open"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -59,7 +59,7 @@ anywhere, approve, then paste the address bar URL you land on.`,
 		if clientID == "" {
 			handleErr(fmt.Errorf("this build has no bundled Anilist client. Create one at "+
 				"https://anilist.co/settings/developer with redirect URL %s, then run "+
-				"`mangaz integration anilist --client-id <id>`", anilist.RedirectURL))
+				"`mangap integration anilist --client-id <id>`", anilist.RedirectURL))
 		}
 
 		authURL := anilist.ImplicitAuthURL(clientID)

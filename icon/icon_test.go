@@ -1,7 +1,7 @@
 package icon
 
 import (
-	"github.com/hongnoul/mangaz/key"
+	"github.com/hongnoul/mangap/key"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/spf13/viper"
 	"testing"

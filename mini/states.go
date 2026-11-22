@@ -2,12 +2,12 @@ package mini
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/downloader"
-	"github.com/hongnoul/mangaz/history"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/provider"
-	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangap/downloader"
+	"github.com/hongnoul/mangap/history"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/provider"
+	"github.com/hongnoul/mangap/source"
+	"github.com/hongnoul/mangap/util"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
 	"golang.org/x/exp/slices"

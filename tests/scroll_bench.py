@@ -4,7 +4,7 @@
 Ported from pdfpane's tests/scroll_bench.py. Drives either viewer in a
 PTY on the same chapter, so the two are measured by the same clock:
 
-  scroll_bench.py --mangaz ./mangaz <chapter dir|cbz>
+  scroll_bench.py --mangap ./mangap <chapter dir|cbz>
   scroll_bench.py --pdfpane pdfpane <chapter.pdf>
 
 Boots the viewer, then measures:
@@ -19,7 +19,7 @@ Boots the viewer, then measures:
    counts frames presented and measures time from the LAST key to the
    final settled frame (how far behind the render pipeline fell).
 
-Usage: scroll_bench.py (--mangaz|--pdfpane) <bin> <doc> [--flips N] [--rate HZ]
+Usage: scroll_bench.py (--mangap|--pdfpane) <bin> <doc> [--flips N] [--rate HZ]
                        [--hold-sec S] [--winsize R,C,PX,PY] [--start-page P]
                        [--json] [--assert] [--min-hold-fps F] [--max-hold-gap-ms G]
 
@@ -52,7 +52,7 @@ throughput the per-key >=50% frame gate cannot hold by design.
 """
 import fcntl, json, os, pty, select, struct, subprocess, sys, termios, time
 
-if sys.argv[1] in ("--mangaz", "--pdfpane"):
+if sys.argv[1] in ("--mangap", "--pdfpane"):
     KIND, BIN, DOC = sys.argv[1][2:], sys.argv[2], sys.argv[3]
 else:  # pdfpane's original positional form
     KIND, BIN, DOC = "pdfpane", sys.argv[1], sys.argv[2]
@@ -97,11 +97,11 @@ else:
 master, slave = pty.openpty()
 rows, cols, px, py = winsize
 fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, px, py))
-if KIND == "mangaz":
-    env = dict(os.environ, MANGAZ_KITTY_GRAPHICS="1")
+if KIND == "mangap":
+    env = dict(os.environ, MANGAP_KITTY_GRAPHICS="1")
     # Isolated config so the bench never touches (or migrates) real config.
-    env.setdefault("MANGAZ_CONFIG_PATH", os.path.join(
-        os.environ.get("TMPDIR", "/tmp"), "mangaz-bench-config"))
+    env.setdefault("MANGAP_CONFIG_PATH", os.path.join(
+        os.environ.get("TMPDIR", "/tmp"), "mangap-bench-config"))
     argv = [BIN, "view", DOC, "--page", str(START)]
 else:
     env = dict(os.environ, PDFPANE_KITTY_GRAPHICS="1")

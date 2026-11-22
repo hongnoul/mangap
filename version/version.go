@@ -3,9 +3,9 @@ package version
 import (
 	"encoding/json"
 	"errors"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/util"
-	"github.com/hongnoul/mangaz/where"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/util"
+	"github.com/hongnoul/mangap/where"
 	"github.com/metafates/gache"
 	"net/http"
 	"path/filepath"
@@ -18,7 +18,7 @@ var versionCacher = gache.New[string](&gache.Options{
 	FileSystem: &filesystem.GacheFs{},
 })
 
-// Latest returns the latest version of mangaz.
+// Latest returns the latest version of mangap.
 // It will fetch the latest version from the GitHub API.
 func Latest() (version string, err error) {
 	ver, expired, err := versionCacher.Get()
@@ -30,7 +30,7 @@ func Latest() (version string, err error) {
 		return ver, nil
 	}
 
-	resp, err := http.Get("https://api.github.com/repos/hongnoul/mangaz/releases/latest")
+	resp, err := http.Get("https://api.github.com/repos/hongnoul/mangap/releases/latest")
 	if err != nil {
 		return
 	}

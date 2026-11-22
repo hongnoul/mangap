@@ -3,7 +3,7 @@ package provider
 import (
 	"testing"
 
-	"github.com/hongnoul/mangaz/provider/mangapill"
+	"github.com/hongnoul/mangap/provider/mangapill"
 )
 
 func TestGet(t *testing.T) {

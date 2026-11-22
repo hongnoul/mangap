@@ -2,8 +2,8 @@ package inline
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangap/source"
+	"github.com/hongnoul/mangap/util"
 	"github.com/samber/lo"
 	"github.com/samber/mo"
 	"io"

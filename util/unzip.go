@@ -3,7 +3,7 @@ package util
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/hongnoul/mangaz/filesystem"
+	"github.com/hongnoul/mangap/filesystem"
 	"io"
 	"os"
 	"path/filepath"

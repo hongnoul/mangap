@@ -1,27 +1,27 @@
-# fish completion for mangaz                               -*- shell-script -*-
+# fish completion for mangap                               -*- shell-script -*-
 
-function __mangaz_debug
+function __mangap_debug
     set -l file "$BASH_COMP_DEBUG_FILE"
     if test -n "$file"
         echo "$argv" >> $file
     end
 end
 
-function __mangaz_perform_completion
-    __mangaz_debug "Starting __mangaz_perform_completion"
+function __mangap_perform_completion
+    __mangap_debug "Starting __mangap_perform_completion"
 
     # Extract all args except the last one
     set -l args (commandline -opc)
     # Extract the last arg and escape it in case it is a space
     set -l lastArg (string escape -- (commandline -ct))
 
-    __mangaz_debug "args: $args"
-    __mangaz_debug "last arg: $lastArg"
+    __mangap_debug "args: $args"
+    __mangap_debug "last arg: $lastArg"
 
     # Disable ActiveHelp which is not supported for fish shell
-    set -l requestComp "MANGAZ_ACTIVE_HELP=0 $args[1] __complete $args[2..-1] $lastArg"
+    set -l requestComp "MANGAP_ACTIVE_HELP=0 $args[1] __complete $args[2..-1] $lastArg"
 
-    __mangaz_debug "Calling $requestComp"
+    __mangap_debug "Calling $requestComp"
     set -l results (eval $requestComp 2> /dev/null)
 
     # Some programs may output extra empty lines after the directive.
@@ -44,9 +44,9 @@ function __mangaz_perform_completion
     # completions must be prefixed with the flag
     set -l flagPrefix (string match -r -- '-.*=' "$lastArg")
 
-    __mangaz_debug "Comps: $comps"
-    __mangaz_debug "DirectiveLine: $directiveLine"
-    __mangaz_debug "flagPrefix: $flagPrefix"
+    __mangap_debug "Comps: $comps"
+    __mangap_debug "DirectiveLine: $directiveLine"
+    __mangap_debug "flagPrefix: $flagPrefix"
 
     for comp in $comps
         printf "%s%s\n" "$flagPrefix" "$comp"
@@ -56,29 +56,29 @@ function __mangaz_perform_completion
 end
 
 # This function does two things:
-# - Obtain the completions and store them in the global __mangaz_comp_results
+# - Obtain the completions and store them in the global __mangap_comp_results
 # - Return false if file completion should be performed
-function __mangaz_prepare_completions
-    __mangaz_debug ""
-    __mangaz_debug "========= starting completion logic =========="
+function __mangap_prepare_completions
+    __mangap_debug ""
+    __mangap_debug "========= starting completion logic =========="
 
     # Start fresh
-    set --erase __mangaz_comp_results
+    set --erase __mangap_comp_results
 
-    set -l results (__mangaz_perform_completion)
-    __mangaz_debug "Completion results: $results"
+    set -l results (__mangap_perform_completion)
+    __mangap_debug "Completion results: $results"
 
     if test -z "$results"
-        __mangaz_debug "No completion, probably due to a failure"
+        __mangap_debug "No completion, probably due to a failure"
         # Might as well do file completion, in case it helps
         return 1
     end
 
     set -l directive (string sub --start 2 $results[-1])
-    set --global __mangaz_comp_results $results[1..-2]
+    set --global __mangap_comp_results $results[1..-2]
 
-    __mangaz_debug "Completions are: $__mangaz_comp_results"
-    __mangaz_debug "Directive is: $directive"
+    __mangap_debug "Completions are: $__mangap_comp_results"
+    __mangap_debug "Directive is: $directive"
 
     set -l shellCompDirectiveError 1
     set -l shellCompDirectiveNoSpace 2
@@ -92,7 +92,7 @@ function __mangaz_prepare_completions
 
     set -l compErr (math (math --scale 0 $directive / $shellCompDirectiveError) % 2)
     if test $compErr -eq 1
-        __mangaz_debug "Received error directive: aborting."
+        __mangap_debug "Received error directive: aborting."
         # Might as well do file completion, in case it helps
         return 1
     end
@@ -100,7 +100,7 @@ function __mangaz_prepare_completions
     set -l filefilter (math (math --scale 0 $directive / $shellCompDirectiveFilterFileExt) % 2)
     set -l dirfilter (math (math --scale 0 $directive / $shellCompDirectiveFilterDirs) % 2)
     if test $filefilter -eq 1; or test $dirfilter -eq 1
-        __mangaz_debug "File extension filtering or directory filtering not supported"
+        __mangap_debug "File extension filtering or directory filtering not supported"
         # Do full file completion instead
         return 1
     end
@@ -108,7 +108,7 @@ function __mangaz_prepare_completions
     set -l nospace (math (math --scale 0 $directive / $shellCompDirectiveNoSpace) % 2)
     set -l nofiles (math (math --scale 0 $directive / $shellCompDirectiveNoFileComp) % 2)
 
-    __mangaz_debug "nospace: $nospace, nofiles: $nofiles"
+    __mangap_debug "nospace: $nospace, nofiles: $nofiles"
 
     # If we want to prevent a space, or if file completion is NOT disabled,
     # we need to count the number of valid completions.
@@ -117,22 +117,22 @@ function __mangaz_prepare_completions
     # criteria than the prefix.
     if test $nospace -ne 0; or test $nofiles -eq 0
         set -l prefix (commandline -t | string escape --style=regex)
-        __mangaz_debug "prefix: $prefix"
+        __mangap_debug "prefix: $prefix"
 
-        set -l completions (string match -r -- "^$prefix.*" $__mangaz_comp_results)
-        set --global __mangaz_comp_results $completions
-        __mangaz_debug "Filtered completions are: $__mangaz_comp_results"
+        set -l completions (string match -r -- "^$prefix.*" $__mangap_comp_results)
+        set --global __mangap_comp_results $completions
+        __mangap_debug "Filtered completions are: $__mangap_comp_results"
 
         # Important not to quote the variable for count to work
-        set -l numComps (count $__mangaz_comp_results)
-        __mangaz_debug "numComps: $numComps"
+        set -l numComps (count $__mangap_comp_results)
+        __mangap_debug "numComps: $numComps"
 
         if test $numComps -eq 1; and test $nospace -ne 0
             # We must first split on \t to get rid of the descriptions to be
             # able to check what the actual completion will be.
             # We don't need descriptions anyway since there is only a single
             # real completion which the shell will expand immediately.
-            set -l split (string split --max 1 \t $__mangaz_comp_results[1])
+            set -l split (string split --max 1 \t $__mangap_comp_results[1])
 
             # Fish won't add a space if the completion ends with any
             # of the following characters: @=/:.,
@@ -140,16 +140,16 @@ function __mangaz_prepare_completions
             if not string match -r -q "[@=/:.,]" -- "$lastChar"
                 # In other cases, to support the "nospace" directive we trick the shell
                 # by outputting an extra, longer completion.
-                __mangaz_debug "Adding second completion to perform nospace directive"
-                set --global __mangaz_comp_results $split[1] $split[1].
-                __mangaz_debug "Completions are now: $__mangaz_comp_results"
+                __mangap_debug "Adding second completion to perform nospace directive"
+                set --global __mangap_comp_results $split[1] $split[1].
+                __mangap_debug "Completions are now: $__mangap_comp_results"
             end
         end
 
         if test $numComps -eq 0; and test $nofiles -eq 0
             # To be consistent with bash and zsh, we only trigger file
             # completion when there are no other completions
-            __mangaz_debug "Requesting file completion"
+            __mangap_debug "Requesting file completion"
             return 1
         end
     end
@@ -161,17 +161,17 @@ end
 # so we can properly delete any completions provided by another script.
 # Only do this if the program can be found, or else fish may print some errors; besides,
 # the existing completions will only be loaded if the program can be found.
-if type -q "mangaz"
+if type -q "mangap"
     # The space after the program name is essential to trigger completion for the program
     # and not completion of the program name itself.
     # Also, we use '> /dev/null 2>&1' since '&>' is not supported in older versions of fish.
-    complete --do-complete "mangaz " > /dev/null 2>&1
+    complete --do-complete "mangap " > /dev/null 2>&1
 end
 
 # Remove any pre-existing completions for the program since we will be handling all of them.
-complete -c mangaz -e
+complete -c mangap -e
 
-# The call to __mangaz_prepare_completions will setup __mangaz_comp_results
+# The call to __mangap_prepare_completions will setup __mangap_comp_results
 # which provides the program's completion choices.
-complete -c mangaz -n '__mangaz_prepare_completions' -f -a '$__mangaz_comp_results'
+complete -c mangap -n '__mangap_prepare_completions' -f -a '$__mangap_comp_results'
 

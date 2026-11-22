@@ -1,7 +1,7 @@
 package version
 
 import (
-	"github.com/hongnoul/mangaz/constant"
+	"github.com/hongnoul/mangap/constant"
 	. "github.com/smartystreets/goconvey/convey"
 	"regexp"
 	"runtime"

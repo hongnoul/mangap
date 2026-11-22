@@ -1,16 +1,16 @@
 package where
 
 import (
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/key"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/key"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
 )
 
-const EnvConfigPath = "MANGAZ_CONFIG_PATH"
+const EnvConfigPath = "MANGAP_CONFIG_PATH"
 
 // mkdir creates a directory and all parent directories if they don't exist
 // will return the path of the directory

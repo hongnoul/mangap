@@ -3,9 +3,9 @@ package update
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/source"
+	"github.com/hongnoul/mangap/util"
 	"os"
 	"path/filepath"
 	"strings"

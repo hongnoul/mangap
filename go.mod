@@ -1,4 +1,4 @@
-module github.com/hongnoul/mangaz
+module github.com/hongnoul/mangap
 
 go 1.18
 

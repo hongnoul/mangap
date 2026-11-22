@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hongnoul/mangaz/reader/pages"
-	"github.com/hongnoul/mangaz/reader/viewer"
+	"github.com/hongnoul/mangap/reader/pages"
+	"github.com/hongnoul/mangap/reader/viewer"
 )
 
 type fakeChapters struct {

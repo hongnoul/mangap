@@ -7,26 +7,30 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/filesystem"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/filesystem"
 	"github.com/spf13/afero"
 )
 
 var migrateOnce sync.Once
 
-// migrateLegacyConfig copies the config dir of the app mangaz was forked
-// from (mangal) into the mangaz config dir, once, so sources, history, and
-// anilist bindings carry over. It only runs when the mangaz dir does not
-// exist yet and the legacy dir does: an existing mangaz dir is never
-// touched. The legacy config file mangal.toml is renamed to mangaz.toml so
-// viper picks it up. Failures are swallowed: a half-copied dir is removed
-// and mangaz starts fresh, which is the behavior without migration.
+// migrateLegacyConfig copies the config dir of an earlier name (mangaz, then
+// mangal) into the mangap config dir, once, so sources, history, and
+// anilist bindings carry over. It only runs when the mangap dir does not
+// exist yet and a legacy dir does: an existing mangap dir is never
+// touched. The legacy config file (mangal.toml, mangaz.toml) is renamed to
+// mangap.toml so viper picks it up. Failures are swallowed: a half-copied
+// dir is removed and mangap starts fresh, which is the behavior without
+// migration.
 func migrateLegacyConfig(base string) {
 	migrateOnce.Do(func() {
-		_ = migrateDir(
-			filepath.Join(base, constant.LegacyApp),
-			filepath.Join(base, constant.App),
-		)
+		to := filepath.Join(base, constant.App)
+		for _, legacy := range constant.LegacyApps {
+			if isDir, _ := afero.IsDir(filesystem.Api(), filepath.Join(base, legacy)); isDir {
+				_ = migrateDir(filepath.Join(base, legacy), to)
+				return
+			}
+		}
 	})
 }
 
@@ -70,9 +74,13 @@ func migrateDir(from, to string) error {
 // renameLegacyFile maps the legacy top-level config file name to the new
 // one. Everything else keeps its relative path.
 func renameLegacyFile(rel string) string {
-	legacy := constant.LegacyApp + "."
-	if filepath.Dir(rel) == "." && strings.HasPrefix(rel, legacy) {
-		return constant.App + "." + strings.TrimPrefix(rel, legacy)
+	if filepath.Dir(rel) != "." {
+		return rel
+	}
+	for _, name := range constant.LegacyApps {
+		if legacy := name + "."; strings.HasPrefix(rel, legacy) {
+			return constant.App + "." + strings.TrimPrefix(rel, legacy)
+		}
 	}
 
 	return rel

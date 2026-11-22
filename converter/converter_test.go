@@ -1,7 +1,7 @@
 package converter
 
 import (
-	"github.com/hongnoul/mangaz/constant"
+	"github.com/hongnoul/mangap/constant"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )

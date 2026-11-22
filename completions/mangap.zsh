@@ -1,8 +1,8 @@
-#compdef mangaz
+#compdef mangap
 
-# zsh completion for mangaz                               -*- shell-script -*-
+# zsh completion for mangap                               -*- shell-script -*-
 
-__mangaz_debug()
+__mangap_debug()
 {
     local file="$BASH_COMP_DEBUG_FILE"
     if [[ -n ${file} ]]; then
@@ -10,7 +10,7 @@ __mangaz_debug()
     fi
 }
 
-_mangaz()
+_mangap()
 {
     local shellCompDirectiveError=1
     local shellCompDirectiveNoSpace=2
@@ -21,21 +21,21 @@ _mangaz()
     local lastParam lastChar flagPrefix requestComp out directive comp lastComp noSpace
     local -a completions
 
-    __mangaz_debug "\n========= starting completion logic =========="
-    __mangaz_debug "CURRENT: ${CURRENT}, words[*]: ${words[*]}"
+    __mangap_debug "\n========= starting completion logic =========="
+    __mangap_debug "CURRENT: ${CURRENT}, words[*]: ${words[*]}"
 
     # The user could have moved the cursor backwards on the command-line.
     # We need to trigger completion from the $CURRENT location, so we need
     # to truncate the command-line ($words) up to the $CURRENT location.
     # (We cannot use $CURSOR as its value does not work when a command is an alias.)
     words=("${=words[1,CURRENT]}")
-    __mangaz_debug "Truncated words[*]: ${words[*]},"
+    __mangap_debug "Truncated words[*]: ${words[*]},"
 
     lastParam=${words[-1]}
     lastChar=${lastParam[-1]}
-    __mangaz_debug "lastParam: ${lastParam}, lastChar: ${lastChar}"
+    __mangap_debug "lastParam: ${lastParam}, lastChar: ${lastChar}"
 
-    # For zsh, when completing a flag with an = (e.g., mangaz -n=<TAB>)
+    # For zsh, when completing a flag with an = (e.g., mangap -n=<TAB>)
     # completions must be prefixed with the flag
     setopt local_options BASH_REMATCH
     if [[ "${lastParam}" =~ '-.*=' ]]; then
@@ -48,22 +48,22 @@ _mangaz()
     if [ "${lastChar}" = "" ]; then
         # If the last parameter is complete (there is a space following it)
         # We add an extra empty parameter so we can indicate this to the go completion code.
-        __mangaz_debug "Adding extra empty parameter"
+        __mangap_debug "Adding extra empty parameter"
         requestComp="${requestComp} \"\""
     fi
 
-    __mangaz_debug "About to call: eval ${requestComp}"
+    __mangap_debug "About to call: eval ${requestComp}"
 
     # Use eval to handle any environment variables and such
     out=$(eval ${requestComp} 2>/dev/null)
-    __mangaz_debug "completion output: ${out}"
+    __mangap_debug "completion output: ${out}"
 
     # Extract the directive integer following a : from the last line
     local lastLine
     while IFS='\n' read -r line; do
         lastLine=${line}
     done < <(printf "%s\n" "${out[@]}")
-    __mangaz_debug "last line: ${lastLine}"
+    __mangap_debug "last line: ${lastLine}"
 
     if [ "${lastLine[1]}" = : ]; then
         directive=${lastLine[2,-1]}
@@ -73,16 +73,16 @@ _mangaz()
         out=${out[1,-$suffix]}
     else
         # There is no directive specified.  Leave $out as is.
-        __mangaz_debug "No directive found.  Setting do default"
+        __mangap_debug "No directive found.  Setting do default"
         directive=0
     fi
 
-    __mangaz_debug "directive: ${directive}"
-    __mangaz_debug "completions: ${out}"
-    __mangaz_debug "flagPrefix: ${flagPrefix}"
+    __mangap_debug "directive: ${directive}"
+    __mangap_debug "completions: ${out}"
+    __mangap_debug "flagPrefix: ${flagPrefix}"
 
     if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
-        __mangaz_debug "Completion received error. Ignoring completions."
+        __mangap_debug "Completion received error. Ignoring completions."
         return
     fi
 
@@ -93,11 +93,11 @@ _mangaz()
     while IFS='\n' read -r comp; do
         # Check if this is an activeHelp statement (i.e., prefixed with $activeHelpMarker)
         if [ "${comp[1,$endIndex]}" = "$activeHelpMarker" ];then
-            __mangaz_debug "ActiveHelp found: $comp"
+            __mangap_debug "ActiveHelp found: $comp"
             comp="${comp[$startIndex,-1]}"
             if [ -n "$comp" ]; then
                 compadd -x "${comp}"
-                __mangaz_debug "ActiveHelp will need delimiter"
+                __mangap_debug "ActiveHelp will need delimiter"
                 hasActiveHelp=1
             fi
 
@@ -114,7 +114,7 @@ _mangaz()
             local tab="$(printf '\t')"
             comp=${comp//$tab/:}
 
-            __mangaz_debug "Adding completion: ${comp}"
+            __mangap_debug "Adding completion: ${comp}"
             completions+=${comp}
             lastComp=$comp
         fi
@@ -125,14 +125,14 @@ _mangaz()
     # - file completion will be performed (so there will be choices after the activeHelp)
     if [ $hasActiveHelp -eq 1 ]; then
         if [ ${#completions} -ne 0 ] || [ $((directive & shellCompDirectiveNoFileComp)) -eq 0 ]; then
-            __mangaz_debug "Adding activeHelp delimiter"
+            __mangap_debug "Adding activeHelp delimiter"
             compadd -x "--"
             hasActiveHelp=0
         fi
     fi
 
     if [ $((directive & shellCompDirectiveNoSpace)) -ne 0 ]; then
-        __mangaz_debug "Activating nospace."
+        __mangap_debug "Activating nospace."
         noSpace="-S ''"
     fi
 
@@ -149,17 +149,17 @@ _mangaz()
         done
         filteringCmd+=" ${flagPrefix}"
 
-        __mangaz_debug "File filtering command: $filteringCmd"
+        __mangap_debug "File filtering command: $filteringCmd"
         _arguments '*:filename:'"$filteringCmd"
     elif [ $((directive & shellCompDirectiveFilterDirs)) -ne 0 ]; then
         # File completion for directories only
         local subdir
         subdir="${completions[1]}"
         if [ -n "$subdir" ]; then
-            __mangaz_debug "Listing directories in $subdir"
+            __mangap_debug "Listing directories in $subdir"
             pushd "${subdir}" >/dev/null 2>&1
         else
-            __mangaz_debug "Listing directories in ."
+            __mangap_debug "Listing directories in ."
         fi
 
         local result
@@ -170,17 +170,17 @@ _mangaz()
         fi
         return $result
     else
-        __mangaz_debug "Calling _describe"
+        __mangap_debug "Calling _describe"
         if eval _describe "completions" completions $flagPrefix $noSpace; then
-            __mangaz_debug "_describe found some completions"
+            __mangap_debug "_describe found some completions"
 
             # Return the success of having called _describe
             return 0
         else
-            __mangaz_debug "_describe did not find completions."
-            __mangaz_debug "Checking if we should do file completion."
+            __mangap_debug "_describe did not find completions."
+            __mangap_debug "Checking if we should do file completion."
             if [ $((directive & shellCompDirectiveNoFileComp)) -ne 0 ]; then
-                __mangaz_debug "deactivating file completion"
+                __mangap_debug "deactivating file completion"
 
                 # We must return an error code here to let zsh know that there were no
                 # completions found by _describe; this is what will trigger other
@@ -189,7 +189,7 @@ _mangaz()
                 return 1
             else
                 # Perform file completion
-                __mangaz_debug "Activating file completion"
+                __mangap_debug "Activating file completion"
 
                 # We must return the result of this command, so it must be the
                 # last command, or else we must store its result to return it.
@@ -200,6 +200,6 @@ _mangaz()
 }
 
 # don't run the completion function when being source-ed or eval-ed
-if [ "$funcstack[1]" = "_mangaz" ]; then
-    _mangaz
+if [ "$funcstack[1]" = "_mangap" ]; then
+    _mangap
 fi

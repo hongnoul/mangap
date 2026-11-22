@@ -3,11 +3,11 @@ package source
 import (
 	"fmt"
 	"github.com/dustin/go-humanize"
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/filesystem"
-	"github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/style"
-	"github.com/hongnoul/mangaz/util"
+	"github.com/hongnoul/mangap/constant"
+	"github.com/hongnoul/mangap/filesystem"
+	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/style"
+	"github.com/hongnoul/mangap/util"
 	"github.com/samber/mo"
 	"github.com/spf13/viper"
 	"os"
@@ -213,7 +213,7 @@ func (c *Chapter) ComicInfo() *ComicInfo {
 		Letterer:   strings.Join(c.Manga.Metadata.Staff.Lettering, ","),
 		Translator: strings.Join(c.Manga.Metadata.Staff.Translation, ","),
 		Tags:       strings.Join(c.Manga.Metadata.Tags, ","),
-		Notes:      "Downloaded with mangaz.",
+		Notes:      "Downloaded with mangap.",
 		Manga:      "YesAndRightToLeft",
 	}
 }

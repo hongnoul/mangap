@@ -12,18 +12,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hongnoul/mangaz/constant"
+	"github.com/hongnoul/mangap/constant"
 )
 
 // CallbackPort is the fixed localhost port of the OAuth redirect.
 // AniList allows a single redirect URL per client, so it cannot be random.
 const CallbackPort = 47563
 
-// RedirectURL must match the redirect URL registered on the mangaz AniList client.
+// RedirectURL must match the redirect URL registered on the mangap AniList client.
 var RedirectURL = "http://localhost:" + strconv.Itoa(CallbackPort) + "/callback"
 
 // ClientID returns the AniList client used for login: the user's own client
-// (anilist.id) if set, else the client bundled with mangaz.
+// (anilist.id) if set, else the client bundled with mangap.
 func ClientID() string {
 	if id := (&Anilist{}).id(); id != "" {
 		return id
@@ -32,7 +32,7 @@ func ClientID() string {
 }
 
 // ImplicitAuthURL is the implicit-grant authorize URL. No client secret is
-// needed, so every mangaz user can share one public client.
+// needed, so every mangap user can share one public client.
 func ImplicitAuthURL(clientID string) string {
 	return "https://anilist.co/api/v2/oauth/authorize?client_id=" + url.QueryEscape(clientID) + "&response_type=token"
 }
@@ -80,9 +80,9 @@ func ParseCallback(raw string) (Token, error) {
 
 // The token lives in the URL fragment, which browsers never send to servers,
 // so this page posts it back to /token.
-const callbackPage = `<!doctype html><meta charset="utf-8"><title>mangaz</title>
+const callbackPage = `<!doctype html><meta charset="utf-8"><title>mangap</title>
 <body style="font-family:system-ui;text-align:center;margin-top:20vh">
-<h2 id="m">Connecting mangaz to AniList…</h2>
+<h2 id="m">Connecting mangap to AniList…</h2>
 <script>
 fetch("/token", {method: "POST", body: location.hash.slice(1) || location.search.slice(1)})
   .then(r => r.text())
@@ -122,7 +122,7 @@ func ListenForToken(ctx context.Context) (Token, error) {
 			}
 			return
 		}
-		_, _ = w.Write([]byte("✓ mangaz is connected to AniList. You can close this tab."))
+		_, _ = w.Write([]byte("✓ mangap is connected to AniList. You can close this tab."))
 		select {
 		case result <- token:
 		default:

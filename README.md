@@ -1,4 +1,4 @@
-# mangaz
+# mangap
 
 A terminal manga reader. Search sources, pick a chapter, and read it right in
 the terminal through the kitty graphics protocol. No external viewer.
@@ -15,7 +15,7 @@ TUI. The in-terminal reader follows the design of pdfpane.
 ## Build
 
 ```sh
-make build      # ./mangaz
+make build      # ./mangap
 make install    # into $(go env GOPATH)/bin
 make test
 ```
@@ -24,7 +24,7 @@ make test
 
 - From the TUI: pick a chapter and press the read key. Pages download into
   memory and open in the terminal. `q` goes back to the chapter list.
-- Downloaded chapters: `mangaz view <folder|file.cbz>`.
+- Downloaded chapters: `mangap view <folder|file.cbz>`.
 - Pages show as authored (no color filters). Default direction is
   right-to-left: config `reader.direction` (`rtl`/`ltr`), `D` flips it while
   reading.
@@ -33,13 +33,13 @@ make test
 
 ## Coming from mangal
 
-On first run, mangaz copies your mangal config directory (sources, history,
-anilist bindings, `mangal.toml` renamed to `mangaz.toml`) into the mangaz
+On first run, mangap copies your mangal config directory (sources, history,
+anilist bindings, `mangal.toml` renamed to `mangap.toml`) into the mangap
 config directory. The mangal directory is left untouched. This happens only
-when the mangaz directory does not exist yet.
+when the mangap directory does not exist yet.
 
-Environment variables use the `MANGAZ_` prefix (was `MANGAL_`), for example
-`MANGAZ_CONFIG_PATH`. Run `mangaz env` to list them, and `mangaz where` for
+Environment variables use the `MANGAP_` prefix (was `MANGAL_`), for example
+`MANGAP_CONFIG_PATH`. Run `mangap env` to list them, and `mangap where` for
 paths.
 
 ## TUI keys
@@ -68,13 +68,13 @@ Press `ctrl+s` on the search screen for the source settings:
 
 Custom Lua scrapers still install from
 [mangal-scrapers](https://github.com/metafates/mangal-scrapers)
-(`mangaz sources install`). They show up in the settings screen, disabled
+(`mangap sources install`). They show up in the settings screen, disabled
 until you turn them on.
 
 ## Anilist
 
 ```
-mangaz integration anilist
+mangap integration anilist
 ```
 
 Your browser opens, you click "Authorize", done. Chapters you read are then

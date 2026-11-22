@@ -2,7 +2,7 @@ package generic
 
 import (
 	"github.com/gocolly/colly/v2"
-	"github.com/hongnoul/mangaz/source"
+	"github.com/hongnoul/mangap/source"
 	"net/http"
 )
 

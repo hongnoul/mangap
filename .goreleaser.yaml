@@ -1,4 +1,4 @@
-project_name: mangaz
+project_name: mangap
 
 before:
   hooks:
@@ -18,9 +18,9 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -X 'github.com/hongnoul/mangaz/constant.BuiltAt={{ .Date }}'
-      - -X 'github.com/hongnoul/mangaz/constant.BuiltBy={{ .Env.USER }}'
-      - -X 'github.com/hongnoul/mangaz/constant.Revision={{ .ShortCommit }}'
+      - -X 'github.com/hongnoul/mangap/constant.BuiltAt={{ .Date }}'
+      - -X 'github.com/hongnoul/mangap/constant.BuiltBy={{ .Env.USER }}'
+      - -X 'github.com/hongnoul/mangap/constant.Revision={{ .ShortCommit }}'
       - -s
       - -w
 
@@ -52,5 +52,5 @@ changelog:
 release:
   github:
     owner: hongnoul
-    name: mangaz
+    name: mangap
   name_template: "{{.ProjectName}} v{{.Version}}"

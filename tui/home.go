@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hongnoul/mangaz/color"
-	"github.com/hongnoul/mangaz/style"
+	"github.com/hongnoul/mangap/color"
+	"github.com/hongnoul/mangap/style"
 )
 
 // homeKeys lists every TUI keybind, grouped, for the home screen.

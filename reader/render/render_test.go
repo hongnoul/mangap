@@ -195,11 +195,11 @@ func TestEncodePNGRoundTrips(t *testing.T) {
 }
 
 // BenchmarkFixture renders a real manga page at a retina half-pane:
-// MANGAZ_BENCH_PAGE=/path/to/page.png go test -bench Fixture ./reader/render
+// MANGAP_BENCH_PAGE=/path/to/page.png go test -bench Fixture ./reader/render
 func BenchmarkFixture(b *testing.B) {
-	path := os.Getenv("MANGAZ_BENCH_PAGE")
+	path := os.Getenv("MANGAP_BENCH_PAGE")
 	if path == "" {
-		b.Skip("set MANGAZ_BENCH_PAGE")
+		b.Skip("set MANGAP_BENCH_PAGE")
 	}
 	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
@@ -212,7 +212,7 @@ func BenchmarkFixture(b *testing.B) {
 			b.Fatal(err)
 		}
 		if _, err := Render(Job{Pages: []image.Image{img}, W: 3200, H: 1800, Total: 50,
-			NativeDensity: os.Getenv("MANGAZ_BENCH_NATIVE") != "0"}); err != nil {
+			NativeDensity: os.Getenv("MANGAP_BENCH_NATIVE") != "0"}); err != nil {
 			b.Fatal(err)
 		}
 	}
