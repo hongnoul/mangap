@@ -12,7 +12,7 @@ type statefulKeymap struct {
 
 	quit, forceQuit,
 	acceptSearchSuggestion,
-	sourceSettings,
+	sourcePicker,
 	remove,
 	redownloadFailed,
 	confirm,
@@ -71,9 +71,9 @@ func newStatefulKeymap() *statefulKeymap {
 			keys("r"),
 			help(style.Fg(color.Orange)("r"), style.Fg(color.Orange)("read")),
 		),
-		sourceSettings: k(
+		sourcePicker: k(
 			keys("ctrl+s"),
-			help("ctrl+s", "sources"),
+			help("ctrl+s", "pick source"),
 		),
 		acceptSearchSuggestion: k(
 			keys("tab"),
@@ -134,9 +134,9 @@ func (k *statefulKeymap) help() ([]key.Binding, []key.Binding) {
 		return to2(h(k.confirm, k.remove, k.back))
 	case sourcesState:
 		search := withDescription(k.confirm, "search")
-		return to2(h(search, k.sourceSettings))
+		return to2(h(search))
 	case searchState:
-		return to2(h(k.confirm, k.acceptSearchSuggestion, k.sourceSettings, k.forceQuit))
+		return to2(h(k.confirm, k.acceptSearchSuggestion, k.sourcePicker, k.forceQuit))
 	case mangasState:
 		return to2(h(k.confirm, k.back, k.vimHL))
 	case chaptersState:

@@ -44,8 +44,6 @@ func (b *statefulBubble) View() string {
 		return b.viewDownloadDone()
 	case errorState:
 		return b.viewError()
-	case sourceSettingsState:
-		return b.viewSourceSettings()
 	}
 
 	panic("unknown state")

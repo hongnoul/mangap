@@ -44,17 +44,6 @@ func Ordered() []*Provider {
 	return out
 }
 
-// SaveSourcePrefs writes order and disabled to the config file.
-func SaveSourcePrefs(order, disabled []string) error {
-	viper.Set(key.SourcesOrder, order)
-	viper.Set(key.SourcesDisabled, disabled)
-	err := viper.WriteConfig()
-	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-		return viper.SafeWriteConfig()
-	}
-	return err
-}
-
 // SaveMangadexLanguage persists the preferred MangaDex language.
 func SaveMangadexLanguage(code string) error {
 	viper.Set(key.MangadexLanguage, code)

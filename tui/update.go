@@ -154,8 +154,6 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return b.updateScrapersInstall(msg)
 	case errorState:
 		return b.updateError(msg)
-	case sourceSettingsState:
-		return b.updateSourceSettings(msg)
 	}
 
 	panic("unreachable")
@@ -326,9 +324,6 @@ func (b *statefulBubble) updateSources(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case b.sourcesC.FilterState() == list.Filtering:
 			break
-		case key.Matches(msg, b.keymap.sourceSettings):
-			b.openSourceSettings()
-			return b, nil
 		case key.Matches(msg, b.keymap.confirm):
 			if b.sourcesC.SelectedItem() == nil {
 				break
@@ -377,7 +372,7 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 			b.newState(loadingState)
 			go query.Remember(b.inputC.Value(), 1)
 			return b, tea.Batch(b.searchManga(b.inputC.Value()), b.waitForMangas(), b.spinnerC.Tick)
-		case key.Matches(msg, b.keymap.sourceSettings):
+		case key.Matches(msg, b.keymap.sourcePicker):
 			b.showKeys = false
 			b.openDropdown(sourceDropdown)
 			return b, nil

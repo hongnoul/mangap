@@ -94,9 +94,7 @@ func (b *statefulBubble) updateDropdown(km tea.KeyMsg) (tea.Model, tea.Cmd) {
 		d.cursor = imax(n-1, 0)
 	case "ctrl+s":
 		if d.kind == sourceDropdown {
-			// Second press: full source settings (order, enable, ...).
 			b.dropdown = nil
-			b.openSourceSettings()
 			return b, nil
 		}
 		b.openDropdown(sourceDropdown)
@@ -152,9 +150,6 @@ func (b *statefulBubble) viewDropdown(w int) string {
 		lines = append(lines, line)
 	}
 	hint := "↑/↓ move • enter pick • esc close"
-	if d.kind == sourceDropdown {
-		hint += " • ctrl+s settings"
-	}
 	lines = append(lines, style.Faint(hint))
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).

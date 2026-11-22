@@ -53,20 +53,20 @@ Arrow keys left/right page through long lists.
 Built in: **Mangapill** (default) and **MangaDex** (fallback). Manganato and
 Manganelo were removed: both return nothing now.
 
-The search screen has a source picker under the search bar, defaulting to
-Mangapill. Press `ctrl+o` (or `←`/`→` while the bar is empty) to switch.
+The search screen has a status box at the bottom showing the source,
+language, and keybinds toggle. Press `ctrl+s` to pick a source (with live
+RTT), `ctrl+l` to pick the MangaDex language, `ctrl+g` for keybinds.
+`ctrl+o` (or `←`/`→` while the bar is empty) cycles sources.
 Once you open a manga it stays on that source.
 
-Press `ctrl+s` on the search screen for the source settings:
-
-- `j`/`k` move, `J`/`K` reorder, `space` enable/disable, `enter` save,
-  `esc` cancel. The picker shows enabled sources in this order.
-- `-S <name>` on the command line still forces specific sources.
+Source order and enabled set live in the config (`mangap config`):
+`sources.order` and `sources.disabled`. `-S <name>` on the command line
+still forces specific sources.
 
 Custom Lua scrapers still install from
 [mangal-scrapers](https://github.com/metafates/mangal-scrapers)
-(`mangap sources install`). They show up in the settings screen, disabled
-until you turn them on.
+(`mangap sources install`). Enable one by removing it from
+`sources.disabled`.
 
 ## Anilist
 

@@ -33,7 +33,7 @@ func (b *statefulBubble) vimHL(msg tea.Msg) tea.Msg {
 		l = b.gridList()
 	case scrapersInstallState:
 		l = &b.scrapersInstallC
-	case sourceSettingsState, confirmState, errorState:
+	case confirmState, errorState:
 	default:
 		return msg
 	}

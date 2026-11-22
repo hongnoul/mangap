@@ -76,8 +76,6 @@ type statefulBubble struct {
 	searchSuggestions []string
 	suggestionIdx     int
 
-	sourceSettings *sourceSettings
-
 	// home screen source picker (see source_picker.go)
 	sourceChoices []string
 	sourceIdx     int
