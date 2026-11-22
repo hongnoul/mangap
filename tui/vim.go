@@ -25,9 +25,12 @@ func (b *statefulBubble) vimHL(msg tea.Msg) tea.Msg {
 	case sourcesState:
 		l = &b.sourcesC
 	case mangasState, chaptersState:
-		// Grid screens: h/l move left/right in the grid (see grid.nav);
-		// esc/enter are back/open.
-		return msg
+		// Multi-column grids use h/l to move left/right (see grid.nav).
+		// The single column has no sideways, so h/l are back/open.
+		if b.grid.cols != 1 {
+			return msg
+		}
+		l = b.gridList()
 	case scrapersInstallState:
 		l = &b.scrapersInstallC
 	case sourceSettingsState, confirmState, errorState:
