@@ -73,13 +73,9 @@ func (b *statefulBubble) sourcePicker(w int) string {
 		gap := imax(inner-lipgloss.Width(label)-lipgloss.Width(hint), 1)
 		return label + strings.Repeat(" ", gap) + style.Faint(hint)
 	}
-	lines := []string{row(srcLabel, "ctrl+s")}
-	if b.dropdown != nil && b.dropdown.kind == sourceDropdown {
-		lines = append(lines, b.viewDropdown(inner))
-	}
-	lines = append(lines, row(style.Faint("Language  ")+bold.Render(lang.name), "ctrl+l"))
-	if b.dropdown != nil && b.dropdown.kind == languageDropdown {
-		lines = append(lines, b.viewDropdown(inner))
+	lines := []string{
+		row(srcLabel, "ctrl+s"),
+		row(style.Faint("Language  ")+bold.Render(lang.name), "ctrl+l"),
 	}
 	word := "show"
 	if b.showKeys {

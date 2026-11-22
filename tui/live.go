@@ -85,16 +85,26 @@ func (b *statefulBubble) viewLive() string {
 	box = lipgloss.PlaceHorizontal(full, lipgloss.Center, box)
 
 	header := box
+	pickerW := lipgloss.Width(b.searchBox(boxW))
+	if b.dropdown != nil {
+		// Keybind expansion opens right under the search bar.
+		header += "\n" + lipgloss.PlaceHorizontal(full, lipgloss.Center, b.viewDropdown(pickerW))
+	}
 	homeView := b.inputC.Value() == "" && b.state == searchState
-	if len(b.sourceChoices) > 0 && (homeView || b.dropdown != nil) {
-		header += "\n" + lipgloss.PlaceHorizontal(full, lipgloss.Center, b.sourcePicker(lipgloss.Width(b.searchBox(boxW))))
+	footer := ""
+	if len(b.sourceChoices) > 0 && homeView {
+		footer = lipgloss.PlaceHorizontal(full, lipgloss.Center, b.sourcePicker(pickerW))
 	}
 
 	H := b.height + 2 - lipgloss.Height(header)
-	if b.inputC.Value() == "" && b.state == searchState {
-		// Empty bar: the art and keys fill the space below, so the bar
-		// never moves when results start showing.
-		return header + "\n" + b.homeBody(full, H)
+	if homeView {
+		// Empty bar: art and keys fill the middle, the status box sits at
+		// the very bottom.
+		if footer == "" {
+			return header + "\n" + b.homeBody(full, H)
+		}
+		bodyH := H - lipgloss.Height(footer) - 1
+		return header + "\n" + b.homeBody(full, imax(bodyH, 0)) + "\n" + footer
 	}
 	if len(b.mangasC.Items()) == 0 || H < 4 {
 		return header
