@@ -9,19 +9,6 @@ import (
 	"github.com/hongnoul/mangaz/style"
 )
 
-// homeArt is an original chibi reading a manga, drawn for mangaz.
-var homeArt = []string{
-	`      .-""""""-.      `,
-	`    .'  /\  /\  '.    `,
-	`   /   (o)  (o)   \   `,
-	`   |  .   /\   .  |   `,
-	`    \  '-.__.-'  /    `,
-	`  .-'.__________.'-.  `,
-	`  | ~~~~~ || ~~~~~ |  `,
-	`  '-------''-------'  `,
-	`      m a n g a z     `,
-}
-
 // homeKeys lists every TUI keybind, grouped, for the home screen.
 var homeKeys = [][2]string{
 	{"enter", "search / open"},
@@ -90,7 +77,7 @@ func (b *statefulBubble) viewHome() string {
 	if showKeys {
 		used += 1 + lipgloss.Height(keys)
 	}
-	showArt := used+len(homeArt)+1 <= full && w >= 32
+	showArt := used+len(homeArt)+1 <= full && w >= lipgloss.Width(homeArt[0])
 
 	var parts []string
 	if showArt {
