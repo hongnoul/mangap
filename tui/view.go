@@ -2,10 +2,12 @@ package tui
 
 import (
 	"fmt"
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hongnoul/mangaz/color"
 	"github.com/hongnoul/mangaz/icon"
 	"github.com/hongnoul/mangaz/key"
+	"github.com/hongnoul/mangaz/source"
 	"github.com/hongnoul/mangaz/style"
 	"github.com/hongnoul/mangaz/util"
 	"github.com/muesli/reflow/wrap"
@@ -91,11 +93,41 @@ func (b *statefulBubble) viewSearch() string {
 }
 
 func (b *statefulBubble) viewMangas() string {
-	return listExtraPaddingStyle.Render(b.mangasC.View())
+	return b.viewGrid(&b.mangasC, mangaCard, func(it list.Item, visible bool) {
+		b.thumbs.WantManga(it.(*listItem).internal.(*source.Manga), visible)
+	})
 }
 
 func (b *statefulBubble) viewChapters() string {
-	return listExtraPaddingStyle.Render(b.chaptersC.View())
+	return b.viewGrid(&b.chaptersC, chapterCard, func(it list.Item, visible bool) {
+		b.thumbs.WantChapter(it.(*listItem).internal.(*source.Chapter), visible)
+	})
+}
+
+// viewGrid draws a thumbnail grid, or the list's own view while filtering
+// (the filter input lives there).
+func (b *statefulBubble) viewGrid(l *list.Model, toCard func(list.Item) card, want func(list.Item, bool)) string {
+	if l.FilterState() == list.Filtering {
+		return listExtraPaddingStyle.Render(l.View())
+	}
+	x, y := listExtraPaddingStyle.GetFrameSize()
+	w, h := b.width+4-x, b.height+2-y
+	body := b.grid.render(l, b.thumbs, w, h, toCard, want)
+	if msg := strings.TrimSpace(l.Title); msg != "" && l.ShowTitle() {
+		body = msg + "\n" + body
+	}
+	return listExtraPaddingStyle.Render(body)
+}
+
+// gridList is the list shown as a grid in the current state, if any.
+func (b *statefulBubble) gridList() *list.Model {
+	switch b.state {
+	case mangasState:
+		return &b.mangasC
+	case chaptersState:
+		return &b.chaptersC
+	}
+	return nil
 }
 
 func (b *statefulBubble) viewAniList() string {

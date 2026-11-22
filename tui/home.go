@@ -18,6 +18,7 @@ var homeKeys = [][2]string{
 	{"j / k", "down / up"},
 	{"l / h", "open / back"},
 	{"← / →", "prev / next page"},
+	{"[ / ]", "1 / 2 columns"},
 	{"g / G", "top / bottom"},
 	{"/", "filter list"},
 	{"esc", "back"},

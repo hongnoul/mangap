@@ -80,6 +80,7 @@ type statefulBubble struct {
 	sourceSettings *sourceSettings
 
 	thumbs *thumbs
+	grid   *grid
 }
 
 func (b *statefulBubble) raiseError(err error) {
@@ -278,7 +279,7 @@ func newBubble() *statefulBubble {
 	bubble.mangasC.SetShowTitle(false)
 	bubble.mangasC.SetShowStatusBar(false)
 	bubble.thumbs = newThumbs(nil)
-	bubble.mangasC.SetDelegate(mangaDelegate{th: bubble.thumbs})
+	bubble.grid = newGrid()
 
 	bubble.chaptersC = makeList("Chapters", showURLs, &listOptions{
 		TitleStyle: mo.Some(
@@ -286,7 +287,6 @@ func newBubble() *statefulBubble {
 		),
 	})
 	bubble.chaptersC.SetStatusBarItemName("chapter", "chapters")
-	bubble.chaptersC.SetDelegate(chapterDelegate{th: bubble.thumbs})
 
 	bubble.anilistC = makeList("Anilist Mangas", showURLs, &listOptions{
 		TitleStyle: mo.Some(

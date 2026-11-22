@@ -34,6 +34,13 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if _, ok := msg.(thumbReadyMsg); ok {
 		return b, nil // a cover landed: the repaint after Update shows it
 	}
+	if km, ok := msg.(tea.KeyMsg); ok {
+		if l := b.gridList(); l != nil && l.FilterState() != list.Filtering {
+			if b.grid.key(km.String()) || b.grid.nav(l, km.String()) {
+				return b, nil
+			}
+		}
+	}
 
 	switch msg := msg.(type) {
 	case error:
@@ -228,7 +235,6 @@ func (b *statefulBubble) updateLoading(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		cmds = append(cmds, b.mangasC.SetItems(items))
 		b.thumbs.Clear()
-		b.thumbs.Load(msg)
 		b.newState(mangasState)
 		b.stopLoading()
 	case []*source.Chapter:
