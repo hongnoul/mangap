@@ -90,29 +90,23 @@ func imax(a, b int) int {
 	return b
 }
 
-// homeBody is what shows under the search bar before anything is typed:
-// art and keys, centered in w x h, dropping pieces that do not fit.
+// homeBody is what shows under the search bar before anything is typed.
+// The art is pinned to the center of w x h so it never moves; the keys
+// cheatsheet is drawn over the bottom of that area when shown.
 func (b *statefulBubble) homeBody(w, h int) string {
+	h = imax(h, 1)
+	art := ""
+	if len(homeArt) <= h && w >= lipgloss.Width(homeArt[0]) {
+		art = strings.Join(homeArt, "\n")
+	}
+	base := lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, art)
+	if !b.showKeys || len(b.searchSuggestions) > 0 {
+		return base
+	}
 	keys := keysGrid(w - 4)
-	var parts []string
-	used := 0
-	if b.showKeys && lipgloss.Height(keys) <= h && lipgloss.Width(keys) <= w && len(b.searchSuggestions) == 0 {
-		used = lipgloss.Height(keys)
-	} else {
-		keys = ""
+	if lipgloss.Height(keys) > h || lipgloss.Width(keys) > w {
+		return base
 	}
-	if used+len(homeArt)+1 <= h && w >= lipgloss.Width(homeArt[0]) {
-		parts = append(parts, strings.Join(homeArt, "\n"))
-		if keys != "" {
-			parts = append(parts, "")
-		}
-	}
-	if keys != "" {
-		parts = append(parts, keys)
-	}
-	if len(parts) == 0 {
-		return ""
-	}
-	return lipgloss.Place(w, imax(h, 1), lipgloss.Center, lipgloss.Center,
-		lipgloss.JoinVertical(lipgloss.Center, parts...))
+	keys = lipgloss.PlaceHorizontal(w, lipgloss.Center, keys)
+	return overlayLines(base, keys, h-lipgloss.Height(keys))
 }

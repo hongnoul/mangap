@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -87,9 +88,29 @@ func (b *statefulBubble) viewLive() string {
 	header := box
 	pickerW := lipgloss.Width(b.searchBox(boxW))
 	if b.dropdown != nil {
-		// Keybind expansion opens right under the search bar.
-		header += "\n" + lipgloss.PlaceHorizontal(full, lipgloss.Center, b.viewDropdown(pickerW))
+		// The dropdown floats over whatever is under the search bar
+		// (art, keys, results) so nothing below it moves.
+		drop := lipgloss.PlaceHorizontal(full, lipgloss.Center, b.viewDropdown(pickerW))
+		return overlayLines(b.viewLiveBase(box, full, pickerW), drop, lipgloss.Height(box))
 	}
+	return b.viewLiveBase(header, full, pickerW)
+}
+
+// overlayLines replaces lines of base starting at row with the lines of top.
+func overlayLines(base, top string, row int) string {
+	bl := strings.Split(base, "\n")
+	for i, l := range strings.Split(top, "\n") {
+		if row+i < len(bl) {
+			bl[row+i] = l
+		} else {
+			bl = append(bl, l)
+		}
+	}
+	return strings.Join(bl, "\n")
+}
+
+// viewLiveBase renders the search screen under header, ignoring dropdowns.
+func (b *statefulBubble) viewLiveBase(header string, full, pickerW int) string {
 	homeView := b.inputC.Value() == "" && b.state == searchState
 	footer := ""
 	if len(b.sourceChoices) > 0 && homeView {
