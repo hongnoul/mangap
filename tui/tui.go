@@ -49,6 +49,9 @@ func Run(options *Options) error {
 	bubble.preview.send = p.Send
 	defer bubble.preview.Clear()
 	defer bubble.thumbs.Clear()
+	// Flush the live-search catalog: its save is debounced, and results
+	// from the last searches before quitting would otherwise be lost.
+	defer func() { _ = liveCatalog().Save() }()
 
 	// bubbletea only watches SIGWINCH when its output is an *os.File, and
 	// syncOut is not, so forward resizes ourselves. Without this the TUI
