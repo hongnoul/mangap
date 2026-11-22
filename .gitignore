@@ -316,3 +316,11 @@ Temporary Items
 .apdisk
 
 dist/
+
+# Editors
+.idea/
+.vscode/
+
+# Local planning notes (keep out of the repo)
+notes/
+*.local.md

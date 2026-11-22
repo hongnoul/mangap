@@ -7,10 +7,6 @@ Forked from [mangal](https://github.com/metafates/mangal) (MIT, unmaintained
 since April 2025), which supplies the sources, Lua scrapers, downloader, and
 TUI. The in-terminal reader follows the design of pdfpane.
 
-> **Status:** Phases 0-2 are done. Reading a chapter from the TUI (or
-> `mangaz mini` / `inline`) opens it in the built-in reader; `q` returns to
-> the chapter list. See [docs/READER_PLAN.md](docs/READER_PLAN.md).
-
 ## Requirements
 
 - A terminal with kitty graphics: kitty, ghostty, wezterm, or gwae.
