@@ -52,6 +52,10 @@ type Result struct {
 	// Chapter is the chapter position the reader stopped in, relative to
 	// the one it opened (0 unless Options.Chapters crossed an edge).
 	Chapter int
+	// Pages is the page count of the chapter the reader stopped in.
+	Pages int
+	// Finished is true when the reader stopped on the last sheet.
+	Finished bool
 }
 
 // Open reads the chapter at path (directory or .cbz/.zip).
@@ -258,7 +262,10 @@ func (s *session) run() (res Result, err error) {
 }
 
 func (s *session) result() Result {
-	return Result{Page: s.state.Page, Chapter: s.cur}
+	return Result{
+		Page: s.state.Page, Chapter: s.cur,
+		Pages: s.state.Pages, Finished: s.state.AtEnd(1),
+	}
 }
 
 // apply folds a key batch into the state. Reports quit.

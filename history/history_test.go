@@ -68,3 +68,42 @@ func TestHistory(t *testing.T) {
 		})
 	})
 }
+
+func TestProgress(t *testing.T) {
+	Convey("Given a bookmarked chapter", t, func() {
+		ch := source.Chapter{Name: "Ch 2", URL: "u2", ID: "c2"}
+		other := source.Chapter{Name: "Ch 3", URL: "u3", ID: "c3"}
+		manga := source.Manga{Name: "progress manga", Source: testSource{}, Chapters: []*source.Chapter{&ch, &other}}
+		ch.Manga, other.Manga = &manga, &manga
+
+		So(SaveProgress(&ch, 12, 38, false), ShouldBeNil)
+
+		Convey("Lookup returns the exact page", func() {
+			saved, ok := Lookup(&manga)
+			So(ok, ShouldBeTrue)
+			So(saved.Page, ShouldEqual, 12)
+			So(saved.Pages, ShouldEqual, 38)
+			So(saved.ResumePage(&ch), ShouldEqual, 12)
+			So(saved.ResumePage(&other), ShouldEqual, 0)
+		})
+
+		Convey("Reopening the same chapter keeps the page", func() {
+			So(Opened(&ch), ShouldBeNil)
+			saved, _ := Lookup(&manga)
+			So(saved.Page, ShouldEqual, 12)
+		})
+
+		Convey("Opening another chapter resets it", func() {
+			So(Opened(&other), ShouldBeNil)
+			saved, _ := Lookup(&manga)
+			So(saved.URL, ShouldEqual, "u3")
+			So(saved.Page, ShouldEqual, 0)
+		})
+
+		Convey("A finished chapter resumes at 0", func() {
+			So(SaveProgress(&ch, 37, 38, true), ShouldBeNil)
+			saved, _ := Lookup(&manga)
+			So(saved.ResumePage(&ch), ShouldEqual, 0)
+		})
+	})
+}

@@ -7,6 +7,7 @@ import (
 	"github.com/hongnoul/mangaz/anilist"
 	"github.com/hongnoul/mangaz/color"
 	"github.com/hongnoul/mangaz/downloader"
+	"github.com/hongnoul/mangaz/history"
 	"github.com/hongnoul/mangaz/installer"
 	"github.com/hongnoul/mangaz/key"
 	"github.com/hongnoul/mangaz/log"
@@ -354,4 +355,34 @@ type readyToReadMsg struct {
 type readFinishedMsg struct {
 	err     error
 	chapter *source.Chapter // the chapter the reader was in when it quit
+}
+
+// selectBookmark moves the chapter cursor to where the user left off.
+func (b *statefulBubble) selectBookmark() tea.Cmd {
+	saved, ok := history.Lookup(b.selectedManga)
+	if !ok {
+		return nil
+	}
+	b.markBookmark(saved)
+	return b.selectChapterBy(saved.Matches)
+}
+
+// markBookmark labels the bookmarked chapter and clears the others.
+func (b *statefulBubble) markBookmark(saved *history.SavedChapter) {
+	for _, item := range b.chaptersC.Items() {
+		li := item.(*listItem)
+		li.bookmark = ""
+		c, ok := li.internal.(*source.Chapter)
+		if !ok || !saved.Matches(c) {
+			continue
+		}
+		switch {
+		case saved.Finished:
+			li.bookmark = "read"
+		case saved.Pages > 0:
+			li.bookmark = fmt.Sprintf("p.%d/%d", saved.Page+1, saved.Pages)
+		default:
+			li.bookmark = fmt.Sprintf("p.%d", saved.Page+1)
+		}
+	}
 }

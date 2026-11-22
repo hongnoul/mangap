@@ -17,6 +17,8 @@ import (
 type listItem struct {
 	internal interface{}
 	marked   bool
+	// bookmark is a "p.13/38" hint on the chapter the user left off in.
+	bookmark string
 }
 
 func (t *listItem) toggleMark() {
@@ -50,6 +52,11 @@ func (t *listItem) Title() (title string) {
 		if e.IsDownloaded() {
 			sb.WriteString(" ")
 			sb.WriteString(icon.Get(icon.Downloaded))
+		}
+
+		if t.bookmark != "" {
+			sb.WriteString(" ")
+			sb.WriteString(style.Faint("🔖 " + t.bookmark))
 		}
 
 		title = sb.String()

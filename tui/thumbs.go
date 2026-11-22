@@ -85,9 +85,9 @@ type thumbState struct {
 	// claimed the load, so later duplicate jobs drop out.
 	queuedVisible bool
 	started       bool
-	img  image.Image // decoded source, kept to re-raster on size change
-	cols int         // span the image was transmitted for
-	rows int
+	img           image.Image // decoded source, kept to re-raster on size change
+	cols          int         // span the image was transmitted for
+	rows          int
 }
 
 // thumbs fetches manga covers and chapter first pages and shows them as

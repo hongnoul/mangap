@@ -299,9 +299,8 @@ func (b *statefulBubble) updateHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd = b.chaptersC.SetItems(items)
 		b.newState(chaptersState)
 		b.stopLoading()
-		selectCmd := b.selectChapterBy(func(chapter *source.Chapter) bool {
-			return chapter.URL == selected.URL
-		})
+		b.markBookmark(selected)
+		selectCmd := b.selectChapterBy(selected.Matches)
 		return b, tea.Batch(cmd, selectCmd)
 	case tea.KeyMsg:
 		switch {
@@ -497,6 +496,7 @@ func (b *statefulBubble) updateMangas(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd = b.chaptersC.SetItems(items)
 		b.newState(chaptersState)
 		b.stopLoading()
+		cmd = tea.Batch(cmd, b.selectBookmark())
 
 		if viper.GetBool(key2.AnilistLinkOnMangaSelect) {
 			return b, tea.Batch(cmd, b.fetchAndSetAnilist(b.selectedManga), b.waitForAnilistFetchAndSet())
@@ -692,12 +692,16 @@ func (b *statefulBubble) updateRead(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case readyToReadMsg:
 		downloader.SaveReadHistory(msg.chapter)
 		opt, nb := downloader.ReaderOptionsFor(msg.chapter)
+		rc := reader.NewCommand(msg.src, opt)
 		return b, tea.Exec(
-			&mutedExec{ExecCommand: reader.NewCommand(msg.src, opt), out: b.thumbs.out},
+			&mutedExec{ExecCommand: rc, out: b.thumbs.out},
 			func(err error) tea.Msg {
 				last := msg.chapter
 				if nb != nil {
 					last = nb.Current
+				}
+				if err == nil {
+					downloader.SaveReadProgress(last, rc.Result)
 				}
 				return readFinishedMsg{err: err, chapter: last}
 			},
@@ -710,6 +714,9 @@ func (b *statefulBubble) updateRead(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		// Crossing chapters in the reader moves the list cursor along.
 		if last := msg.chapter; last != nil && b.state == chaptersState {
+			if saved, ok := history.Lookup(b.selectedManga); ok {
+				b.markBookmark(saved)
+			}
 			return b, b.selectChapterBy(func(c *source.Chapter) bool { return c == last })
 		}
 		return b, nil

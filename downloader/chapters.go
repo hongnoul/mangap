@@ -1,6 +1,7 @@
 package downloader
 
 import (
+	"github.com/hongnoul/mangaz/history"
 	"regexp"
 	"sort"
 	"strconv"
@@ -91,6 +92,9 @@ func (n *Neighbors) Entered(pos int) {
 // ReaderOptionsFor is ReaderOptions with chapter crossing around chapter.
 func ReaderOptionsFor(chapter *source.Chapter) (reader.Options, *Neighbors) {
 	opt := ReaderOptions()
+	if saved, ok := history.Lookup(chapter.Manga); ok {
+		opt.Start = saved.ResumePage(chapter)
+	}
 	nb := NewNeighbors(chapter)
 	if nb != nil {
 		opt.Chapters = nb

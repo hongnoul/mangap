@@ -83,13 +83,20 @@ func SaveReadHistory(chapter *source.Chapter) {
 		return
 	}
 
-	go func() {
-		if err := history.Save(chapter); err != nil {
-			log.Warn(err)
-		} else {
-			log.Info("history saved")
-		}
-	}()
+	// Synchronous: a later SaveReadProgress must not be overtaken.
+	if err := history.Opened(chapter); err != nil {
+		log.Warn(err)
+	}
+}
+
+// SaveReadProgress bookmarks where the reader stopped in chapter.
+func SaveReadProgress(chapter *source.Chapter, res reader.Result) {
+	if chapter == nil || !viper.GetBool(key.HistorySaveOnRead) {
+		return
+	}
+	if err := history.SaveProgress(chapter, res.Page, res.Pages, res.Finished); err != nil {
+		log.Warn(err)
+	}
 }
 
 // Read prepares the chapter and reads it in the built-in reader, which
@@ -103,7 +110,12 @@ func Read(chapter *source.Chapter, progress func(string)) error {
 	defer src.Close()
 
 	SaveReadHistory(chapter)
-	opt, _ := ReaderOptionsFor(chapter)
-	_, err = reader.Run(src, opt)
+	opt, nb := ReaderOptionsFor(chapter)
+	res, err := reader.Run(src, opt)
+	last := chapter
+	if nb != nil {
+		last = nb.Current
+	}
+	SaveReadProgress(last, res)
 	return err
 }
