@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/hongnoul/mangaz/reader"
-	"github.com/hongnoul/mangaz/reader/render"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 )
@@ -14,7 +11,6 @@ import (
 func init() {
 	rootCmd.AddCommand(viewCmd)
 	viewCmd.Flags().IntP("page", "p", 1, "page to open at (1-based)")
-	viewCmd.Flags().String("tone", "dark", "page tone: dark, light, dim")
 	viewCmd.Flags().Bool("ltr", false, "read left-to-right (default is right-to-left)")
 	viewCmd.Flags().Int("lanes", 0, "render worker count (0 = auto)")
 }
@@ -32,7 +28,6 @@ Keys:
                      (right-to-left: left is the next page)
   g / G              first / last     f <digits>    go to page
   s                  two-page spread  D             flip reading direction
-  d                  tone: dark, light, dim
   r / R              rotate clockwise / counterclockwise
   q / ctrl-c         quit
 
@@ -43,17 +38,6 @@ MANGAZ_TRACE=1 writes timing lines to stderr.`,
 		opt := reader.Options{
 			Start: lo.Must(cmd.Flags().GetInt("page")) - 1,
 			Lanes: lo.Must(cmd.Flags().GetInt("lanes")),
-		}
-		switch strings.ToLower(lo.Must(cmd.Flags().GetString("tone"))) {
-		case "dark":
-		case "light":
-			t := render.Light
-			opt.Tone = &t
-		case "dim":
-			t := render.Dim
-			opt.Tone = &t
-		default:
-			handleErr(fmt.Errorf("unknown tone %q (dark, light, dim)", lo.Must(cmd.Flags().GetString("tone"))))
 		}
 		if lo.Must(cmd.Flags().GetBool("ltr")) {
 			rtl := false

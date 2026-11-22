@@ -20,7 +20,6 @@ const (
 	Last
 	RotateCW
 	RotateCCW
-	Tone
 	Spread
 	Direction
 	Goto
@@ -148,8 +147,6 @@ func single(c byte) Key {
 		return Key{Action: RotateCW}
 	case 'R':
 		return Key{Action: RotateCCW}
-	case 'd':
-		return Key{Action: Tone}
 	case 's':
 		return Key{Action: Spread}
 	case 'D':

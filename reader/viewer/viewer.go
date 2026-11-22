@@ -1,13 +1,11 @@
 // Package viewer is the reader's state machine (page, spread, direction,
-// tone, rotation) and the image-id cache that keeps the terminal's image
+// rotation) and the image-id cache that keeps the terminal's image
 // store under its budgets. Ported from pdfpane's Viewer.swift.
 package viewer
 
 import (
 	"fmt"
 	"math"
-
-	"github.com/hongnoul/mangaz/reader/render"
 )
 
 // Grid is the placement cell span and raster pixel size for a viewport.
@@ -57,16 +55,15 @@ type Target struct {
 	Page     int // 0-based first page of the sheet
 	Grid     Grid
 	Rotation int
-	Tone     render.Tone
 	Spread   bool
 	RTL      bool
 }
 
 // Key is the cache key shared by the id map, the prefetcher, and the
-// transport: two tones/rotations/directions of a page are different
+// transport: two rotations/directions of a page are different
 // pixels, exactly like two raster sizes.
 func (t Target) Key() string {
-	s := fmt.Sprintf("%d@%dx%dr%dt%d", t.Page, t.Grid.PxW, t.Grid.PxH, t.Rotation, t.Tone)
+	s := fmt.Sprintf("%d@%dx%dr%d", t.Page, t.Grid.PxW, t.Grid.PxH, t.Rotation)
 	if t.Spread {
 		s += "s"
 		if t.RTL {
@@ -81,7 +78,6 @@ type State struct {
 	Pages    int
 	Page     int // 0-based
 	Rotation int
-	Tone     render.Tone
 	Spread   bool
 	RTL      bool
 	// LastDir is the last flip's direction (+1/-1), seeding the
@@ -89,9 +85,9 @@ type State struct {
 	LastDir int
 }
 
-// NewState starts at page 0 with the mangaz defaults: dark, RTL.
+// NewState starts at page 0 with the mangaz default: RTL.
 func NewState(pages int) *State {
-	return &State{Pages: pages, Tone: render.Dark, RTL: true, LastDir: 1}
+	return &State{Pages: pages, RTL: true, LastDir: 1}
 }
 
 // Stride is pages per flip: two in spread view, like a physical book.
@@ -206,7 +202,7 @@ func (s *State) Target(g Grid) Target {
 // TargetAt is the frame for the sheet at page p.
 func (s *State) TargetAt(p int, g Grid) Target {
 	return Target{Page: s.SheetStart(p), Grid: g, Rotation: s.Rotation,
-		Tone: s.Tone, Spread: s.Spread, RTL: s.RTL}
+		Spread: s.Spread, RTL: s.RTL}
 }
 
 // WarmSet is the prefetch set around t: 4 sheets ahead along the last

@@ -248,12 +248,6 @@ It will also cache the results to not spam the API`,
 Available options are: emoji, kaomoji, plain, squares, nerd (nerd-font required)`,
 	},
 	{
-		key.ReaderTone,
-		"dark",
-		`Page tone in the built-in reader (d cycles while reading)
-Available options are: dark, light, dim`,
-	},
-	{
 		key.ReaderDirection,
 		"rtl",
 		`Reading direction in the built-in reader (D flips while reading)

@@ -1,5 +1,5 @@
 // Package render turns one decoded manga page into the PNG that fills the
-// pane: aspect-fit, centered, black gutters, optional spread, tone pass,
+// pane: aspect-fit, centered, black gutters, optional spread,
 // progress thumb in the gutter, and a 1-channel PNG whenever the result is
 // neutral gray (most manga), which is a quarter of the samples to deflate
 // and for the terminal to inflate.
@@ -23,33 +23,6 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-// Tone is the page color treatment.
-type Tone int
-
-const (
-	// Dark is the default: paper becomes black (matching the gutters) and
-	// ink lands at soft gray 224 instead of glaring white. Color pages keep
-	// their hue (luma flip plus hue rotation, pdfpane's smart matrix).
-	Dark Tone = iota
-	// Light is the page as authored.
-	Light
-	// Dim keeps the page un-inverted at 85% brightness.
-	Dim
-)
-
-func (t Tone) String() string {
-	switch t {
-	case Light:
-		return "light"
-	case Dim:
-		return "dim"
-	}
-	return "dark"
-}
-
-// Next cycles dark -> light -> dim -> dark.
-func (t Tone) Next() Tone { return (t + 1) % 3 }
-
 // Job is one render request.
 type Job struct {
 	// Pages to compose left to right into one sheet: one page, or two in
@@ -60,7 +33,6 @@ type Job struct {
 	W, H int
 	// Rotation in quarter turns clockwise, 0-3.
 	Rotation int
-	Tone     Tone
 	// Progress thumb: page index (0-based) of Total. Total <= 1 hides it.
 	Index, Total int
 	// RTL puts page 1 of the thumb on the right (horizontal bar) to match
@@ -109,7 +81,7 @@ func (b *bufferPool) Put(e *png.EncoderBuffer) { b.p.Put(e) }
 
 var encoder = png.Encoder{CompressionLevel: png.BestSpeed, BufferPool: encoderPool}
 
-// Render composes, fits, tones, and encodes one frame.
+// Render composes, fits, and encodes one frame.
 func Render(j Job) (*Result, error) {
 	if len(j.Pages) == 0 || j.W <= 0 || j.H <= 0 {
 		return nil, errors.New("render: empty job")
@@ -193,9 +165,6 @@ func Render(j Job) (*Result, error) {
 	}
 	tScale := time.Now()
 
-	for _, s := range slots {
-		applyTone(dst, s, j.Tone)
-	}
 	drawThumb(dst, f, j, unit)
 
 	var buf bytes.Buffer
@@ -222,7 +191,7 @@ func ms(d time.Duration) float64 { return float64(d.Microseconds()) / 1000 }
 
 // fit returns the aspect-fit rect of a w x h footprint inside W x H,
 // rounded to whole pixels and centered (pdfpane: a fractional edge would
-// antialias against the gutter and leave a bright fringe in dark tone).
+// antialias against the gutter and leave a fringe).
 func fit(w, h, W, H int) image.Rectangle {
 	sx := float64(W) / float64(w)
 	sy := float64(H) / float64(h)

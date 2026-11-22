@@ -10,7 +10,7 @@ every OS. pdfpane is the reference design, not linked code.
 | Name | **mangaz**: binary, module path, config dir, env prefix (`MANGAZ_*`) |
 | External viewers | **None.** The built-in reader is the only way to read. A terminal without kitty graphics gets a clear error, not a fallback |
 | Reading direction | **Right-to-left** by default, per-manga override |
-| Tone | **Dark** by default, `d` toggles light |
+| Tone | **None.** Pages render as authored. The dark/light/dim tone feature was removed 2026-11-22 |
 
 ## Goal
 
@@ -172,11 +172,8 @@ needed.
   previous one, matching the physical book. `j`/`k` stay next/prev in both modes.
   Spread view puts the cover alone, then pairs with the earlier page on the
   right.
-- Tones: `dark` (default), `light`, `dim`. `dark` is a plain inversion with
-  ink landing at soft gray (pdfpane's 224/255 cap), so it doesn't glare.
-  Color pages get pdfpane's hue-preserving flip. Skip photo detection: manga
-  pages are a single image, so there are no embedded photos to exempt.
-  Config: `reader.tone`, `d` cycles at runtime.
+- Tones: removed (2026-11-22). Pages render as authored, no `d` key, no
+  `reader.tone` config.
 - Rotation moves off `h`/`l` (taken by RTL paging) to `r`/`R`.
 - Page-level history: `{manga, chapter, page}` stored on every flip, plus a
   "continue" entry in the history view.

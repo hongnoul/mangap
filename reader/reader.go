@@ -34,9 +34,8 @@ var ErrNoKittyGraphics = errors.New("this terminal does not support the kitty gr
 type Options struct {
 	// Start is the 0-based page to open at.
 	Start int
-	// Tone and RTL override the defaults (dark, right-to-left).
-	Tone *render.Tone
-	RTL  *bool
+	// RTL overrides the default (right-to-left).
+	RTL *bool
 	// Lanes is the render worker count (0 = auto).
 	Lanes int
 	// In/Out default to the process stdin/stdout.
@@ -105,9 +104,6 @@ type session struct {
 
 func newSession(src pages.Source, opt Options) *session {
 	st := viewer.NewState(src.Len())
-	if opt.Tone != nil {
-		st.Tone = *opt.Tone
-	}
 	if opt.RTL != nil {
 		st.RTL = *opt.RTL
 	}
@@ -269,8 +265,6 @@ func (s *session) apply(ks []input.Key) bool {
 			st.Rotate(1)
 		case input.RotateCCW:
 			st.Rotate(-1)
-		case input.Tone:
-			st.Tone = st.Tone.Next()
 		case input.Spread:
 			st.ToggleSpread()
 		case input.Direction:
@@ -363,7 +357,7 @@ func (s *session) present() {
 	// Show the nearest ready page between the shown one and the target so
 	// the pane keeps moving instead of freezing until release.
 	if sh := s.shown; sh != nil && sh.Grid == t.Grid && sh.Rotation == t.Rotation &&
-		sh.Tone == t.Tone && sh.Spread == t.Spread && sh.RTL == t.RTL && sh.Page != t.Page {
+		sh.Spread == t.Spread && sh.RTL == t.RTL && sh.Page != t.Page {
 		dir := 1
 		if t.Page < sh.Page {
 			dir = -1
@@ -391,7 +385,7 @@ func (s *session) present() {
 	// image to the new cells (zero image bytes); the crisp frame replaces
 	// it when it lands.
 	if sh := s.shown; sh != nil && sh.Grid != t.Grid && sh.Page == t.Page &&
-		sh.Rotation == t.Rotation && sh.Tone == t.Tone && sh.Spread == t.Spread && sh.RTL == t.RTL {
+		sh.Rotation == t.Rotation && sh.Spread == t.Spread && sh.RTL == t.RTL {
 		if id, ok := s.cache.Lookup(sh.Key()); ok && s.kt.Transmitted(id) {
 			out := []byte("\x1b[?2026h")
 			out = s.kt.RePlace(out, id, t.Grid.Cols, t.Grid.Rows)

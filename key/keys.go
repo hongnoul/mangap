@@ -3,7 +3,7 @@ package key
 // DefinedFieldsCount is the number of fields defined in this package.
 // You have to manually update this number when you add a new field
 // to check later if every field has a defined default value
-const DefinedFieldsCount = 48
+const DefinedFieldsCount = 47
 
 const (
 	DownloaderPath                = "downloader.path"
@@ -33,7 +33,6 @@ const (
 )
 
 const (
-	ReaderTone      = "reader.tone"
 	ReaderDirection = "reader.direction"
 )
 
@@ -47,6 +46,7 @@ var RemovedReaderKeys = []string{
 	"reader.browser",
 	"reader.folder",
 	"reader.read_in_browser",
+	"reader.tone",
 }
 
 const (

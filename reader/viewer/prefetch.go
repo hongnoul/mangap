@@ -36,7 +36,7 @@ type Prefetcher struct {
 	cond     *sync.Cond
 
 	// decoded caches decoded pages: a spread and its neighbors share
-	// pages, and tone/rotation changes re-render the same source.
+	// pages, and rotation changes re-render the same source.
 	decoded *decodeCache
 
 	// Ready receives (non-blocking, coalesced) whenever a wanted render
@@ -289,8 +289,8 @@ func (p *Prefetcher) render(t Target) (*render.Result, error) {
 	decodeMs := float64(time.Since(t0).Microseconds()) / 1000
 	res, err := render.Render(render.Job{
 		Pages: imgs, W: t.Grid.PxW, H: t.Grid.PxH,
-		Rotation: t.Rotation, Tone: t.Tone,
-		Index: t.Page, Total: p.src.Len(), RTL: t.RTL,
+		Rotation: t.Rotation,
+		Index:    t.Page, Total: p.src.Len(), RTL: t.RTL,
 		NativeDensity: p.NativeDensity,
 	})
 	if res != nil {

@@ -29,8 +29,8 @@ make test
 - From the TUI: pick a chapter and press the read key. Pages download into
   memory and open in the terminal. `q` goes back to the chapter list.
 - Downloaded chapters: `mangaz view <folder|file.cbz>`.
-- Defaults: right-to-left, dark tone. Config `reader.direction` (`rtl`/`ltr`)
-  and `reader.tone` (`dark`/`light`/`dim`); `D` and `d` change them while
+- Pages show as authored (no color filters). Default direction is
+  right-to-left: config `reader.direction` (`rtl`/`ltr`), `D` flips it while
   reading.
 - External viewers are gone. Old `reader.pdf`, `reader.cbz`, ... keys are
   ignored with a warning. `formats.use` only affects downloads now.

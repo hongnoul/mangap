@@ -10,7 +10,6 @@ import (
 	"github.com/hongnoul/mangaz/log"
 	"github.com/hongnoul/mangaz/reader"
 	"github.com/hongnoul/mangaz/reader/pages"
-	"github.com/hongnoul/mangaz/reader/render"
 	"github.com/hongnoul/mangaz/source"
 	"github.com/spf13/viper"
 )
@@ -62,18 +61,9 @@ func Prepare(chapter *source.Chapter, progress func(string)) (pages.Source, erro
 }
 
 // ReaderOptions builds reader options from the config
-// (reader.tone, reader.direction).
+// (reader.direction).
 func ReaderOptions() reader.Options {
 	var opt reader.Options
-
-	switch strings.ToLower(viper.GetString(key.ReaderTone)) {
-	case "light":
-		t := render.Light
-		opt.Tone = &t
-	case "dim":
-		t := render.Dim
-		opt.Tone = &t
-	}
 
 	if strings.ToLower(viper.GetString(key.ReaderDirection)) == "ltr" {
 		rtl := false
