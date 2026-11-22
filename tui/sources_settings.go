@@ -112,7 +112,7 @@ func (ss *sourceSettings) preferMangadex() {
 }
 
 // newSourceSettings loads rows in priority order: sources.order first,
-// then remaining builtins, then customs (disabled until enabled here).
+// then remaining builtins, then customs.
 func newSourceSettings() *sourceSettings {
 	enabled := map[string]bool{}
 	for _, p := range provider.Ordered() {

@@ -37,6 +37,10 @@ func Ordered() []*Provider {
 	for _, p := range Builtins() {
 		add(p)
 	}
+	// Custom Lua sources show up unless explicitly disabled.
+	for _, p := range Customs() {
+		add(p)
+	}
 	return out
 }
 
