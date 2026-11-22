@@ -1,6 +1,10 @@
 package downloader
 
 import (
+	"regexp"
+	"sort"
+	"strconv"
+
 	"github.com/hongnoul/mangaz/reader"
 	"github.com/hongnoul/mangaz/reader/pages"
 	"github.com/hongnoul/mangaz/source"
@@ -24,7 +28,7 @@ func NewNeighbors(chapter *source.Chapter) *Neighbors {
 	if chapter == nil || chapter.Manga == nil {
 		return nil
 	}
-	list := chapter.Manga.Chapters
+	list := readingOrder(chapter.Manga.Chapters)
 	at := -1
 	for i, c := range list {
 		if c == chapter {
@@ -84,4 +88,51 @@ func ReaderOptionsFor(chapter *source.Chapter) (reader.Options, *Neighbors) {
 		opt.Chapters = nb
 	}
 	return opt, nb
+}
+
+var chapterNum = regexp.MustCompile(`(?i)(?:ch(?:apter)?\.?\s*)?(\d+(?:\.\d+)?)`)
+
+// number pulls the chapter number out of a name like "Chapter 10.5".
+func number(name string) (float64, bool) {
+	m := chapterNum.FindStringSubmatch(name)
+	if m == nil {
+		return 0, false
+	}
+	f, err := strconv.ParseFloat(m[1], 64)
+	return f, err == nil
+}
+
+// readingOrder returns chapters oldest first. Sources disagree: some list
+// newest first, and Index is not always meaningful. Sort by Index, then
+// trust the chapter numbers in the names when they say it runs backwards.
+func readingOrder(in []*source.Chapter) []*source.Chapter {
+	list := make([]*source.Chapter, 0, len(in))
+	for _, c := range in {
+		if c != nil {
+			list = append(list, c)
+		}
+	}
+	sort.SliceStable(list, func(a, b int) bool { return list[a].Index < list[b].Index })
+	up, down := 0, 0
+	prev, havePrev := 0.0, false
+	for _, c := range list {
+		n, ok := number(c.Name)
+		if !ok {
+			continue
+		}
+		if havePrev {
+			if n > prev {
+				up++
+			} else if n < prev {
+				down++
+			}
+		}
+		prev, havePrev = n, true
+	}
+	if down > up {
+		for i, j := 0, len(list)-1; i < j; i, j = i+1, j-1 {
+			list[i], list[j] = list[j], list[i]
+		}
+	}
+	return list
 }

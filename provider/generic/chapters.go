@@ -33,6 +33,7 @@ func (s *Scraper) ChaptersOf(manga *source.Manga) ([]*source.Chapter, error) {
 		}
 
 		s.chapters[manga.URL] = reversed
+		manga.Chapters = reversed
 	}
 
 	return s.chapters[manga.URL], nil
