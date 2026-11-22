@@ -67,12 +67,20 @@ func (b *statefulBubble) viewHome() string {
 	// then art.
 	full := h + 2
 	center := []string{box}
-	used := lipgloss.Height(lipgloss.JoinVertical(lipgloss.Center, center...))
-	showKeys := len(b.searchSuggestions) == 0 && used+1+lipgloss.Height(keys) <= full
-	if showKeys {
-		used += 1 + lipgloss.Height(keys)
+	// Decide the layout from the resting state (collapsed box, keys shown)
+	// so the art stays put while the search bar expands with suggestions.
+	restBox := 3 // collapsed box: border + input + border
+	keysFit := restBox+1+lipgloss.Height(keys) <= full
+	restUsed := restBox
+	if keysFit {
+		restUsed += 1 + lipgloss.Height(keys)
 	}
-	showArt := used+len(homeArt)+1 <= full && w >= lipgloss.Width(homeArt[0])
+	showKeys := len(b.searchSuggestions) == 0 && keysFit
+	showArt := restUsed+len(homeArt)+1 <= full && w >= lipgloss.Width(homeArt[0])
+	restH := restUsed
+	if showArt {
+		restH += len(homeArt) + 1
+	}
 
 	var parts []string
 	if showArt {
@@ -84,7 +92,14 @@ func (b *statefulBubble) viewHome() string {
 	}
 
 	block := lipgloss.JoinVertical(lipgloss.Center, parts...)
-	return lipgloss.Place(w+4, h+2, lipgloss.Center, lipgloss.Center, block)
+	// Anchor the top where the resting layout would be centered; only move
+	// up if the expanded block would overflow the bottom.
+	top := imax(0, (full-restH)/2)
+	if bh := lipgloss.Height(block); top+bh > full {
+		top = imax(0, full-bh)
+	}
+	block = strings.Repeat("\n", top) + block
+	return lipgloss.Place(w+4, full, lipgloss.Center, lipgloss.Top, block)
 }
 
 // searchBox renders the search bar. With suggestions it expands downward

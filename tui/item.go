@@ -27,7 +27,7 @@ func (t *listItem) toggleMark() {
 func (t *listItem) getMark() string {
 	switch t.internal.(type) {
 	case *source.Chapter:
-		return style.Bold(icon.Get(icon.Mark))
+		return "" // shown as a yellow row instead
 	case *provider.Provider:
 		return icon.Get(icon.Search)
 	default:
@@ -61,7 +61,7 @@ func (t *listItem) Title() (title string) {
 		title = t.FilterValue()
 	}
 
-	if title != "" && t.marked {
+	if mark := t.getMark(); title != "" && t.marked && mark != "" {
 		//title = fmt.Sprintf("%s %s", title, icon.Get(icon.Mark))
 		title = fmt.Sprintf("%s %s", title, t.getMark())
 	}

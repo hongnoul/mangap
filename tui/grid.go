@@ -71,7 +71,8 @@ type card struct {
 	thumbKey string
 	title    string
 	sub      string
-	selected bool
+	selected bool // cursor is on it
+	marked   bool // chosen in select mode
 }
 
 // render draws the grid of the list's current page and returns it with
@@ -151,7 +152,10 @@ func (g *grid) render(l *list.Model, th *thumbs, width, height int, toCard func(
 
 func renderCard(cd card, th *thumbs, cardW, cardH, thumbW, thumbH int) string {
 	textW := cardW - thumbW - 3
-	title := rowTitle(cd.title, cd.selected, textW)
+	title := rowTitle(cd.title, false, textW)
+	if cd.selected {
+		title = lipgloss.NewStyle().Bold(true).Render(title)
+	}
 	sub := ""
 	if cd.sub != "" {
 		sub = " " + lipgloss.NewStyle().Faint(true).Render(truncate.StringWithTail(cd.sub, uint(imax(textW-2, 1)), "…"))
@@ -178,7 +182,45 @@ func renderCard(cd card, th *thumbs, cardW, cardH, thumbW, thumbH int) string {
 		}
 		lines[r] = left + text
 	}
-	return lipgloss.NewStyle().Width(cardW).MaxWidth(cardW).Render(strings.Join(lines, "\n"))
+	out := lipgloss.NewStyle().Width(cardW).MaxWidth(cardW).Render(strings.Join(lines, "\n"))
+	return highlightRows(out, cd.selected, cd.marked, cardW)
+}
+
+// Row backgrounds: focus is gray, select mode is yellow, both is orange.
+const (
+	bgFocus       = "\x1b[48;5;238m"
+	bgMarked      = "\x1b[48;5;220m\x1b[38;5;16m"
+	bgMarkedFocus = "\x1b[48;5;214m\x1b[38;5;16m\x1b[1m"
+)
+
+// highlightRows paints the whole card (thumbnail row included) with a
+// background, re-applying it after any SGR reset inside the content.
+func highlightRows(s string, focused, marked bool, w int) string {
+	bg := ""
+	switch {
+	case focused && marked:
+		bg = bgMarkedFocus
+	case marked:
+		bg = bgMarked
+	case focused:
+		bg = bgFocus
+	default:
+		return s
+	}
+	lines := strings.Split(s, "\n")
+	for i, ln := range lines {
+		if pad := w - lipgloss.Width(ln); pad > 0 {
+			ln += strings.Repeat(" ", pad)
+		}
+		ln = strings.ReplaceAll(ln, "\x1b[0m", "\x1b[0m"+bg)
+		ln = strings.ReplaceAll(ln, "\x1b[m", "\x1b[m"+bg)
+		// Thumbnail cells set their own fg and end with 39: restore ours.
+		if marked {
+			ln = strings.ReplaceAll(ln, "\x1b[39m", "\x1b[38;5;16m")
+		}
+		lines[i] = bg + ln + "\x1b[0m"
+	}
+	return strings.Join(lines, "\n")
 }
 
 // mangaCard and chapterCard adapt list items for the grid.
@@ -190,7 +232,7 @@ func mangaCard(it list.Item) card {
 func chapterCard(it list.Item) card {
 	li := it.(*listItem)
 	c := li.internal.(*source.Chapter)
-	return card{thumbKey: c.URL, title: li.Title(), sub: c.Volume}
+	return card{thumbKey: c.URL, title: li.Title(), sub: c.Volume, marked: li.marked}
 }
 
 // nav moves the list cursor through the grid: h/j/k/l go left, down, up,
