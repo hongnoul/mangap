@@ -84,6 +84,7 @@ type card struct {
 	sub      string
 	selected bool // cursor is on it
 	marked   bool // chosen in select mode
+	lastRead bool // last viewed chapter, painted green
 }
 
 // render draws the grid of the list's current page and returns it with
@@ -194,21 +195,27 @@ func renderCard(cd card, th *thumbs, cardW, cardH, thumbW, thumbH int) string {
 		lines[r] = left + text
 	}
 	out := lipgloss.NewStyle().Width(cardW).MaxWidth(cardW).Render(strings.Join(lines, "\n"))
-	return highlightRows(out, cd.selected, cd.marked, cardW)
+	return highlightRows(out, cd.selected, cd.marked, cd.lastRead, cardW)
 }
 
 // Row backgrounds: focus is gray, select mode is yellow, both is orange.
 const (
-	bgFocus       = "\x1b[48;5;238m"
-	bgMarked      = "\x1b[48;5;220m\x1b[38;5;16m"
-	bgMarkedFocus = "\x1b[48;5;214m\x1b[38;5;16m\x1b[1m"
+	bgFocus         = "\x1b[48;5;238m"
+	bgMarked        = "\x1b[48;5;220m\x1b[38;5;16m"
+	bgMarkedFocus   = "\x1b[48;5;214m\x1b[38;5;16m\x1b[1m"
+	bgLastRead      = "\x1b[48;5;28m\x1b[38;5;16m"
+	bgLastReadFocus = "\x1b[48;5;34m\x1b[38;5;16m\x1b[1m"
 )
 
 // highlightRows paints the whole card (thumbnail row included) with a
 // background, re-applying it after any SGR reset inside the content.
-func highlightRows(s string, focused, marked bool, w int) string {
+func highlightRows(s string, focused, marked, lastRead bool, w int) string {
 	bg := ""
 	switch {
+	case lastRead && !marked && focused:
+		bg, marked = bgLastReadFocus, true
+	case lastRead && !marked:
+		bg, marked = bgLastRead, true
 	case focused && marked:
 		bg = bgMarkedFocus
 	case marked:
@@ -243,7 +250,7 @@ func mangaCard(it list.Item) card {
 func chapterCard(it list.Item) card {
 	li := it.(*listItem)
 	c := li.internal.(*source.Chapter)
-	return card{thumbKey: c.URL, title: li.Title(), sub: c.Volume, marked: li.marked}
+	return card{thumbKey: c.URL, title: li.Title(), sub: c.Volume, marked: li.marked, lastRead: li.bookmark != ""}
 }
 
 // nav moves the list cursor through the grid: h/j/k/l go left, down, up,

@@ -53,7 +53,7 @@ func (t *listItem) Title() (title string) {
 
 		if t.bookmark != "" {
 			sb.WriteString(" ")
-			sb.WriteString(style.Faint("🔖 " + t.bookmark))
+			sb.WriteString("(last read: " + t.bookmark + ")")
 		}
 
 		title = sb.String()
