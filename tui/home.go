@@ -49,10 +49,18 @@ func (b *statefulBubble) viewHome() string {
 	// Narrow pane (e.g. a quarter of the screen): the centered layout
 	// cannot fit, so show only the search bar, full width, at the top.
 	if w+4 < lipgloss.Width(keys)+4 || w < 56 {
-		boxW := imax(w, 12)
+		full := w + 4
+		boxW := imax(full-4, 12)
 		b.inputC.Width = imax(boxW-6-lipgloss.Width(b.inputC.Prompt), 4)
 		box := b.searchBox(boxW)
-		return lipgloss.NewStyle().Padding(1, 2).Render(box)
+		// Shrink until the rendered box (borders included) leaves equal
+		// margins, then center it on the full width.
+		for lipgloss.Width(box) > full-4 && boxW > 12 {
+			boxW--
+			b.inputC.Width = imax(boxW-6-lipgloss.Width(b.inputC.Prompt), 4)
+			box = b.searchBox(boxW)
+		}
+		return "\n" + lipgloss.PlaceHorizontal(full, lipgloss.Center, box)
 	}
 
 	boxW := imin(60, w-4)
