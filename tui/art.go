@@ -1,6 +1,11 @@
 package tui
 
-import "strings"
+import (
+	"strings"
+	"sync"
+
+	"github.com/hongnoul/mangaz/style"
+)
 
 // homeArtRaw is the home screen art (braille). Common leading and trailing
 // blank braille cells are trimmed at init so it centers cleanly.
@@ -71,4 +76,15 @@ func trimArt(raw string) []string {
 		out[i] = string(r[lo:hi])
 	}
 	return out
+}
+
+// homeArtColored is homeArt with the gradient applied, built once.
+var (
+	homeArtOnce sync.Once
+	homeArtStr  string
+)
+
+func homeArtColored() string {
+	homeArtOnce.Do(func() { homeArtStr = style.Gradient(homeArt) })
+	return homeArtStr
 }

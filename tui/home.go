@@ -48,7 +48,7 @@ func (b *statefulBubble) viewHome() string {
 	box := b.searchBox(boxW)
 
 	keys := keysGrid(w)
-	art := style.Fg(color.Purple)(strings.Join(homeArt, "\n"))
+	art := homeArtColored()
 
 	// Fit what we can in the full terminal height: box always, then keys,
 	// then art.
