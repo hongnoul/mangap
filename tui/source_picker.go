@@ -58,12 +58,15 @@ func (b *statefulBubble) sourcePicker() string {
 		if strings.EqualFold(n, "mangapill") {
 			n += " (Recommended)"
 		}
+		box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
 		if i == b.sourceIdx {
-			parts = append(parts, lipgloss.NewStyle().Reverse(true).Bold(true).Render(" "+n+" "))
+			box = box.Bold(true).BorderForeground(lipgloss.Color("5")).Foreground(lipgloss.Color("5"))
 		} else {
-			parts = append(parts, style.Faint(" "+n+" "))
+			box = box.Faint(true).BorderForeground(lipgloss.Color("8"))
 		}
+		parts = append(parts, box.Render(n), " ")
 	}
-	parts = append(parts, style.Faint("  (ctrl+o / ← →)"))
-	return strings.Join(parts, " ")
+	hint := lipgloss.NewStyle().PaddingTop(1).Render(style.Faint(" (ctrl+o / ← →)"))
+	parts = append(parts, hint)
+	return lipgloss.JoinHorizontal(lipgloss.Top, parts...)
 }
