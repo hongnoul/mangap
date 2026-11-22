@@ -430,3 +430,30 @@ func (m *mutedExec) Run() error {
 	defer m.out.setMuted(false)
 	return m.ExecCommand.Run()
 }
+
+// Retain frees every transmitted image whose key is not in keep. The
+// terminal's image store is finite (Ghostty evicts or refuses uploads once
+// it is full), so only the pages around the cursor stay resident. Sources
+// remain on disk and reload in milliseconds when paged back to.
+func (t *thumbs) Retain(keep map[string]bool) {
+	if !t.enabled {
+		return
+	}
+	t.mu.Lock()
+	var buf []byte
+	for key, st := range t.state {
+		if keep[key] || st.busy {
+			continue
+		}
+		if st.id != 0 {
+			buf = append(buf, "\x1b_Ga=d,d=I,i="...)
+			buf = strconv.AppendInt(buf, int64(st.id), 10)
+			buf = append(buf, ",q=2\x1b\\"...)
+		}
+		delete(t.state, key)
+	}
+	t.mu.Unlock()
+	if len(buf) > 0 {
+		_, _ = t.out.Write(buf)
+	}
+}

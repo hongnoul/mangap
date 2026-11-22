@@ -170,6 +170,8 @@ func (b *statefulBubble) viewPreviewPane(l *list.Model, toCard func(list.Item) c
 	imgW, imgH := imax(w-2, 4), imax(h-4, 2)
 	b.preview.SetSpan(imgW, imgH)
 	want(b.preview, it, true)
+	// The pane rasters are large: keep only the selected one resident.
+	b.preview.Retain(map[string]bool{cd.thumbKey: true})
 
 	lines := make([]string, 0, h)
 	lines = append(lines, "")

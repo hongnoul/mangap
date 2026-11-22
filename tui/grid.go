@@ -110,6 +110,13 @@ func (g *grid) render(l *list.Model, th *thumbs, width, height int, toCard func(
 	for i := imax(start-perPage, 0); i < start; i++ {
 		want(items[i], false)
 	}
+	if th.enabled {
+		keep := map[string]bool{}
+		for i := imax(start-perPage, 0); i < imin(end+2*perPage, len(items)); i++ {
+			keep[toCard(items[i]).thumbKey] = true
+		}
+		th.Retain(keep)
+	}
 
 	var rowsOut []string
 	for r := 0; r < g.rows; r++ {
