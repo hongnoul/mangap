@@ -71,12 +71,17 @@ func (b *statefulBubble) sourcePicker(w int) string {
 	}
 	bold := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5"))
 	lang := languages[languageIndex(viper.GetString(key2.MangadexLanguage))]
-	label := style.Faint("Source  ") + bold.Render(n) +
-		style.Faint("   Language  ") + bold.Render(lang.name) + style.Faint(" (ctrl+l)")
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("5")).
-		Width(imax(w-2, 4)).
-		Align(lipgloss.Center).
-		Render(label)
+	box := func(width int, label string) string {
+		return lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("5")).
+			Width(imax(width-2, 4)).
+			Align(lipgloss.Center).
+			Render(label)
+	}
+	leftW := (w - 1) / 2
+	rightW := w - 1 - leftW
+	src := box(leftW, style.Faint("Source  ")+bold.Render(n)+style.Faint(" (ctrl+o)"))
+	lng := box(rightW, style.Faint("Language  ")+bold.Render(lang.name)+style.Faint(" (ctrl+l)"))
+	return lipgloss.JoinHorizontal(lipgloss.Top, src, " ", lng)
 }
