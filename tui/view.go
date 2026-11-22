@@ -58,8 +58,6 @@ func (b *statefulBubble) viewLoading() string {
 	lines := []string{
 		style.Title("Loading"),
 		"",
-		b.loaderC.view(b.width),
-		"",
 		style.Truncate(b.width)(style.Faint(b.progressStatus)),
 	}
 	// Art fills the space between the status and the help line.
@@ -206,9 +204,19 @@ func (b *statefulBubble) viewConfirm() string {
 		[]string{
 			style.Title("Confirm"),
 			"",
-			fmt.Sprintf("%s Download %s?", icon.Get(icon.Question), util.Quantify(len(b.selectedChapters), "chapter", "chapters")),
+			b.confirmQuestion(),
+			"",
+			style.Faint("enter confirm · esc cancel"),
 		},
 	)
+}
+
+func (b *statefulBubble) confirmQuestion() string {
+	n := util.Quantify(len(b.selectedChapters), "chapter", "chapters")
+	if b.confirmAll && b.selectedManga != nil {
+		return fmt.Sprintf("%s Download all of %s (%s)?", icon.Get(icon.Question), style.Fg(color.Purple)(b.selectedManga.Name), n)
+	}
+	return fmt.Sprintf("%s Download %s?", icon.Get(icon.Question), n)
 }
 
 func (b *statefulBubble) downloadingChapterMetainfo() string {
@@ -228,6 +236,10 @@ func (b *statefulBubble) downloadingChapterMetainfo() string {
 }
 
 func (b *statefulBubble) viewRead() string {
+	return b.viewLive()
+}
+
+func (b *statefulBubble) viewReadPlain() string {
 	var chapterName string
 
 	chapter := b.currentDownloadingChapter
@@ -251,6 +263,10 @@ func (b *statefulBubble) viewRead() string {
 }
 
 func (b *statefulBubble) viewDownload() string {
+	return b.viewLive()
+}
+
+func (b *statefulBubble) viewDownloadPlain() string {
 	var chapterName string
 
 	chapter := b.currentDownloadingChapter

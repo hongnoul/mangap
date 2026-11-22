@@ -48,6 +48,8 @@ type statefulBubble struct {
 	selectedChapters  map[*source.Chapter]struct{} // mathematical set
 	// visualAnchor is the chapter index where select mode (v) started, -1 when off.
 	visualAnchor int
+	// confirmAll is set while confirming a whole-comic download (ctrl+d).
+	confirmAll bool
 
 	scrapersLoadedChannel   chan []*installer.Scraper
 	scraperInstalledChannel chan *installer.Scraper
@@ -88,6 +90,7 @@ type statefulBubble struct {
 
 	thumbs  *thumbs
 	preview *thumbs // large image of the selected item, right pane
+	recent  *thumbs // cover of the newest download, home Downloaded box
 	grid    *grid
 }
 
@@ -287,6 +290,7 @@ func newBubble() *statefulBubble {
 	bubble.thumbs = newThumbs(nil)
 	bubble.thumbs.fill = true
 	bubble.preview = newThumbs(nil)
+	bubble.recent = newThumbs(nil)
 	bubble.grid = newGrid()
 
 	bubble.chaptersC = makeList("Chapters", showURLs, &listOptions{

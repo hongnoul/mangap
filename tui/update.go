@@ -71,6 +71,19 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.resize(msg.Width, msg.Height)
 	case tea.KeyMsg:
 		switch {
+		case isArchiveKey(msg) && b.state == chaptersState && b.chaptersC.FilterState() != list.Filtering && !b.inArchiveChapters():
+			// ctrl+d on a comic's chapters downloads the whole comic.
+			if len(b.chaptersC.Items()) == 0 {
+				return b, nil
+			}
+			b.visualAnchor = -1
+			b.selectedChapters = make(map[*source.Chapter]struct{})
+			for _, it := range b.chaptersC.Items() {
+				b.selectedChapters[it.(*listItem).internal.(*source.Chapter)] = struct{}{}
+			}
+			b.confirmAll = true
+			b.newState(confirmState)
+			return b, nil
 		case isArchiveKey(msg) && b.canOpenArchive():
 			return b, b.openArchive()
 		case key.Matches(msg, b.keymap.forceQuit):
@@ -146,6 +159,11 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				cmd = onListBack(&b.scrapersInstallC)
+			case confirmState:
+				if b.confirmAll {
+					b.confirmAll = false
+					b.clearChapterSelection()
+				}
 			}
 
 			b.previousState()
@@ -542,7 +560,7 @@ func (b *statefulBubble) updateChapters(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			chapter := b.chaptersC.SelectedItem().(*listItem).internal.(*source.Chapter)
 			b.newState(readState)
-			return b, tea.Batch(b.readChapter(chapter), b.waitForChapterRead(), b.startLoading())
+			return b, tea.Batch(b.readChapter(chapter), b.waitForChapterRead(), b.startLoading(), b.spinnerC.Tick)
 		case key.Matches(msg, b.keymap.confirm):
 			if viper.GetBool(key2.TUIReadOnEnter) {
 				if b.chaptersC.SelectedItem() == nil {
@@ -551,7 +569,7 @@ func (b *statefulBubble) updateChapters(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				chapter := b.chaptersC.SelectedItem().(*listItem).internal.(*source.Chapter)
 				b.newState(readState)
-				return b, tea.Batch(b.readChapter(chapter), b.waitForChapterRead(), b.startLoading())
+				return b, tea.Batch(b.readChapter(chapter), b.waitForChapterRead(), b.startLoading(), b.spinnerC.Tick)
 			}
 		}
 	}
@@ -599,6 +617,7 @@ func (b *statefulBubble) updateConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, b.keymap.quit):
 			return b, tea.Quit
 		case key.Matches(msg, b.keymap.confirm):
+			b.confirmAll = false
 			chapters := lo.Keys(b.selectedChapters)
 			util.SortFunc(chapters, func(a, b *source.Chapter) bool {
 				return a.Index > b.Index
@@ -608,8 +627,12 @@ func (b *statefulBubble) updateConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 				b.chaptersToDownload.Push(chapter)
 			}
 			b.newState(downloadState)
-			return b, tea.Batch(b.startLoading(), b.downloadChapter(b.chaptersToDownload.Pop()), b.waitForChapterDownload(), b.progressC.SetPercent(0))
+			return b, tea.Batch(b.startLoading(), b.downloadChapter(b.chaptersToDownload.Pop()), b.waitForChapterDownload(), b.progressC.SetPercent(0), b.spinnerC.Tick)
 		case key.Matches(msg, b.keymap.back):
+			if b.confirmAll {
+				b.confirmAll = false
+				b.clearChapterSelection()
+			}
 			b.previousState()
 		}
 	}
@@ -732,7 +755,7 @@ func (b *statefulBubble) updateDownloadDone(msg tea.Msg) (tea.Model, tea.Cmd) {
 			b.failedChapters = make([]*source.Chapter, 0)
 			b.succededChapters = make([]*source.Chapter, 0)
 			b.newState(downloadState)
-			return b, tea.Batch(b.startLoading(), b.downloadChapter(b.chaptersToDownload.Pop()), b.waitForChapterDownload(), b.progressC.SetPercent(0))
+			return b, tea.Batch(b.startLoading(), b.downloadChapter(b.chaptersToDownload.Pop()), b.waitForChapterDownload(), b.progressC.SetPercent(0), b.spinnerC.Tick)
 		}
 	}
 
