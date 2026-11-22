@@ -16,6 +16,8 @@ type statefulKeymap struct {
 	remove,
 	redownloadFailed,
 	confirm,
+	visual, download,
+	top, bottom,
 	read,
 	back,
 	up, down, left, right,
@@ -44,6 +46,22 @@ func newStatefulKeymap() *statefulKeymap {
 		remove: k(
 			keys("d"),
 			help("d", "remove"),
+		),
+		visual: k(
+			keys("v"),
+			help("v", "select mode"),
+		),
+		download: k(
+			keys("d"),
+			help("d", "download"),
+		),
+		top: k(
+			keys("g"),
+			help("g", "top"),
+		),
+		bottom: k(
+			keys("G"),
+			help("G", "bottom"),
 		),
 		confirm: k(
 			keys("enter"),
@@ -122,7 +140,7 @@ func (k *statefulKeymap) help() ([]key.Binding, []key.Binding) {
 	case mangasState:
 		return to2(h(k.confirm, k.back, k.vimHL))
 	case chaptersState:
-		return to2(h(k.read, k.back))
+		return h(k.read, k.visual, k.download, k.back), h(k.read, k.visual, k.download, k.top, k.bottom, k.back)
 	case confirmState:
 		return to2(h(k.confirm, k.back, k.quit))
 	case readState:
@@ -154,8 +172,8 @@ func (k *statefulKeymap) forList() list.KeyMap {
 		CursorDown:           k.down,
 		NextPage:             k.right,
 		PrevPage:             k.left,
-		GoToStart:            key.NewBinding(key.WithDisabled()),
-		GoToEnd:              key.NewBinding(key.WithDisabled()),
+		GoToStart:            k.top,
+		GoToEnd:              k.bottom,
 		Filter:               key.NewBinding(key.WithDisabled()),
 		ClearFilter:          k.back,
 		CancelWhileFiltering: k.back,

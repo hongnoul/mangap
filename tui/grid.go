@@ -227,9 +227,9 @@ func (g *grid) nav(l *list.Model, k string) bool {
 		to = imax(cur-1, 0)
 	case "l":
 		to = imin(cur+1, n-1)
-	case "home":
+	case "g", "home":
 		to = 0
-	case "end":
+	case "G", "end":
 		to = n - 1
 	default:
 		return false

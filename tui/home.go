@@ -20,7 +20,10 @@ var homeKeys = [][2]string{
 	{"hjkl", "move in grid"},
 	{"← / →", "prev / next page"},
 	{"esc", "back"},
+	{"g / G", "top / bottom"},
 	{"r", "read chapter"},
+	{"v", "select mode"},
+	{"d", "download"},
 	{"?", "more help"},
 	{"ctrl+c", "quit"},
 }

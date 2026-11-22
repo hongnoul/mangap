@@ -33,6 +33,7 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if km, ok := msg.(tea.KeyMsg); ok {
 		if l := b.gridList(); l != nil && l.FilterState() != list.Filtering {
 			if b.grid.key(km.String()) || b.grid.nav(l, km.String()) {
+				b.applyVisual()
 				return b, nil
 			}
 		}
@@ -68,7 +69,10 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return b, cmd
 				}
 
-				b.selectedChapters = make(map[*source.Chapter]struct{})
+				if b.visualAnchor >= 0 || len(b.selectedChapters) > 0 {
+					b.clearChapterSelection()
+					return b, nil
+				}
 				cmd = onListBack(&b.chaptersC)
 			case mangasState:
 				if b.mangasC.FilterState() != list.Unfiltered {
@@ -253,6 +257,7 @@ func (b *statefulBubble) updateHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		cmd = b.chaptersC.SetItems(items)
+		b.clearChapterSelection()
 		b.newState(chaptersState)
 		b.stopLoading()
 		b.markBookmark(selected)
@@ -400,6 +405,7 @@ func (b *statefulBubble) updateMangas(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		cmd = b.chaptersC.SetItems(items)
+		b.clearChapterSelection()
 		b.newState(chaptersState)
 		b.stopLoading()
 		cmd = tea.Batch(cmd, b.selectBookmark())
@@ -419,6 +425,26 @@ func (b *statefulBubble) updateChapters(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case b.chaptersC.FilterState() == list.Filtering:
 			break
+		case key.Matches(msg, b.keymap.visual):
+			if b.visualAnchor >= 0 {
+				// Leave select mode, keeping the range selected.
+				b.visualAnchor = -1
+			} else {
+				b.visualAnchor = b.chaptersC.Index()
+				b.applyVisual()
+			}
+			return b, nil
+		case key.Matches(msg, b.keymap.download):
+			if len(b.selectedChapters) == 0 {
+				it := b.chaptersC.SelectedItem()
+				if it == nil {
+					break
+				}
+				b.selectedChapters[it.(*listItem).internal.(*source.Chapter)] = struct{}{}
+			}
+			b.visualAnchor = -1
+			b.newState(confirmState)
+			return b, nil
 		case key.Matches(msg, b.keymap.read):
 			if b.chaptersC.SelectedItem() == nil {
 				break
@@ -428,9 +454,7 @@ func (b *statefulBubble) updateChapters(msg tea.Msg) (tea.Model, tea.Cmd) {
 			b.newState(readState)
 			return b, tea.Batch(b.readChapter(chapter), b.waitForChapterRead(), b.startLoading())
 		case key.Matches(msg, b.keymap.confirm):
-			if len(b.selectedChapters) != 0 {
-				b.newState(confirmState)
-			} else if viper.GetBool(key2.TUIReadOnEnter) {
+			if viper.GetBool(key2.TUIReadOnEnter) {
 				if b.chaptersC.SelectedItem() == nil {
 					break
 				}
@@ -443,7 +467,37 @@ func (b *statefulBubble) updateChapters(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	b.chaptersC, cmd = b.chaptersC.Update(msg)
+	b.applyVisual()
 	return b, cmd
+}
+
+// applyVisual marks every chapter between the select-mode anchor and the
+// cursor, yazi style. No-op outside select mode.
+func (b *statefulBubble) applyVisual() {
+	if b.state != chaptersState || b.visualAnchor < 0 {
+		return
+	}
+	lo_, hi := b.visualAnchor, b.chaptersC.Index()
+	if lo_ > hi {
+		lo_, hi = hi, lo_
+	}
+	b.selectedChapters = make(map[*source.Chapter]struct{})
+	for i, it := range b.chaptersC.Items() {
+		li := it.(*listItem)
+		li.marked = i >= lo_ && i <= hi
+		if li.marked {
+			b.selectedChapters[li.internal.(*source.Chapter)] = struct{}{}
+		}
+	}
+}
+
+// clearChapterSelection leaves select mode and unmarks all chapters.
+func (b *statefulBubble) clearChapterSelection() {
+	b.visualAnchor = -1
+	b.selectedChapters = make(map[*source.Chapter]struct{})
+	for _, it := range b.chaptersC.Items() {
+		it.(*listItem).marked = false
+	}
 }
 
 func (b *statefulBubble) updateConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {

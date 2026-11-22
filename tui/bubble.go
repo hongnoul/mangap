@@ -45,6 +45,8 @@ type statefulBubble struct {
 	selectedSources   []source.Source
 	selectedManga     *source.Manga
 	selectedChapters  map[*source.Chapter]struct{} // mathematical set
+	// visualAnchor is the chapter index where select mode (v) started, -1 when off.
+	visualAnchor int
 
 	scrapersLoadedChannel   chan []*installer.Scraper
 	scraperInstalledChannel chan *installer.Scraper
@@ -182,6 +184,7 @@ func newBubble() *statefulBubble {
 
 		selectedProviders:  make(map[*provider.Provider]struct{}),
 		selectedChapters:   make(map[*source.Chapter]struct{}),
+		visualAnchor:       -1,
 		chaptersToDownload: util.Stack[*source.Chapter]{},
 
 		failedChapters:   make([]*source.Chapter, 0),
