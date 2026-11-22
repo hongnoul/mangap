@@ -72,7 +72,7 @@ func (b *statefulBubble) sourcePicker(w int) string {
 	}
 	langRow := row(style.Faint("Language  ")+bold.Render(lang.name), "ctrl+l")
 	if b.languageLocked() {
-		langRow = row(style.Faint("Language  English"), "ctrl+l")
+		langRow = row(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("Language  English"), "ctrl+l")
 	}
 	lines := []string{
 		row(srcLabel, "ctrl+s"),
