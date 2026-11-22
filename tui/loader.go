@@ -1,7 +1,10 @@
 package tui
 
 import (
+	"strings"
 	"time"
+
+	"github.com/charmbracelet/lipgloss"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/codewandler/spinners"
@@ -26,7 +29,44 @@ type loader struct {
 	running bool
 }
 
-func newLoader() loader { return newLoaderWith(spinners.KnightRider) }
+func newLoader() loader { return newLoaderWith(greenKnightRider) }
+
+// Green take on spinners.KnightRider (whose palette is hard-coded blue).
+var (
+	gkrHead = lipgloss.NewStyle().Foreground(lipgloss.Color("#4ADE80")).Bold(true)
+	gkrH1   = lipgloss.NewStyle().Foreground(lipgloss.Color("#16A34A"))
+	gkrH2   = lipgloss.NewStyle().Foreground(lipgloss.Color("#14532D"))
+	gkrDark = lipgloss.NewStyle().Foreground(lipgloss.Color("#052E16"))
+)
+
+var greenKnightRider = spinners.Spinner{
+	Name: "Knight Rider (green)",
+	Frames: func(tick, w int) string {
+		total := (w - 1) * 2
+		pos := tick % total
+		if pos >= w {
+			pos = total - pos
+		}
+		var sb strings.Builder
+		for i := 0; i < w; i++ {
+			d := i - pos
+			if d < 0 {
+				d = -d
+			}
+			switch d {
+			case 0:
+				sb.WriteString(gkrHead.Render("█"))
+			case 1:
+				sb.WriteString(gkrH1.Render("▓"))
+			case 2:
+				sb.WriteString(gkrH2.Render("▒"))
+			default:
+				sb.WriteString(gkrDark.Render("░"))
+			}
+		}
+		return sb.String()
+	},
+}
 
 func newLoaderWith(s spinners.Spinner) loader {
 	loaderIDs++

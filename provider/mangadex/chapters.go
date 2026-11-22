@@ -12,7 +12,10 @@ import (
 )
 
 func (m *Mangadex) ChaptersOf(manga *source.Manga) ([]*source.Chapter, error) {
-	if cached, ok := m.cache.chapters.Get(manga.URL).Get(); ok {
+	language := viper.GetString(key.MangadexLanguage)
+	// Cache per language so switching languages never serves stale chapters.
+	cacheKey := manga.URL + "|" + language
+	if cached, ok := m.cache.chapters.Get(cacheKey).Get(); ok {
 		for _, chapter := range cached {
 			chapter.Manga = manga
 		}
@@ -35,13 +38,15 @@ func (m *Mangadex) ChaptersOf(manga *source.Manga) ([]*source.Chapter, error) {
 	// scanlation group for the chapter
 	params.Add("includes[]", mangodex.ScanlationGroupRel)
 	params.Set("order[chapter]", "asc")
+	if language != "any" {
+		// Filter server side. Client side filtering paged incorrectly.
+		params.Add("translatedLanguage[]", language)
+	}
 
 	var (
 		chapters   []*source.Chapter
 		currOffset = 0
 	)
-
-	language := viper.GetString(key.MangadexLanguage)
 
 	for {
 		params.Set("offset", strconv.Itoa(currOffset))
@@ -56,9 +61,7 @@ func (m *Mangadex) ChaptersOf(manga *source.Manga) ([]*source.Chapter, error) {
 				continue
 			}
 
-			// skip chapters that are not in the current language
 			if language != "any" && chapter.Attributes.TranslatedLanguage != language {
-				currOffset += 500
 				continue
 			}
 
@@ -86,10 +89,6 @@ func (m *Mangadex) ChaptersOf(manga *source.Manga) ([]*source.Chapter, error) {
 		if currOffset >= list.Total {
 			break
 		}
-
-		if currOffset >= list.Total {
-			break
-		}
 	}
 
 	util.SortFunc(chapters, func(a, b *source.Chapter) bool {
@@ -97,6 +96,6 @@ func (m *Mangadex) ChaptersOf(manga *source.Manga) ([]*source.Chapter, error) {
 	})
 
 	manga.Chapters = chapters
-	_ = m.cache.chapters.Set(manga.URL, chapters)
+	_ = m.cache.chapters.Set(cacheKey, chapters)
 	return chapters, nil
 }

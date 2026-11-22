@@ -13,7 +13,9 @@ import (
 )
 
 func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
-	if cached, ok := m.cache.mangas.Get(query).Get(); ok {
+	language := viper.GetString(key.MangadexLanguage)
+	cacheKey := query + "|" + language
+	if cached, ok := m.cache.mangas.Get(cacheKey).Get(); ok {
 		for _, manga := range cached {
 			manga.Source = m
 		}
@@ -37,6 +39,10 @@ func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
 
 	params.Set("order[followedCount]", "desc")
 	params.Set("title", query)
+	if language != "any" {
+		// Only manga that actually have chapters in the preferred language.
+		params.Add("availableTranslatedLanguage[]", language)
+	}
 	// Embed cover_art relationships so cover file names come back inline.
 	params.Add("includes[]", mangodex.CoverArtRel)
 
@@ -50,7 +56,7 @@ func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
 
 	for i, manga := range mangaList.Data {
 		m := source.Manga{
-			Name:   manga.GetTitle(viper.GetString(key.MangadexLanguage)),
+			Name:   mangaTitle(&manga, language),
 			URL:    fmt.Sprintf("https://mangadex.org/title/%s", manga.ID),
 			Index:  uint16(i),
 			ID:     manga.ID,
@@ -66,8 +72,23 @@ func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
 		mangas = append(mangas, &m)
 	}
 
-	_ = m.cache.mangas.Set(query, mangas)
+	_ = m.cache.mangas.Set(cacheKey, mangas)
 	return mangas, nil
+}
+
+// mangaTitle prefers a title in lang, then English, then any title.
+func mangaTitle(manga *mangodex.Manga, lang string) string {
+	for _, l := range []string{lang, "en"} {
+		if t := manga.GetTitle(l); t != "" {
+			return t
+		}
+	}
+	for _, t := range manga.Attributes.Title.Values {
+		if t != "" {
+			return t
+		}
+	}
+	return manga.ID
 }
 
 // coverURL builds the full-size cover URL from an embedded cover_art
