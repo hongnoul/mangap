@@ -549,6 +549,11 @@ func (b *statefulBubble) updateRead(msg tea.Msg) (tea.Model, tea.Cmd) {
 			},
 		)
 	case readFinishedMsg:
+		// The reader owned the terminal (and its own alt screen), so the
+		// terminal no longer holds our thumbnails. Forget them so the next
+		// frames re-transmit from the disk cache.
+		b.thumbs.Clear()
+		b.preview.Clear()
 		b.stopLoading()
 		b.previousState()
 		if msg.err != nil {
