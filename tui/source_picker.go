@@ -64,30 +64,32 @@ func (b *statefulBubble) sourcePicker(w int) string {
 	}
 	bold := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5"))
 	lang := languages[languageIndex(viper.GetString(key2.MangadexLanguage))]
-	box := func(width int, label string) string {
-		return lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("5")).
-			Width(imax(width-2, 4)).
-			Align(lipgloss.Center).
-			Render(label)
-	}
-	srcLabel := style.Faint("Source  ") + bold.Render(n)
+	srcLabel := style.Faint("Source    ") + bold.Render(n)
 	if bd := b.pingC.badge(b.sourceChoices[b.sourceIdx]); bd != "" {
 		srcLabel += "  " + bd
 	}
-	parts := []string{box(w, srcLabel+style.Faint(" (ctrl+s)"))}
-	if b.dropdown != nil && b.dropdown.kind == sourceDropdown {
-		parts = append(parts, b.viewDropdown(w))
+	inner := imax(w-4, 4)
+	row := func(label, hint string) string {
+		gap := imax(inner-lipgloss.Width(label)-lipgloss.Width(hint), 1)
+		return label + strings.Repeat(" ", gap) + style.Faint(hint)
 	}
-	parts = append(parts, box(w, style.Faint("Language  ")+bold.Render(lang.name)+style.Faint(" (ctrl+l)")))
+	lines := []string{row(srcLabel, "ctrl+s")}
+	if b.dropdown != nil && b.dropdown.kind == sourceDropdown {
+		lines = append(lines, b.viewDropdown(inner))
+	}
+	lines = append(lines, row(style.Faint("Language  ")+bold.Render(lang.name), "ctrl+l"))
 	if b.dropdown != nil && b.dropdown.kind == languageDropdown {
-		parts = append(parts, b.viewDropdown(w))
+		lines = append(lines, b.viewDropdown(inner))
 	}
 	word := "show"
 	if b.showKeys {
 		word = "hide"
 	}
-	parts = append(parts, box(w, style.Faint("Keybinds  ")+bold.Render(word)+style.Faint(" (ctrl+/)")))
-	return lipgloss.JoinVertical(lipgloss.Left, parts...)
+	lines = append(lines, row(style.Faint("Keybinds  ")+bold.Render(word), "ctrl+/"))
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("5")).
+		Padding(0, 1).
+		Width(imax(w-2, 4)).
+		Render(strings.Join(lines, "\n"))
 }
