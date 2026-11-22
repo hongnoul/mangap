@@ -57,7 +57,7 @@ type statefulBubble struct {
 	foundChaptersChannel        chan []*source.Chapter
 	fetchedAnilistMangasChannel chan []*anilist.Manga
 	closestAnilistMangaChannel  chan *anilist.Manga
-	chapterReadChannel          chan struct{}
+	chapterReadChannel          chan readyToReadMsg
 	chapterDownloadChannel      chan struct{}
 	errorChannel                chan error
 
@@ -178,7 +178,7 @@ func newBubble() *statefulBubble {
 		foundChaptersChannel:        make(chan []*source.Chapter),
 		fetchedAnilistMangasChannel: make(chan []*anilist.Manga),
 		closestAnilistMangaChannel:  make(chan *anilist.Manga),
-		chapterReadChannel:          make(chan struct{}),
+		chapterReadChannel:          make(chan readyToReadMsg),
 		chapterDownloadChannel:      make(chan struct{}),
 		errorChannel:                make(chan error),
 

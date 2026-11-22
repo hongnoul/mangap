@@ -36,7 +36,22 @@ func Setup() error {
 	}
 
 	resolveAliases()
+	warnRemovedKeys()
 	return nil
+}
+
+// warnRemovedKeys tells the user once per run that external viewer keys
+// left over from mangal are ignored.
+func warnRemovedKeys() {
+	var set []string
+	for _, k := range key.RemovedReaderKeys {
+		if viper.InConfig(k) {
+			set = append(set, k)
+		}
+	}
+	if len(set) > 0 {
+		fmt.Fprintf(os.Stderr, "mangaz: ignoring %s in config: chapters open in the built-in reader now\n", strings.Join(set, ", "))
+	}
 }
 
 func setName() {

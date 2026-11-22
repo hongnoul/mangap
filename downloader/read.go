@@ -2,123 +2,117 @@ package downloader
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/color"
-	"github.com/hongnoul/mangaz/constant"
-	"github.com/hongnoul/mangaz/converter"
+	"os"
+	"strings"
+
 	"github.com/hongnoul/mangaz/history"
 	"github.com/hongnoul/mangaz/key"
 	"github.com/hongnoul/mangaz/log"
-	"github.com/hongnoul/mangaz/open"
+	"github.com/hongnoul/mangaz/reader"
+	"github.com/hongnoul/mangaz/reader/pages"
+	"github.com/hongnoul/mangaz/reader/render"
 	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/style"
 	"github.com/spf13/viper"
 )
 
-// Read the chapter by downloading it with the given source
-// and opening it with the configured reader.
-func Read(chapter *source.Chapter, progress func(string)) error {
-	if viper.GetBool(key.ReaderReadInBrowser) {
-		return open.StartWith(
-			chapter.URL,
-			viper.GetString(key.ReaderBrowser),
-		)
-	}
-
+// Prepare gets the chapter's pages ready for the built-in reader. A chapter
+// already downloaded as a folder or cbz/zip is opened from disk (when
+// downloader.read_downloaded is set). Anything else is downloaded into
+// memory and read from there, with no converter step.
+func Prepare(chapter *source.Chapter, progress func(string)) (pages.Source, error) {
 	if viper.GetBool(key.DownloaderReadDownloaded) && chapter.IsDownloaded() {
-		path, err := chapter.Path(false)
-		if err == nil {
-			return openRead(path, chapter, progress)
+		if path, err := chapter.Path(false); err == nil {
+			src, err := pages.Open(path)
+			if err == nil {
+				log.Infof("reading downloaded %s", path)
+				return src, nil
+			}
+			// e.g. a pdf export: not readable in place, fetch the pages.
+			log.Infof("cannot read %s in place (%s), downloading pages", path, err)
 		}
 	}
 
 	log.Infof("downloading %s for reading. Provider is %s", chapter.Name, chapter.Source().ID())
-	log.Infof("getting pages of %s", chapter.Name)
 	progress("Getting pages")
-	pages, err := chapter.Source().PagesOf(chapter)
-	if err != nil {
+	if _, err := chapter.Source().PagesOf(chapter); err != nil {
 		log.Error(err)
-		return err
+		return nil, err
 	}
 
-	err = chapter.DownloadPages(true, progress)
-	if err != nil {
+	if err := chapter.DownloadPages(true, progress); err != nil {
 		log.Error(err)
-		return err
+		return nil, err
 	}
 
-	log.Info("getting " + viper.GetString(key.FormatsUse) + " converter")
-	conv, err := converter.Get(viper.GetString(key.FormatsUse))
-	if err != nil {
-		log.Error(err)
-		return err
+	names := make([]string, 0, len(chapter.Pages))
+	data := make([][]byte, 0, len(chapter.Pages))
+	for _, p := range chapter.Pages {
+		if p == nil || p.Contents == nil {
+			continue
+		}
+		names = append(names, p.Filename())
+		data = append(data, p.Contents.Bytes())
 	}
 
-	log.Info("converting " + viper.GetString(key.FormatsUse))
-	progress(fmt.Sprintf(
-		"Converting %d pages to %s %s",
-		len(pages),
-		style.Fg(color.Yellow)(viper.GetString(key.FormatsUse)),
-		style.Faint(chapter.SizeHuman())),
-	)
-	path, err := conv.SaveTemp(chapter)
+	src, err := pages.NewMem(names, data)
 	if err != nil {
-		log.Error(err)
-		return err
+		return nil, fmt.Errorf("%s: %w", chapter.Name, err)
 	}
-
-	err = openRead(path, chapter, progress)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	progress("Done")
-	return nil
+	return src, nil
 }
 
-func openRead(path string, chapter *source.Chapter, progress func(string)) error {
-	if viper.GetBool(key.HistorySaveOnRead) {
-		go func() {
-			err := history.Save(chapter)
-			if err != nil {
-				log.Warn(err)
-			} else {
-				log.Info("history saved")
-			}
-		}()
+// ReaderOptions builds reader options from the config
+// (reader.tone, reader.direction).
+func ReaderOptions() reader.Options {
+	var opt reader.Options
+
+	switch strings.ToLower(viper.GetString(key.ReaderTone)) {
+	case "light":
+		t := render.Light
+		opt.Tone = &t
+	case "dim":
+		t := render.Dim
+		opt.Tone = &t
 	}
 
-	var (
-		reader string
-		err    error
-	)
-
-	switch viper.GetString(key.FormatsUse) {
-	case constant.FormatPDF:
-		reader = viper.GetString(key.ReaderPDF)
-	case constant.FormatCBZ:
-		reader = viper.GetString(key.ReaderCBZ)
-	case constant.FormatZIP:
-		reader = viper.GetString(key.ReaderZIP)
-	case constant.FormatPlain:
-		reader = viper.GetString(key.RaderPlain)
+	if strings.ToLower(viper.GetString(key.ReaderDirection)) == "ltr" {
+		rtl := false
+		opt.RTL = &rtl
 	}
 
-	if reader != "" {
-		log.Info("opening with " + reader)
-		progress(fmt.Sprintf("Opening %s", reader))
-	} else {
-		log.Info("no reader specified. opening with default")
-		progress("Opening")
+	if os.Getenv("MANGAZ_TRACE") == "1" {
+		opt.Trace = os.Stderr
 	}
 
-	err = open.RunWith(path, reader)
+	return opt
+}
+
+// SaveReadHistory records the chapter as read, if enabled.
+func SaveReadHistory(chapter *source.Chapter) {
+	if !viper.GetBool(key.HistorySaveOnRead) {
+		return
+	}
+
+	go func() {
+		if err := history.Save(chapter); err != nil {
+			log.Warn(err)
+		} else {
+			log.Info("history saved")
+		}
+	}()
+}
+
+// Read prepares the chapter and reads it in the built-in reader, which
+// takes over the terminal until the user quits. Callers running a
+// bubbletea program should use tea.Exec with reader.Command instead.
+func Read(chapter *source.Chapter, progress func(string)) error {
+	src, err := Prepare(chapter, progress)
 	if err != nil {
-		log.Error(err)
-		return fmt.Errorf("could not open %s with %s: %s", path, reader, err.Error())
+		return err
 	}
+	defer src.Close()
 
-	log.Info("opened without errors")
-
-	return nil
+	SaveReadHistory(chapter)
+	_, err = reader.Run(src, ReaderOptions())
+	return err
 }

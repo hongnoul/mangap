@@ -248,39 +248,16 @@ It will also cache the results to not spam the API`,
 Available options are: emoji, kaomoji, plain, squares, nerd (nerd-font required)`,
 	},
 	{
-		key.ReaderPDF,
-		"",
-		"What app to use to open pdf files",
+		key.ReaderTone,
+		"dark",
+		`Page tone in the built-in reader (d cycles while reading)
+Available options are: dark, light, dim`,
 	},
 	{
-		key.ReaderCBZ,
-		"",
-		"What app to use to open cbz files",
-	},
-	{
-		key.ReaderZIP,
-		"",
-		"What app to use to open zip files",
-	},
-	{
-		key.RaderPlain,
-		"",
-		"What app to use to open folders",
-	},
-	{
-		key.ReaderBrowser,
-		"",
-		"What browser to use to open webpages",
-	},
-	{
-		key.ReaderFolder,
-		"",
-		"What app to use to open folders",
-	},
-	{
-		key.ReaderReadInBrowser,
-		false,
-		"Open chapter url in browser instead of downloading it",
+		key.ReaderDirection,
+		"rtl",
+		`Reading direction in the built-in reader (D flips while reading)
+Available options are: rtl, ltr`,
 	},
 	{
 		key.HistorySaveOnRead,

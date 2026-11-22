@@ -11,6 +11,7 @@ import (
 	"github.com/hongnoul/mangaz/key"
 	"github.com/hongnoul/mangaz/log"
 	"github.com/hongnoul/mangaz/provider"
+	"github.com/hongnoul/mangaz/reader/pages"
 	"github.com/hongnoul/mangaz/source"
 	"github.com/hongnoul/mangaz/style"
 	"github.com/hongnoul/mangaz/util"
@@ -218,14 +219,14 @@ func (b *statefulBubble) waitForChapters() tea.Cmd {
 func (b *statefulBubble) readChapter(chapter *source.Chapter) tea.Cmd {
 	return func() tea.Msg {
 		b.currentDownloadingChapter = chapter
-		err := downloader.Read(chapter, func(s string) {
+		src, err := downloader.Prepare(chapter, func(s string) {
 			b.progressStatus = s
 		})
 
 		if err != nil {
 			b.errorChannel <- err
 		} else {
-			b.chapterReadChannel <- struct{}{}
+			b.chapterReadChannel <- readyToReadMsg{chapter: chapter, src: src}
 		}
 
 		return nil
@@ -340,4 +341,16 @@ func (b *statefulBubble) selectChapterBy(f func(chapter *source.Chapter) bool) t
 
 		return nil
 	}
+}
+
+// readyToReadMsg carries a prepared chapter to the read state, which hands
+// it to the built-in reader through tea.Exec.
+type readyToReadMsg struct {
+	chapter *source.Chapter
+	src     pages.Source
+}
+
+// readFinishedMsg is sent when the reader returns the terminal.
+type readFinishedMsg struct {
+	err error
 }

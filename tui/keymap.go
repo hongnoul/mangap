@@ -19,7 +19,6 @@ type statefulKeymap struct {
 	confirm,
 	openURL,
 	read,
-	openFolder,
 	back,
 	filter,
 	up, down, left, right,
@@ -88,10 +87,6 @@ func newStatefulKeymap() *statefulKeymap {
 		anilistSelect: k(
 			keys("a"),
 			help("a", "select anilist manga"),
-		),
-		openFolder: k(
-			keys("o"),
-			help("o", "open folder"),
 		),
 		back: k(
 			keys("esc"),
@@ -170,7 +165,7 @@ func (k *statefulKeymap) help() ([]key.Binding, []key.Binding) {
 	case downloadState:
 		return to2(h(k.back, k.forceQuit))
 	case downloadDoneState:
-		return to2(h(k.back, k.quit, k.openFolder, k.redownloadFailed))
+		return to2(h(k.back, k.quit, k.redownloadFailed))
 	case errorState:
 		return to2(h(k.back, k.quit))
 	default:

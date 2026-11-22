@@ -150,7 +150,7 @@ the slow case (~2 MB frames, first frame 85 ms on the cover); the
 prefetcher hides them during reading. No remedy from the list above was
 needed.
 
-### Phase 2: in-TUI integration (1-2 days)
+### Phase 2: in-TUI integration (1-2 days) -- DONE 2026-11-22
 - `reader.Read(chapter)` implements `tea.ExecCommand` and replaces
   `downloader.Read` entirely. Delete the external-viewer code and config keys
   listed above in the same PR.

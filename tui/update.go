@@ -8,12 +8,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hongnoul/mangaz/anilist"
 	"github.com/hongnoul/mangaz/color"
+	"github.com/hongnoul/mangaz/downloader"
 	"github.com/hongnoul/mangaz/history"
 	"github.com/hongnoul/mangaz/installer"
 	key2 "github.com/hongnoul/mangaz/key"
 	"github.com/hongnoul/mangaz/open"
 	"github.com/hongnoul/mangaz/provider"
 	"github.com/hongnoul/mangaz/query"
+	"github.com/hongnoul/mangaz/reader"
 	"github.com/hongnoul/mangaz/source"
 	"github.com/hongnoul/mangaz/style"
 	"github.com/hongnoul/mangaz/util"
@@ -654,10 +656,20 @@ func (b *statefulBubble) updateConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (b *statefulBubble) updateRead(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	switch msg.(type) {
-	case struct{}:
+	switch msg := msg.(type) {
+	case readyToReadMsg:
+		downloader.SaveReadHistory(msg.chapter)
+		return b, tea.Exec(
+			reader.NewCommand(msg.src, downloader.ReaderOptions()),
+			func(err error) tea.Msg { return readFinishedMsg{err: err} },
+		)
+	case readFinishedMsg:
 		b.stopLoading()
 		b.previousState()
+		if msg.err != nil {
+			b.raiseError(msg.err)
+		}
+		return b, nil
 	}
 
 	b.spinnerC, cmd = b.spinnerC.Update(msg)
@@ -701,15 +713,6 @@ func (b *statefulBubble) updateDownloadDone(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, b.keymap.quit):
 			return b, tea.Quit
-		case key.Matches(msg, b.keymap.openFolder):
-			err := open.StartWith(
-				lo.Must(b.currentDownloadingChapter.Manga.Path(false)),
-				viper.GetString(key2.ReaderFolder),
-			)
-
-			if err != nil {
-				b.raiseError(err)
-			}
 		case key.Matches(msg, b.keymap.redownloadFailed):
 			if len(b.failedChapters) == 0 {
 				break

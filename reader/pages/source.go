@@ -185,3 +185,32 @@ func lower(c byte) byte {
 	}
 	return c
 }
+
+// Mem is a chapter already held in memory, in reading order. The TUI
+// reads freshly downloaded chapters this way, with no converter step.
+type Mem struct {
+	names []string
+	data  [][]byte
+}
+
+// NewMem wraps page images already in reading order. names may be nil.
+func NewMem(names []string, data [][]byte) (*Mem, error) {
+	if len(data) == 0 {
+		return nil, ErrNoPages
+	}
+	if names == nil {
+		names = make([]string, len(data))
+		for i := range names {
+			names[i] = fmt.Sprintf("page %d", i+1)
+		}
+	}
+	if len(names) != len(data) {
+		return nil, fmt.Errorf("pages: %d names for %d pages", len(names), len(data))
+	}
+	return &Mem{names: names, data: data}, nil
+}
+
+func (m *Mem) Len() int                   { return len(m.data) }
+func (m *Mem) Name(i int) string          { return m.names[i] }
+func (m *Mem) Close() error               { return nil }
+func (m *Mem) Read(i int) ([]byte, error) { return m.data[i], nil }

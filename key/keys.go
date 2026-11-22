@@ -3,7 +3,7 @@ package key
 // DefinedFieldsCount is the number of fields defined in this package.
 // You have to manually update this number when you add a new field
 // to check later if every field has a defined default value
-const DefinedFieldsCount = 53
+const DefinedFieldsCount = 48
 
 const (
 	DownloaderPath                = "downloader.path"
@@ -33,14 +33,21 @@ const (
 )
 
 const (
-	ReaderPDF           = "reader.pdf"
-	ReaderCBZ           = "reader.cbz"
-	ReaderZIP           = "reader.zip"
-	RaderPlain          = "reader.plain"
-	ReaderBrowser       = "reader.browser"
-	ReaderFolder        = "reader.folder"
-	ReaderReadInBrowser = "reader.read_in_browser"
+	ReaderTone      = "reader.tone"
+	ReaderDirection = "reader.direction"
 )
+
+// RemovedReaderKeys configured external viewers. mangaz reads chapters
+// itself, so these are ignored; configs that set them get a warning.
+var RemovedReaderKeys = []string{
+	"reader.pdf",
+	"reader.cbz",
+	"reader.zip",
+	"reader.plain",
+	"reader.browser",
+	"reader.folder",
+	"reader.read_in_browser",
+}
 
 const (
 	HistorySaveOnRead     = "history.save_on_read"

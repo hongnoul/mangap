@@ -70,3 +70,19 @@ func TestEmpty(t *testing.T) {
 		t.Fatal("empty dir should fail")
 	}
 }
+
+func TestMem(t *testing.T) {
+	if _, err := NewMem(nil, nil); err == nil {
+		t.Fatal("empty Mem should fail")
+	}
+	m, err := NewMem(nil, [][]byte{[]byte("a"), []byte("b")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.Len() != 2 || m.Name(1) != "page 2" {
+		t.Fatalf("Len=%d Name(1)=%q", m.Len(), m.Name(1))
+	}
+	if b, _ := m.Read(1); string(b) != "b" {
+		t.Fatalf("Read(1) = %q", b)
+	}
+}
