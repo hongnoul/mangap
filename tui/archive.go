@@ -38,6 +38,7 @@ func (b *statefulBubble) openArchive() tea.Cmd {
 	b.mangasC.ResetFilter()
 	b.thumbs.Clear()
 	b.preview.Clear()
+	b.recent.Clear()
 	if b.state == chaptersState {
 		b.previousState() // back to whatever grid led here
 	}

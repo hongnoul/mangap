@@ -42,6 +42,7 @@ func (b *statefulBubble) toggleThumbnails() error {
 	if !on {
 		b.thumbs.Clear()
 		b.preview.Clear()
+		b.recent.Clear()
 	}
 	return savePref(key2.TUIThumbnails, on)
 }

@@ -120,6 +120,7 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					b.mangasC.SetItems(nil)
 					b.thumbs.Clear()
 					b.preview.Clear()
+					b.recent.Clear()
 					b.previousState()
 					return b, b.scheduleLive()
 				}
@@ -237,6 +238,7 @@ func (b *statefulBubble) updateLoading(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, b.mangasC.SetItems(items))
 		b.thumbs.Clear()
 		b.preview.Clear()
+		b.recent.Clear()
 		b.newState(mangasState)
 		b.stopLoading()
 	case []*source.Chapter:
@@ -660,6 +662,7 @@ func (b *statefulBubble) updateRead(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// frames re-transmit from the disk cache.
 		b.thumbs.Clear()
 		b.preview.Clear()
+		b.recent.Clear()
 		b.stopLoading()
 		b.previousState()
 		if msg.err != nil {
