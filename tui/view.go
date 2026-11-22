@@ -94,14 +94,14 @@ func (b *statefulBubble) viewSearch() string {
 }
 
 func (b *statefulBubble) viewMangas() string {
-	return b.viewGrid(&b.mangasC, mangaCard, func(th *thumbs, it list.Item, visible bool) {
-		th.WantManga(it.(*listItem).internal.(*source.Manga), visible)
+	return b.viewGrid(&b.mangasC, mangaCard, func(th *thumbs, it list.Item, prio int) {
+		th.WantManga(it.(*listItem).internal.(*source.Manga), prio)
 	})
 }
 
 func (b *statefulBubble) viewChapters() string {
-	return b.viewGrid(&b.chaptersC, chapterCard, func(th *thumbs, it list.Item, visible bool) {
-		th.WantChapter(it.(*listItem).internal.(*source.Chapter), visible)
+	return b.viewGrid(&b.chaptersC, chapterCard, func(th *thumbs, it list.Item, prio int) {
+		th.WantChapter(it.(*listItem).internal.(*source.Chapter), prio)
 	})
 }
 
@@ -113,7 +113,7 @@ const (
 
 // viewGrid draws a thumbnail grid, or the list's own view while filtering
 // (the filter input lives there).
-func (b *statefulBubble) viewGrid(l *list.Model, toCard func(list.Item) card, want func(*thumbs, list.Item, bool)) string {
+func (b *statefulBubble) viewGrid(l *list.Model, toCard func(list.Item) card, want func(*thumbs, list.Item, int)) string {
 	if l.FilterState() == list.Filtering {
 		return listExtraPaddingStyle.Render(l.View())
 	}
@@ -128,7 +128,7 @@ func (b *statefulBubble) viewGrid(l *list.Model, toCard func(list.Item) card, wa
 	}
 	const sideMargin = 2
 	gridH := H - 4 // 1 top + indicator + 1 below it + 1 slack
-	body, footer := b.grid.render(l, b.thumbs, W-2*sideMargin, gridH, toCard, func(it list.Item, v bool) { want(b.thumbs, it, v) })
+	body, footer := b.grid.render(l, b.thumbs, W-2*sideMargin, gridH, toCard, func(it list.Item, p int) { want(b.thumbs, it, p) })
 	if msg := strings.TrimSpace(l.Title); msg != "" && l.ShowTitle() {
 		body = msg + "\n" + body
 	}
@@ -161,7 +161,7 @@ func (b *statefulBubble) viewGrid(l *list.Model, toCard func(list.Item) card, wa
 
 // viewPreviewPane shows the selected item large: the manga cover or the
 // chapter's first page, fitted to the pane, with its title underneath.
-func (b *statefulBubble) viewPreviewPane(l *list.Model, toCard func(list.Item) card, want func(*thumbs, list.Item, bool), w, h int) string {
+func (b *statefulBubble) viewPreviewPane(l *list.Model, toCard func(list.Item) card, want func(*thumbs, list.Item, int), w, h int) string {
 	it := l.SelectedItem()
 	if it == nil {
 		return ""
@@ -169,9 +169,9 @@ func (b *statefulBubble) viewPreviewPane(l *list.Model, toCard func(list.Item) c
 	cd := toCard(it)
 	imgW, imgH := imax(w-2, 4), imax(h-4, 2)
 	b.preview.SetSpan(imgW, imgH)
-	want(b.preview, it, true)
-	// The pane rasters are large: keep only the selected one resident.
+	// The pane rasters are large: only the selected one is full-res.
 	b.preview.Retain(map[string]bool{cd.thumbKey: true})
+	want(b.preview, it, prioVisible)
 
 	lines := make([]string, 0, h)
 	lines = append(lines, "")

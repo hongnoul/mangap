@@ -79,7 +79,7 @@ type card struct {
 // pin the indicator to the bottom. want is called for each card on screen
 // (visible=true) and for the next page (prefetch). height is the space
 // for the grid alone.
-func (g *grid) render(l *list.Model, th *thumbs, width, height int, toCard func(list.Item) card, want func(list.Item, bool)) (body, footer string) {
+func (g *grid) render(l *list.Model, th *thumbs, width, height int, toCard func(list.Item) card, want func(list.Item, int)) (body, footer string) {
 	items := l.VisibleItems()
 	if len(items) == 0 {
 		return "No results", ""
@@ -100,22 +100,32 @@ func (g *grid) render(l *list.Model, th *thumbs, width, height int, toCard func(
 	start := page * perPage
 	end := imin(start+perPage, len(items))
 
-	for i := start; i < end; i++ {
-		want(items[i], true)
-	}
-	// Prefetch the next two pages, then the previous one.
-	for i := end; i < imin(end+2*perPage, len(items)); i++ {
-		want(items[i], false)
-	}
-	for i := imax(start-perPage, 0); i < start; i++ {
-		want(items[i], false)
-	}
+	// Full res for this page, the next two and the previous one; low-res
+	// for everything else, swept outward from the cursor.
+	lo, hi := imax(start-perPage, 0), imin(end+2*perPage, len(items))
 	if th.enabled {
-		keep := map[string]bool{}
-		for i := imax(start-perPage, 0); i < imin(end+2*perPage, len(items)); i++ {
+		keep := make(map[string]bool, hi-lo)
+		for i := lo; i < hi; i++ {
 			keep[toCard(items[i]).thumbKey] = true
 		}
 		th.Retain(keep)
+	}
+	for i := start; i < end; i++ {
+		want(items[i], prioVisible)
+	}
+	for i := end; i < hi; i++ {
+		want(items[i], prioNear)
+	}
+	for i := lo; i < start; i++ {
+		want(items[i], prioNear)
+	}
+	for d := 1; start-d >= 0 || end+d-1 < len(items); d++ {
+		if i := end + d - 1; i < len(items) {
+			want(items[i], prioSweep)
+		}
+		if i := start - d; i >= 0 {
+			want(items[i], prioSweep)
+		}
 	}
 
 	var rowsOut []string

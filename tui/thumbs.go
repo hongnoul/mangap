@@ -36,8 +36,8 @@ const previewBaseID = 1 << 22
 // terminal almost as soon as the bytes arrive; the terminal stretches it
 // to the cell box. The full raster then replaces it under the same id.
 const (
-	previewPx = 24 // long edge of the low-res preview
-	cacheDir  = "thumbs"
+	lowPx    = 48 // long edge of the low-res raster
+	cacheDir = "thumbs"
 )
 
 // syncOut serializes writes to the terminal: bubbletea's frames and the
@@ -77,18 +77,30 @@ type thumbReadyMsg struct{}
 
 // thumbState is one thumbnail's progress.
 type thumbState struct {
-	id   int  // kitty image id, 0 until something was transmitted
-	full bool // the full-res raster replaced the preview
-	busy bool
-	fail bool
-	// queuedVisible: a job sits in the visible lane. started: a worker
-	// claimed the load, so later duplicate jobs drop out.
-	queuedVisible bool
-	started       bool
-	img           image.Image // decoded source, kept to re-raster on size change
-	cols          int         // span the image was transmitted for
-	rows          int
+	id    int // kitty image id, 0 until something was transmitted
+	level int // 0 nothing shown, 1 low-res, 2 full-res
+	fail  bool
+	// low is the low-res PNG, kept (a few KB) so a full raster can be
+	// swapped back to it without decoding the source again.
+	low        []byte
+	lowW, lowH int
+	// Scheduling: busy while a job is queued or running, queued is the
+	// best priority queued so far, running once a worker took it. seq
+	// bumps when a job ends so stale duplicates in slower lanes drop out.
+	busy    bool
+	running bool
+	queued  int
+	seq     int
+	cols    int // span the image was transmitted for
+	rows    int
 }
+
+// Priorities, lowest first. sweep fills in low-res for the whole list.
+const (
+	prioSweep = iota + 1
+	prioNear
+	prioVisible
+)
 
 // thumbs fetches manga covers and chapter first pages and shows them as
 // kitty images: a low-res preview first, then the full raster under the
@@ -103,23 +115,29 @@ type thumbs struct {
 	state map[string]*thumbState
 	next  int
 
-	// Two lanes: on-screen work first, prefetch only with spare capacity.
-	visible  chan struct{}
-	prefetch chan struct{}
+	// One worker pool per priority: on-screen first, then the pages
+	// around it, then the low-res sweep of everything else.
+	lanes [prioVisible + 1]chan struct{}
+	// hot keys get the full raster; everything else stays low-res.
+	hot map[string]bool
 	// Cell span every thumbnail is drawn at; set by the layout.
 	cols, rows int
 }
 
 func newThumbs(out *syncOut) *thumbs {
 	return &thumbs{
-		enabled:  out != nil && term.SupportsKittyGraphics(),
-		out:      out,
-		state:    map[string]*thumbState{},
-		next:     thumbBaseID,
-		visible:  make(chan struct{}, 16),
-		prefetch: make(chan struct{}, 6),
-		cols:     6,
-		rows:     4,
+		enabled: out != nil && term.SupportsKittyGraphics(),
+		out:     out,
+		state:   map[string]*thumbState{},
+		next:    thumbBaseID,
+		lanes: [prioVisible + 1]chan struct{}{
+			prioSweep:   make(chan struct{}, 12),
+			prioNear:    make(chan struct{}, 6),
+			prioVisible: make(chan struct{}, 16),
+		},
+		hot:  map[string]bool{},
+		cols: 6,
+		rows: 4,
 	}
 }
 
@@ -128,19 +146,23 @@ func newThumbs(out *syncOut) *thumbs {
 // the background at the new pixel size.
 func (t *thumbs) SetSpan(cols, rows int) {
 	t.mu.Lock()
-	defer t.mu.Unlock()
 	if cols == t.cols && rows == t.rows {
+		t.mu.Unlock()
 		return
 	}
 	t.cols, t.rows = cols, rows
-	for key, st := range t.state {
-		if st.id == 0 || st.img == nil {
+	// Re-send every low-res raster at the new span (cheap, cached bytes).
+	// Hot ones are promoted to full again by the next frame's want.
+	var buf []byte
+	for _, st := range t.state {
+		if st.level == 0 || st.low == nil {
 			continue
 		}
-		st.full = false
-		img := st.img
-		go t.raster(key, img, false)
+		st.level = 1
+		buf = t.appendLow(buf, st)
 	}
+	t.mu.Unlock()
+	t.write(buf)
 }
 
 func coverURL(m *source.Manga) string {
@@ -149,17 +171,17 @@ func coverURL(m *source.Manga) string {
 }
 
 // WantManga requests a manga's cover. visible rows are fetched first.
-func (t *thumbs) WantManga(m *source.Manga, visible bool) {
+func (t *thumbs) WantManga(m *source.Manga, prio int) {
 	u, ref := coverURL(m), m.URL
 	if u == "" {
 		return
 	}
-	t.want(u, visible, func() (string, string, error) { return u, ref, nil })
+	t.want(u, prio, func() (string, string, error) { return u, ref, nil })
 }
 
 // WantChapter requests a chapter's first page. Scraper sources only:
 // MangaDex would download the whole chapter to learn its first page.
-func (t *thumbs) WantChapter(c *source.Chapter, visible bool) {
+func (t *thumbs) WantChapter(c *source.Chapter, prio int) {
 	if c == nil || c.Manga == nil || c.URL == "" {
 		return
 	}
@@ -167,57 +189,57 @@ func (t *thumbs) WantChapter(c *source.Chapter, visible bool) {
 	if !ok {
 		return
 	}
-	t.want(c.URL, visible, func() (string, string, error) {
+	t.want(c.URL, prio, func() (string, string, error) {
 		u, err := sc.FirstPageURL(c)
 		return u, c.URL, err
 	})
 }
 
-// want schedules a thumbnail once. Safe to call on every frame.
-func (t *thumbs) want(key string, visible bool, locate func() (url, referer string, err error)) {
+// want schedules whatever key still needs: the low-res raster if nothing
+// is shown, the full one if key is hot. Safe to call on every frame.
+func (t *thumbs) want(key string, prio int, locate func() (url, referer string, err error)) {
 	if !t.enabled || key == "" {
 		return
 	}
 	t.mu.Lock()
 	st := t.state[key]
-	if st != nil && (st.id != 0 || st.fail) {
-		t.mu.Unlock()
-		return
-	}
-	if st != nil && st.busy {
-		// Queued as a prefetch but now on screen (the user paged onto
-		// it): promote it with a second job in the visible lane, which
-		// races the stale one; whichever starts first does the load.
-		if !visible || st.queuedVisible || st.started {
-			t.mu.Unlock()
-			return
-		}
-	}
 	if st == nil {
 		st = &thumbState{}
 		t.state[key] = st
 	}
-	st.busy = true
-	if visible {
-		st.queuedVisible = true
+	need := !st.fail && (st.level == 0 || (st.level == 1 && t.hot[key]))
+	if !need || (st.busy && (st.running || prio <= st.queued)) {
+		t.mu.Unlock()
+		return
 	}
+	// Either idle, or queued in a slower lane: add a job here too and let
+	// whichever starts first do the work.
+	st.busy, st.queued = true, prio
+	seq := st.seq
+	lane := t.lanes[prio]
 	t.mu.Unlock()
 
-	lane := t.prefetch
-	if visible {
-		lane = t.visible
-	}
 	go func() {
 		lane <- struct{}{}
 		defer func() { <-lane }()
 		t.mu.Lock()
-		if st.started {
+		// Dropped by Clear (list replaced), superseded, or already taken.
+		if t.state[key] != st || st.seq != seq || st.running || !st.busy {
 			t.mu.Unlock()
 			return
 		}
-		st.started = true
+		st.running = true
 		t.mu.Unlock()
-		t.load(key, locate)
+
+		t.work(key, st, locate)
+
+		t.mu.Lock()
+		st.busy, st.running, st.queued = false, false, 0
+		st.seq++
+		t.mu.Unlock()
+		if t.send != nil {
+			t.send(thumbReadyMsg{})
+		}
 	}()
 }
 
@@ -226,113 +248,139 @@ func cachePath(key string) string {
 	return filepath.Join(where.Cache(), cacheDir, hex.EncodeToString(h[:]))
 }
 
-func (t *thumbs) load(key string, locate func() (string, string, error)) {
-	fail := func() {
-		t.mu.Lock()
-		if st := t.state[key]; st != nil {
-			st.busy, st.fail = false, true
-		}
-		t.mu.Unlock()
-	}
-
+// fetchSource returns the image bytes for key, from the disk cache or the
+// network (with one retry, so a blip doesn't blank the card for good).
+func fetchSource(key string, locate func() (string, string, error)) ([]byte, error) {
 	path := cachePath(key)
-	data, err := os.ReadFile(path)
-	if err != nil {
-		// One retry: a transient error would otherwise blank the card
-		// for the rest of the session.
-		for attempt := 0; attempt < 2; attempt++ {
-			var u, ref string
-			if u, ref, err = locate(); err == nil {
-				data, err = get(u, ref)
-			}
-			if err == nil {
-				break
-			}
+	if data, err := os.ReadFile(path); err == nil {
+		return data, nil
+	}
+	var data []byte
+	var err error
+	for attempt := 0; attempt < 2; attempt++ {
+		var u, ref string
+		if u, ref, err = locate(); err == nil {
+			data, err = get(u, ref)
 		}
-		if err != nil {
-			fail()
-			return
+		if err == nil {
+			break
 		}
-		_ = os.MkdirAll(filepath.Dir(path), 0o755)
-		_ = os.WriteFile(path, data, 0o644)
 	}
-	img, err := render.Decode(data)
 	if err != nil {
-		_ = os.Remove(path)
-		fail()
-		return
+		return nil, err
 	}
-
-	t.mu.Lock()
-	if st := t.state[key]; st != nil {
-		st.img = img
-	}
-	t.mu.Unlock()
-
-	// Preview first, then the full raster under the same id.
-	t.raster(key, img, true)
-	t.raster(key, img, false)
-
-	t.mu.Lock()
-	if st := t.state[key]; st != nil {
-		st.busy = false
-	}
-	t.mu.Unlock()
+	_ = os.MkdirAll(filepath.Dir(path), 0o755)
+	_ = os.WriteFile(path, data, 0o644)
+	return data, nil
 }
 
-// raster renders img at preview or full size and transmits it, replacing
-// whatever the id held before.
-func (t *thumbs) raster(key string, img image.Image, preview bool) {
-	t.mu.Lock()
-	cols, rows := t.cols, t.rows
-	st := t.state[key]
-	if st == nil {
+func (t *thumbs) work(key string, st *thumbState, locate func() (string, string, error)) {
+	data, err := fetchSource(key, locate)
+	var img image.Image
+	if err == nil {
+		if img, err = render.Decode(data); err != nil {
+			_ = os.Remove(cachePath(key))
+		}
+	}
+	if err != nil {
+		t.mu.Lock()
+		st.fail = true
 		t.mu.Unlock()
 		return
 	}
-	id := st.id
-	if id == 0 {
-		id = t.next
-		t.next++
-	}
-	t.mu.Unlock()
 
+	t.mu.Lock()
+	needLow := st.level == 0
+	t.mu.Unlock()
+	if needLow {
+		t.sendLow(st, img)
+	}
+	t.mu.Lock()
+	hot := t.hot[key]
+	t.mu.Unlock()
+	if hot {
+		t.sendFull(st, img)
+	}
+}
+
+// pixels is the raster size for the current span; low shrinks it so the
+// long edge is lowPx (the terminal stretches it to the cells).
+func (t *thumbs) pixels(cols, rows int, low bool) (int, int) {
 	sz := term.GetSize(t.out.f)
 	w, h := cols*sz.CellW, rows*sz.CellH
-	if preview {
-		// Same aspect as the box, long edge previewPx.
+	if low {
 		if w >= h {
-			w, h = previewPx, imax(previewPx*h/imax(w, 1), 1)
+			w, h = lowPx, imax(lowPx*h/imax(w, 1), 1)
 		} else {
-			w, h = imax(previewPx*w/imax(h, 1), 1), previewPx
+			w, h = imax(lowPx*w/imax(h, 1), 1), lowPx
 		}
 	}
+	return w, h
+}
+
+func (t *thumbs) sendLow(st *thumbState, img image.Image) {
+	t.mu.Lock()
+	cols, rows := t.cols, t.rows
+	t.mu.Unlock()
+	w, h := t.pixels(cols, rows, true)
 	res, err := render.Render(render.Job{Pages: []image.Image{img}, W: w, H: h})
 	if err != nil {
 		return
 	}
-
-	// Free the old raster of this id, then send the new one, in one write.
-	var buf []byte
-	if st.id != 0 {
-		buf = append(buf, "\x1b_Ga=d,d=I,i="...)
-		buf = strconv.AppendInt(buf, int64(id), 10)
-		buf = append(buf, ",q=2\x1b\\"...)
+	t.mu.Lock()
+	st.low, st.lowW, st.lowH = res.PNG, res.W, res.H
+	if st.level == 0 {
+		st.level = 1
 	}
-	buf, _ = kitty.New().Transmit(buf, res.PNG, res.W, res.H, id, cols, rows)
-	if _, err := t.out.Write(buf); err != nil {
+	buf := t.appendLow(nil, st)
+	t.mu.Unlock()
+	t.write(buf)
+}
+
+func (t *thumbs) sendFull(st *thumbState, img image.Image) {
+	t.mu.Lock()
+	cols, rows := t.cols, t.rows
+	t.mu.Unlock()
+	w, h := t.pixels(cols, rows, false)
+	res, err := render.Render(render.Job{Pages: []image.Image{img}, W: w, H: h})
+	if err != nil {
 		return
 	}
-
 	t.mu.Lock()
-	st.id = id
-	st.cols, st.rows = cols, rows
-	if !preview {
-		st.full = true
+	if cols != t.cols || rows != t.rows {
+		t.mu.Unlock()
+		return // resized meanwhile; the next frame asks again
 	}
+	buf := t.appendTransmit(nil, st, res.PNG, res.W, res.H)
+	st.level = 2
 	t.mu.Unlock()
-	if t.send != nil {
-		t.send(thumbReadyMsg{})
+	t.write(buf)
+}
+
+// appendLow appends st's low-res raster at the current span. Caller holds mu.
+func (t *thumbs) appendLow(buf []byte, st *thumbState) []byte {
+	return t.appendTransmit(buf, st, st.low, st.lowW, st.lowH)
+}
+
+// appendTransmit appends a transmit of png under st's id, freeing what the
+// id held before. Caller holds mu.
+func (t *thumbs) appendTransmit(buf []byte, st *thumbState, png []byte, w, h int) []byte {
+	if st.id == 0 {
+		st.id = t.next
+		t.next++
+	} else {
+		buf = append(buf, "\x1b_Ga=d,d=I,i="...)
+		buf = strconv.AppendInt(buf, int64(st.id), 10)
+		buf = append(buf, ",q=2\x1b\\"...)
+	}
+	buf, _ = kitty.New().Transmit(buf, png, w, h, st.id, t.cols, t.rows)
+	st.cols, st.rows = t.cols, t.rows
+	return buf
+}
+
+func (t *thumbs) write(buf []byte) {
+	if len(buf) > 0 && t.out != nil {
+		_, _ = t.out.Write(buf)
 	}
 }
 
@@ -431,29 +479,23 @@ func (m *mutedExec) Run() error {
 	return m.ExecCommand.Run()
 }
 
-// Retain frees every transmitted image whose key is not in keep. The
-// terminal's image store is finite (Ghostty evicts or refuses uploads once
-// it is full), so only the pages around the cursor stay resident. Sources
-// remain on disk and reload in milliseconds when paged back to.
+// Retain marks keep as hot (full-res) and swaps every other full raster
+// back to its low-res version. The terminal's image store is finite, so
+// only the pages around the cursor hold full rasters, while the low-res
+// copies (a few KB each) stay for the whole list.
 func (t *thumbs) Retain(keep map[string]bool) {
 	if !t.enabled {
 		return
 	}
 	t.mu.Lock()
+	t.hot = keep
 	var buf []byte
 	for key, st := range t.state {
-		if keep[key] || st.busy {
-			continue
+		if st.level == 2 && !keep[key] && st.low != nil {
+			st.level = 1
+			buf = t.appendLow(buf, st)
 		}
-		if st.id != 0 {
-			buf = append(buf, "\x1b_Ga=d,d=I,i="...)
-			buf = strconv.AppendInt(buf, int64(st.id), 10)
-			buf = append(buf, ",q=2\x1b\\"...)
-		}
-		delete(t.state, key)
 	}
 	t.mu.Unlock()
-	if len(buf) > 0 {
-		_, _ = t.out.Write(buf)
-	}
+	t.write(buf)
 }
