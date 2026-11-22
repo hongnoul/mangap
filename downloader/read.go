@@ -19,6 +19,11 @@ import (
 // downloader.read_downloaded is set). Anything else is downloaded into
 // memory and read from there, with no converter step.
 func Prepare(chapter *source.Chapter, progress func(string)) (pages.Source, error) {
+	if ls, ok := chapter.Manga.Source.(source.LocalSource); ok {
+		// From the downloads archive: there is nothing to fetch.
+		progress("Opening")
+		return pages.Open(ls.PathOf(chapter))
+	}
 	if viper.GetBool(key.DownloaderReadDownloaded) && chapter.IsDownloaded() {
 		if path, err := chapter.Path(false); err == nil {
 			src, err := pages.Open(path)
@@ -79,7 +84,8 @@ func ReaderOptions() reader.Options {
 
 // SaveReadHistory records the chapter as read, if enabled.
 func SaveReadHistory(chapter *source.Chapter) {
-	if !viper.GetBool(key.HistorySaveOnRead) {
+	// Archive chapters have no provider to resume from in history.
+	if !viper.GetBool(key.HistorySaveOnRead) || source.IsLocal(chapter) {
 		return
 	}
 
@@ -91,7 +97,7 @@ func SaveReadHistory(chapter *source.Chapter) {
 
 // SaveReadProgress bookmarks where the reader stopped in chapter.
 func SaveReadProgress(chapter *source.Chapter, res reader.Result) {
-	if chapter == nil || !viper.GetBool(key.HistorySaveOnRead) {
+	if chapter == nil || !viper.GetBool(key.HistorySaveOnRead) || source.IsLocal(chapter) {
 		return
 	}
 	if err := history.SaveProgress(chapter, res.Page, res.Pages, res.Finished); err != nil {

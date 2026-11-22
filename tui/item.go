@@ -46,7 +46,7 @@ func (t *listItem) Title() (title string) {
 			sb.WriteString(style.Faint(e.Volume))
 		}
 
-		if e.IsDownloaded() {
+		if !source.IsLocal(e) && e.IsDownloaded() {
 			sb.WriteString(" ")
 			sb.WriteString(icon.Get(icon.Downloaded))
 		}

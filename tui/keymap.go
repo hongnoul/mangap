@@ -40,7 +40,7 @@ func newStatefulKeymap() *statefulKeymap {
 			help("q", "quit"),
 		),
 		forceQuit: k(
-			keys("ctrl+c", "ctrl+d"),
+			keys("ctrl+c"),
 			help("ctrl+c", "quit"),
 		),
 		remove: k(

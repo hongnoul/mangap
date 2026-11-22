@@ -15,10 +15,12 @@ import (
 	"unicode/utf8"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hongnoul/mangap/archive"
 	"github.com/hongnoul/mangap/constant"
 	"github.com/hongnoul/mangap/network"
 	"github.com/hongnoul/mangap/provider/generic"
 	"github.com/hongnoul/mangap/reader/kitty"
+	"github.com/hongnoul/mangap/reader/pages"
 	"github.com/hongnoul/mangap/reader/render"
 	"github.com/hongnoul/mangap/reader/term"
 	"github.com/hongnoul/mangap/source"
@@ -207,6 +209,10 @@ func (t *thumbs) WantChapter(c *source.Chapter, prio int) {
 	if c == nil || c.Manga == nil || c.URL == "" {
 		return
 	}
+	if _, local := archive.PathOfURL(c.URL); local {
+		t.want(c.URL, prio, nil) // read from disk, see fetchSource
+		return
+	}
 	sc, ok := c.Source().(firstPager)
 	if !ok {
 		return
@@ -278,6 +284,9 @@ func cachePath(key string) string {
 // fetchSource returns the image bytes for key, from the disk cache or the
 // network (with one retry, so a blip doesn't blank the card for good).
 func fetchSource(key string, locate func() (string, string, error)) ([]byte, error) {
+	if path, ok := archive.PathOfURL(key); ok {
+		return localImage(path)
+	}
 	path := cachePath(key)
 	if data, err := os.ReadFile(path); err == nil {
 		return data, nil
@@ -562,4 +571,18 @@ func (t *thumbs) Retain(keep map[string]bool) {
 	}
 	t.mu.Unlock()
 	t.write(buf)
+}
+
+// localImage is the thumbnail for a file in the downloads archive: an
+// image as is, or the first page of a chapter (pdf/cbz/zip/folder).
+func localImage(path string) ([]byte, error) {
+	if pages.IsImage(path) {
+		return os.ReadFile(path)
+	}
+	src, err := pages.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer src.Close()
+	return src.Read(0)
 }

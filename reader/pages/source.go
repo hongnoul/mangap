@@ -38,7 +38,7 @@ func IsImage(name string) bool {
 	return imageExt[strings.ToLower(filepath.Ext(name))]
 }
 
-// Open opens a directory, or a .cbz/.zip archive.
+// Open opens a directory, a .cbz/.zip archive, or an image .pdf.
 func Open(path string) (Source, error) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -50,8 +50,10 @@ func Open(path string) (Source, error) {
 	switch strings.ToLower(filepath.Ext(path)) {
 	case ".cbz", ".zip":
 		return OpenZip(path)
+	case ".pdf":
+		return OpenPDF(path)
 	}
-	return nil, fmt.Errorf("%s: not a directory or .cbz/.zip archive", path)
+	return nil, fmt.Errorf("%s: not a directory, .cbz/.zip archive or .pdf", path)
 }
 
 // Dir is a directory of page images in natural name order.

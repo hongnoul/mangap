@@ -59,6 +59,8 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.resize(msg.Width, msg.Height)
 	case tea.KeyMsg:
 		switch {
+		case isArchiveKey(msg) && b.canOpenArchive():
+			return b, b.openArchive()
 		case key.Matches(msg, b.keymap.forceQuit):
 			return b, tea.Quit
 		case key.Matches(msg, b.keymap.back):
@@ -101,6 +103,14 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return b, cmd
 				}
 
+				if b.inArchive() {
+					// Back to search: the live results were replaced, redo them.
+					b.mangasC.SetItems(nil)
+					b.thumbs.Clear()
+					b.preview.Clear()
+					b.previousState()
+					return b, b.scheduleLive()
+				}
 				cmd = onListBack(&b.mangasC)
 			case historyState:
 				if b.historyC.FilterState() != list.Unfiltered {
@@ -499,6 +509,9 @@ func (b *statefulBubble) updateChapters(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return b, nil
 		case key.Matches(msg, b.keymap.download):
+			if b.inArchiveChapters() {
+				return b, nil // already on disk
+			}
 			if len(b.selectedChapters) == 0 {
 				it := b.chaptersC.SelectedItem()
 				if it == nil {
