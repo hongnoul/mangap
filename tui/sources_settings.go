@@ -232,14 +232,22 @@ func (b *statefulBubble) updateSourceSettings(msg tea.Msg) (tea.Model, tea.Cmd) 
 		}
 		b.sourceSettings = nil
 		if ss.auto {
-			auto, err := provider.NewAuto()
-			if err != nil {
+			// Back to the search screen, keeping the picked source.
+			prev := ""
+			if b.sourceIdx < len(b.sourceChoices) {
+				prev = b.sourceChoices[b.sourceIdx]
+			}
+			b.sourceChoices = sourceChoices()
+			idx := defaultSourceIdx(b.sourceChoices)
+			for i, n := range b.sourceChoices {
+				if n == prev {
+					idx = i
+				}
+			}
+			if err := b.pickSource(idx); err != nil {
 				b.raiseError(err)
 				return b, nil
 			}
-			b.selectedSources = []source.Source{auto}
-			b.sourceChoices = sourceChoices()
-			b.sourceIdx = len(b.sourceChoices) - 1
 			b.statesHistory = util.Stack[state]{}
 			b.setState(searchState)
 			b.inputC.Focus()

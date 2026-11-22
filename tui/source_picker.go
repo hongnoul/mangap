@@ -9,11 +9,8 @@ import (
 	"github.com/hongnoul/mangap/style"
 )
 
-// autoChoice is the picker entry for the fallback chain.
-const autoChoice = "Auto"
-
 // sourceChoices lists the home screen picker entries: every provider in
-// priority order, then Auto.
+// priority order.
 func sourceChoices() []string {
 	var names []string
 	for _, p := range provider.Builtins() {
@@ -22,7 +19,7 @@ func sourceChoices() []string {
 	for _, p := range provider.Customs() {
 		names = append(names, p.Name)
 	}
-	return append(names, autoChoice)
+	return names
 }
 
 // defaultSourceIdx picks Mangapill, falling back to the first entry.
@@ -44,23 +41,13 @@ func (b *statefulBubble) pickSource(i int) error {
 	i = ((i % n) + n) % n
 	name := b.sourceChoices[i]
 
-	var src source.Source
-	if name == autoChoice {
-		auto, err := provider.NewAuto()
-		if err != nil {
-			return err
-		}
-		src = auto
-	} else {
-		p, ok := provider.Get(name)
-		if !ok {
-			return nil
-		}
-		s, err := p.CreateSource()
-		if err != nil {
-			return err
-		}
-		src = s
+	p, ok := provider.Get(name)
+	if !ok {
+		return nil
+	}
+	src, err := p.CreateSource()
+	if err != nil {
+		return err
 	}
 	b.sourceIdx = i
 	b.selectedSources = []source.Source{src}
@@ -69,8 +56,11 @@ func (b *statefulBubble) pickSource(i int) error {
 
 // sourcePicker renders the source row under the search bar.
 func (b *statefulBubble) sourcePicker() string {
-	parts := []string{style.Faint("source:")}
+	var parts []string
 	for i, n := range b.sourceChoices {
+		if strings.EqualFold(n, "mangapill") {
+			n += " (Recommended)"
+		}
 		if i == b.sourceIdx {
 			parts = append(parts, lipgloss.NewStyle().Reverse(true).Bold(true).Render(" "+n+" "))
 		} else {
