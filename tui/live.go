@@ -87,10 +87,17 @@ func (b *statefulBubble) viewLive() string {
 
 	header := box
 	pickerW := lipgloss.Width(b.searchBox(boxW))
-	if b.dropdown != nil {
-		// The dropdown floats over whatever is under the search bar
-		// (art, keys, results) so nothing below it moves.
-		drop := lipgloss.PlaceHorizontal(full, lipgloss.Center, b.viewDropdown(pickerW))
+	var drop string
+	switch {
+	case b.dropdown != nil:
+		drop = b.viewDropdown(pickerW)
+	case b.showKeys:
+		drop = b.viewKeysBox(pickerW)
+	}
+	if drop != "" {
+		// Expansions float over whatever is under the search bar
+		// (art, results) so nothing below them moves.
+		drop = lipgloss.PlaceHorizontal(full, lipgloss.Center, drop)
 		return overlayLines(b.viewLiveBase(box, full, pickerW), drop, lipgloss.Height(box))
 	}
 	return b.viewLiveBase(header, full, pickerW)

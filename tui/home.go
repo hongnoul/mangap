@@ -91,22 +91,24 @@ func imax(a, b int) int {
 }
 
 // homeBody is what shows under the search bar before anything is typed.
-// The art is pinned to the center of w x h so it never moves; the keys
-// cheatsheet is drawn over the bottom of that area when shown.
+// The art is pinned to the center of w x h so it never moves.
 func (b *statefulBubble) homeBody(w, h int) string {
 	h = imax(h, 1)
 	art := ""
 	if len(homeArt) <= h && w >= lipgloss.Width(homeArt[0]) {
 		art = strings.Join(homeArt, "\n")
 	}
-	base := lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, art)
-	if !b.showKeys || len(b.searchSuggestions) > 0 {
-		return base
-	}
-	keys := keysGrid(w - 4)
-	if lipgloss.Height(keys) > h || lipgloss.Width(keys) > w {
-		return base
-	}
-	keys = lipgloss.PlaceHorizontal(w, lipgloss.Center, keys)
-	return overlayLines(base, keys, h-lipgloss.Height(keys))
+	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, art)
+}
+
+// viewKeysBox is the ctrl+g cheatsheet, boxed like the dropdowns.
+func (b *statefulBubble) viewKeysBox(w int) string {
+	lines := keysGrid(imax(w-4, 10)) + "\n" + style.Faint("ctrl+g / esc close")
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("5")).
+		Padding(0, 1).
+		Width(imax(w-2, 4)).
+		Align(lipgloss.Center).
+		Render(lines)
 }

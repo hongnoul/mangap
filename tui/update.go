@@ -71,6 +71,10 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			switch b.state {
 			case searchState:
+				if b.dropdown != nil || b.showKeys {
+					b.dropdown, b.showKeys = nil, false
+					return b, nil
+				}
 				if len(b.searchSuggestions) > 0 {
 					b.clearSuggestions()
 					return b, nil
@@ -374,13 +378,18 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 			go query.Remember(b.inputC.Value(), 1)
 			return b, tea.Batch(b.searchManga(b.inputC.Value()), b.waitForMangas(), b.spinnerC.Tick)
 		case key.Matches(msg, b.keymap.sourceSettings):
+			b.showKeys = false
 			b.openDropdown(sourceDropdown)
 			return b, nil
 		case msg.String() == "ctrl+l":
+			b.showKeys = false
 			b.openDropdown(languageDropdown)
 			return b, nil
 		case isKeysToggle(msg):
 			b.showKeys = !b.showKeys
+			return b, nil
+		case b.showKeys && msg.String() == "esc":
+			b.showKeys = false
 			return b, nil
 		case len(b.sourceChoices) > 0 && (msg.String() == "ctrl+o" ||
 			(b.inputC.Value() == "" && (msg.String() == "left" || msg.String() == "right"))):
