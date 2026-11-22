@@ -29,80 +29,6 @@ var homeKeys = [][2]string{
 	{"ctrl+c", "quit"},
 }
 
-// viewHome is the search screen: art, a boxed search bar, and the keys,
-// centered in the terminal. Pieces drop out on short terminals.
-func (b *statefulBubble) viewHome() string {
-	w, h := b.width, b.height
-	if w <= 0 {
-		w = 80
-	}
-	if h <= 0 {
-		h = 24
-	}
-
-	keys := keysGrid(w)
-
-	// Narrow pane (e.g. a quarter of the screen): the centered layout
-	// cannot fit, so show only the search bar, full width, at the top.
-	if w+4 < lipgloss.Width(keys)+4 || w < 56 {
-		full := w + 4
-		boxW := imax(full-4, 12)
-		b.inputC.Width = imax(boxW-6-lipgloss.Width(b.inputC.Prompt), 4)
-		box := b.searchBox(boxW)
-		// Shrink until the rendered box (borders included) leaves equal
-		// margins, then center it on the full width.
-		for lipgloss.Width(box) > full-4 && boxW > 12 {
-			boxW--
-			b.inputC.Width = imax(boxW-6-lipgloss.Width(b.inputC.Prompt), 4)
-			box = b.searchBox(boxW)
-		}
-		return "\n" + lipgloss.PlaceHorizontal(full, lipgloss.Center, box)
-	}
-
-	boxW := imin(60, w-4)
-	b.inputC.Width = imax(boxW-6-lipgloss.Width(b.inputC.Prompt), 10)
-	box := b.searchBox(boxW)
-	art := strings.Join(homeArt, "\n")
-
-	// Fit what we can in the full terminal height: box always, then keys,
-	// then art.
-	full := h + 2
-	center := []string{box}
-	// Decide the layout from the resting state (collapsed box, keys shown)
-	// so the art stays put while the search bar expands with suggestions.
-	restBox := 3 // collapsed box: border + input + border
-	keysFit := restBox+1+lipgloss.Height(keys) <= full
-	restUsed := restBox
-	if keysFit {
-		restUsed += 1 + lipgloss.Height(keys)
-	}
-	showKeys := len(b.searchSuggestions) == 0 && keysFit
-	showArt := restUsed+len(homeArt)+1 <= full && w >= lipgloss.Width(homeArt[0])
-	restH := restUsed
-	if showArt {
-		restH += len(homeArt) + 1
-	}
-
-	var parts []string
-	if showArt {
-		parts = append(parts, art, "")
-	}
-	parts = append(parts, center...)
-	if showKeys {
-		parts = append(parts, "", keys)
-	}
-
-	block := lipgloss.JoinVertical(lipgloss.Center, parts...)
-	// Anchor the top where the resting layout would be centered; only move
-	// up if the expanded block would overflow the bottom.
-	top := imax(0, (full-restH)/2)
-	if bh := lipgloss.Height(block); top+bh > full {
-		top = imax(0, full-bh)
-	}
-	block = strings.Repeat("\n", top) + block
-	return lipgloss.Place(w+4, full, lipgloss.Center, lipgloss.Top, block)
-}
-
 // searchBox renders the search bar. With suggestions it expands downward
 // like a browser search box: the input on top, a divider, then one row per
 // suggestion, all inside the same border.
@@ -187,4 +113,31 @@ func imax(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// homeBody is what shows under the search bar before anything is typed:
+// art and keys, centered in w x h, dropping pieces that do not fit.
+func (b *statefulBubble) homeBody(w, h int) string {
+	keys := keysGrid(w - 4)
+	var parts []string
+	used := 0
+	if lipgloss.Height(keys) <= h && lipgloss.Width(keys) <= w && len(b.searchSuggestions) == 0 {
+		used = lipgloss.Height(keys)
+	} else {
+		keys = ""
+	}
+	if used+len(homeArt)+1 <= h && w >= lipgloss.Width(homeArt[0]) {
+		parts = append(parts, strings.Join(homeArt, "\n"))
+		if keys != "" {
+			parts = append(parts, "")
+		}
+	}
+	if keys != "" {
+		parts = append(parts, keys)
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return lipgloss.Place(w, imax(h, 1), lipgloss.Center, lipgloss.Center,
+		lipgloss.JoinVertical(lipgloss.Center, parts...))
 }

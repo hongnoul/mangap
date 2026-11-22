@@ -79,9 +79,6 @@ func (b *statefulBubble) applyLive(m liveResultMsg) tea.Cmd {
 // live manga results below it. Before anything is
 // typed the home screen (art + keys) shows instead.
 func (b *statefulBubble) viewLive() string {
-	if b.inputC.Value() == "" && b.state == searchState {
-		return b.viewHome()
-	}
 	full := b.width + 4
 	boxW := imax(full-4, 12)
 	b.inputC.Width = imax(boxW-6-lipgloss.Width(b.inputC.Prompt), 4)
@@ -102,6 +99,11 @@ func (b *statefulBubble) viewLive() string {
 	header := box + "\n  " + truncate.StringWithTail(status, uint(imax(full-4, 1)), "…")
 
 	H := b.height + 2 - lipgloss.Height(header)
+	if b.inputC.Value() == "" && b.state == searchState {
+		// Empty bar: the art and keys fill the space below, so the bar
+		// never moves when results start showing.
+		return header + "\n" + b.homeBody(full, H)
+	}
 	if len(b.mangasC.Items()) == 0 || H < 4 {
 		return header
 	}
