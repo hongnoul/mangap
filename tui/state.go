@@ -11,7 +11,6 @@ const (
 	searchState
 	mangasState
 	chaptersState
-	anilistSelectState
 	confirmState
 	readState
 	downloadState

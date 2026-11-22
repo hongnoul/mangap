@@ -28,8 +28,6 @@ func (b *statefulBubble) vimHL(msg tea.Msg) tea.Msg {
 		// Grid screens: h/l move left/right in the grid (see grid.nav);
 		// esc/enter are back/open.
 		return msg
-	case anilistSelectState:
-		l = &b.anilistC
 	case scrapersInstallState:
 		l = &b.scrapersInstallC
 	case sourceSettingsState, confirmState, errorState:

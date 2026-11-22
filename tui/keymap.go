@@ -11,19 +11,14 @@ type statefulKeymap struct {
 	state state
 
 	quit, forceQuit,
-	selectOne, selectAll, selectVolume, clearSelection,
 	acceptSearchSuggestion,
 	sourceSettings,
-	anilistSelect,
 	remove,
 	redownloadFailed,
 	confirm,
-	openURL,
 	read,
 	back,
-	filter,
 	up, down, left, right,
-	top, bottom,
 	showHelp,
 	vimHL key.Binding
 }
@@ -50,29 +45,9 @@ func newStatefulKeymap() *statefulKeymap {
 			keys("d"),
 			help("d", "remove"),
 		),
-		selectOne: k(
-			keys(" "),
-			help("space", "select one"),
-		),
-		selectAll: k(
-			keys("ctrl+a", "tab", "*"),
-			help("tab", "select all"),
-		),
-		selectVolume: k(
-			keys("v"),
-			help("v", "select volume"),
-		),
-		clearSelection: k(
-			keys("backspace"),
-			help("backspace", "clear selection"),
-		),
 		confirm: k(
 			keys("enter"),
 			help("enter", "confirm"),
-		),
-		openURL: k(
-			keys("o"),
-			help("o", "open url"),
 		),
 		read: k(
 			keys("r"),
@@ -90,17 +65,9 @@ func newStatefulKeymap() *statefulKeymap {
 			keys("r"),
 			help("r", "redownload failed"),
 		),
-		anilistSelect: k(
-			keys("a"),
-			help("a", "select anilist manga"),
-		),
 		back: k(
 			keys("esc"),
 			help("esc", "back"),
-		),
-		filter: k(
-			keys("/"),
-			help("/", "filter"),
 		),
 		up: k(
 			keys("up", "k"),
@@ -117,14 +84,6 @@ func newStatefulKeymap() *statefulKeymap {
 		right: k(
 			keys("right", "ctrl+j"),
 			help("→", "next page"),
-		),
-		top: k(
-			keys("g"),
-			help("g", "top"),
-		),
-		bottom: k(
-			keys("G"),
-			help("G", "bottom"),
 		),
 		vimHL: k(
 			keys(),
@@ -149,25 +108,21 @@ func (k *statefulKeymap) help() ([]key.Binding, []key.Binding) {
 
 	switch k.state {
 	case scrapersInstallState:
-		viewSource := withDescription(k.openURL, "view source")
 		install := withDescription(k.confirm, "install")
-		return to2(h(install, viewSource))
+		return to2(h(install))
 	case loadingState:
 		return to2(h(k.forceQuit, k.back))
 	case historyState:
-		return to2(h(k.confirm, k.remove, k.back, k.openURL))
+		return to2(h(k.confirm, k.remove, k.back))
 	case sourcesState:
-		search := withDescription(k.confirm, "search with selected")
-		return h(k.selectOne, k.selectAll, search, k.sourceSettings), h(k.selectOne, k.selectAll, k.clearSelection, search, k.sourceSettings)
+		search := withDescription(k.confirm, "search")
+		return to2(h(search, k.sourceSettings))
 	case searchState:
 		return to2(h(k.confirm, k.acceptSearchSuggestion, k.sourceSettings, k.forceQuit))
 	case mangasState:
-		return to2(h(k.confirm, k.back, k.openURL, k.vimHL))
+		return to2(h(k.confirm, k.back, k.vimHL))
 	case chaptersState:
-		download := withDescription(k.confirm, "download selected")
-		return h(k.read, k.selectOne, k.selectAll, download, k.back), h(k.read, k.selectOne, k.selectAll, k.clearSelection, k.openURL, download, k.selectVolume, k.anilistSelect, k.back)
-	case anilistSelectState:
-		return to2(h(k.confirm, k.openURL, k.back))
+		return to2(h(k.read, k.back))
 	case confirmState:
 		return to2(h(k.confirm, k.back, k.quit))
 	case readState:
@@ -199,9 +154,9 @@ func (k *statefulKeymap) forList() list.KeyMap {
 		CursorDown:           k.down,
 		NextPage:             k.right,
 		PrevPage:             k.left,
-		GoToStart:            k.top,
-		GoToEnd:              k.bottom,
-		Filter:               k.filter,
+		GoToStart:            key.NewBinding(key.WithDisabled()),
+		GoToEnd:              key.NewBinding(key.WithDisabled()),
+		Filter:               key.NewBinding(key.WithDisabled()),
 		ClearFilter:          k.back,
 		CancelWhileFiltering: k.back,
 		AcceptWhileFiltering: k.confirm,

@@ -8,18 +8,14 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hongnoul/mangaz/anilist"
-	"github.com/hongnoul/mangaz/color"
 	"github.com/hongnoul/mangaz/downloader"
 	"github.com/hongnoul/mangaz/history"
 	"github.com/hongnoul/mangaz/installer"
 	key2 "github.com/hongnoul/mangaz/key"
-	"github.com/hongnoul/mangaz/open"
 	"github.com/hongnoul/mangaz/provider"
 	"github.com/hongnoul/mangaz/query"
 	"github.com/hongnoul/mangaz/reader"
 	"github.com/hongnoul/mangaz/source"
-	"github.com/hongnoul/mangaz/style"
 	"github.com/hongnoul/mangaz/util"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
@@ -74,13 +70,6 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				b.selectedChapters = make(map[*source.Chapter]struct{})
 				cmd = onListBack(&b.chaptersC)
-			case anilistSelectState:
-				if b.anilistC.FilterState() != list.Unfiltered {
-					b.anilistC, cmd = b.anilistC.Update(msg)
-					return b, cmd
-				}
-
-				cmd = onListBack(&b.anilistC)
 			case mangasState:
 				if b.mangasC.FilterState() != list.Unfiltered {
 					b.mangasC, cmd = b.mangasC.Update(msg)
@@ -132,8 +121,6 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return b.updateMangas(msg)
 	case chaptersState:
 		return b.updateChapters(msg)
-	case anilistSelectState:
-		return b.updateAnilistSelect(msg)
 	case confirmState:
 		return b.updateConfirm(msg)
 	case readState:
@@ -166,14 +153,7 @@ func (b *statefulBubble) updateScrapersInstall(msg tea.Msg) (tea.Model, tea.Cmd)
 		switch {
 		case b.scrapersInstallC.FilterState() == list.Filtering:
 			break
-		case key.Matches(msg, b.keymap.openURL):
-			url := b.scrapersInstallC.SelectedItem().(*listItem).internal.(*installer.Scraper).GithubURL()
-			err := open.Run(url)
-			if err != nil {
-				b.lastError = err
-				b.newState(errorState)
-			}
-		case key.Matches(msg, b.keymap.selectOne, b.keymap.confirm):
+		case key.Matches(msg, b.keymap.confirm):
 			scraper := b.scrapersInstallC.SelectedItem().(*listItem).internal.(*installer.Scraper)
 			b.newState(loadingState)
 			return b, tea.Batch(b.startLoading(), b.installScraper(scraper), b.waitForScraperInstallation())
@@ -196,30 +176,6 @@ func (b *statefulBubble) updateLoading(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, b.keymap.back):
 			b.previousState()
 		}
-	case []*anilist.Manga:
-		manga, err := anilist.FindClosest(b.selectedManga.Name)
-		id := -1
-		if err == nil {
-			id = manga.ID
-		}
-
-		items := make([]list.Item, len(msg))
-		var marked int
-		for i, manga := range msg {
-			if manga.ID == id {
-				marked = i
-			}
-
-			items[i] = &listItem{
-				internal: manga,
-				marked:   manga.ID == id,
-			}
-		}
-
-		cmd = b.anilistC.SetItems(items)
-		b.newState(anilistSelectState)
-		b.anilistC.Select(marked)
-		return b, tea.Batch(cmd, b.stopLoading())
 	case []*installer.Scraper:
 		b.newState(scrapersInstallState)
 		return b, b.stopLoading()
@@ -306,14 +262,6 @@ func (b *statefulBubble) updateHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case b.historyC.FilterState() == list.Filtering:
 			break
-		case key.Matches(msg, b.keymap.openURL):
-			if b.historyC.SelectedItem() != nil {
-				chapter := b.historyC.SelectedItem().(*listItem).internal.(*history.SavedChapter)
-				err := open.Run(chapter.URL)
-				if err != nil {
-					b.raiseError(err)
-				}
-			}
 		case key.Matches(msg, b.keymap.remove):
 			if b.historyC.SelectedItem() != nil {
 				chapter := b.historyC.SelectedItem().(*listItem).internal.(*history.SavedChapter)
@@ -325,7 +273,7 @@ func (b *statefulBubble) updateHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				return b, cmd
 			}
-		case key.Matches(msg, b.keymap.selectOne, b.keymap.confirm):
+		case key.Matches(msg, b.keymap.confirm):
 			if b.historyC.SelectedItem() != nil {
 				selected := b.historyC.SelectedItem().(*listItem).internal.(*history.SavedChapter)
 				p, ok := provider.GetByID(selected.SourceID)
@@ -357,33 +305,6 @@ func (b *statefulBubble) updateSources(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, b.keymap.sourceSettings):
 			b.openSourceSettings()
 			return b, nil
-		case key.Matches(msg, b.keymap.selectAll):
-			for _, item := range b.sourcesC.Items() {
-				item := item.(*listItem)
-				item.marked = true
-				b.selectedProviders[item.internal.(*provider.Provider)] = struct{}{}
-			}
-		case key.Matches(msg, b.keymap.clearSelection):
-			for _, item := range b.sourcesC.Items() {
-				item := item.(*listItem)
-				item.marked = false
-				delete(b.selectedProviders, item.internal.(*provider.Provider))
-			}
-		case key.Matches(msg, b.keymap.selectOne):
-			if b.sourcesC.SelectedItem() == nil {
-				break
-			}
-
-			item := b.sourcesC.SelectedItem().(*listItem)
-			p := item.internal.(*provider.Provider)
-
-			if item.marked {
-				delete(b.selectedProviders, p)
-			} else {
-				b.selectedProviders[p] = struct{}{}
-			}
-
-			item.toggleMark()
 		case key.Matches(msg, b.keymap.confirm):
 			if b.sourcesC.SelectedItem() == nil {
 				break
@@ -391,12 +312,7 @@ func (b *statefulBubble) updateSources(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			item := b.sourcesC.SelectedItem().(*listItem)
 			defer b.newState(loadingState)
-
-			if len(b.selectedProviders) == 0 {
-				return b, tea.Batch(b.startLoading(), b.loadSources([]*provider.Provider{item.internal.(*provider.Provider)}), b.waitForSourcesLoaded())
-			}
-
-			return b, tea.Batch(b.startLoading(), b.loadSources(lo.Keys(b.selectedProviders)), b.waitForSourcesLoaded())
+			return b, tea.Batch(b.startLoading(), b.loadSources([]*provider.Provider{item.internal.(*provider.Provider)}), b.waitForSourcesLoaded())
 		}
 	}
 
@@ -460,7 +376,7 @@ func (b *statefulBubble) updateMangas(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case b.mangasC.FilterState() == list.Filtering:
 			break
-		case key.Matches(msg, b.keymap.confirm, b.keymap.selectOne):
+		case key.Matches(msg, b.keymap.confirm):
 			if b.mangasC.SelectedItem() == nil {
 				break
 			}
@@ -469,16 +385,6 @@ func (b *statefulBubble) updateMangas(msg tea.Msg) (tea.Model, tea.Cmd) {
 			b.selectedManga = m
 			go query.Remember(m.Name, 2)
 			return b, tea.Batch(b.getChapters(m), b.waitForChapters(), b.startLoading())
-		case key.Matches(msg, b.keymap.openURL):
-			if b.mangasC.SelectedItem() == nil {
-				break
-			}
-
-			m, _ := b.mangasC.SelectedItem().(*listItem).internal.(*source.Manga)
-			err := open.Start(m.URL)
-			if err != nil {
-				b.raiseError(err)
-			}
 		}
 	case []*source.Chapter:
 		items := make([]list.Item, len(msg))
@@ -498,10 +404,6 @@ func (b *statefulBubble) updateMangas(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.stopLoading()
 		cmd = tea.Batch(cmd, b.selectBookmark())
 
-		if viper.GetBool(key2.AnilistLinkOnMangaSelect) {
-			return b, tea.Batch(cmd, b.fetchAndSetAnilist(b.selectedManga), b.waitForAnilistFetchAndSet())
-		}
-
 		return b, cmd
 	}
 
@@ -513,84 +415,10 @@ func (b *statefulBubble) updateChapters(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
-	case *anilist.Manga:
-		cmd = b.chaptersC.NewStatusMessage(fmt.Sprintf(`Linked to %s %s`, style.Fg(color.Orange)(msg.Name()), style.Faint(urlOrEmpty(msg.SiteURL))))
-		return b, cmd
 	case tea.KeyMsg:
 		switch {
 		case b.chaptersC.FilterState() == list.Filtering:
 			break
-		case key.Matches(msg, b.keymap.openURL):
-			if b.chaptersC.SelectedItem() == nil {
-				break
-			}
-
-			chapter := b.chaptersC.SelectedItem().(*listItem).internal.(*source.Chapter)
-			err := open.Start(chapter.URL)
-			if err != nil {
-				b.raiseError(err)
-			}
-		case key.Matches(msg, b.keymap.anilistSelect):
-			b.newState(loadingState)
-			return b, tea.Batch(b.startLoading(), b.fetchAnilist(b.selectedManga), b.waitForAnilist())
-		case key.Matches(msg, b.keymap.selectVolume):
-			if b.chaptersC.SelectedItem() == nil {
-				break
-			}
-
-			chapter := b.chaptersC.SelectedItem().(*listItem).internal.(*source.Chapter)
-
-			if chapter.Volume == "" {
-				break
-			}
-
-			for _, item := range b.chaptersC.Items() {
-				item := item.(*listItem)
-				if item.internal.(*source.Chapter).Volume == chapter.Volume {
-					if !item.marked {
-						b.selectedChapters[item.internal.(*source.Chapter)] = struct{}{}
-					}
-					item.marked = true
-				}
-			}
-		case key.Matches(msg, b.keymap.selectOne):
-			if b.chaptersC.SelectedItem() == nil {
-				break
-			}
-
-			item := b.chaptersC.SelectedItem().(*listItem)
-			chapter := item.internal.(*source.Chapter)
-
-			item.toggleMark()
-			if item.marked {
-				b.selectedChapters[chapter] = struct{}{}
-			} else {
-				delete(b.selectedChapters, chapter)
-			}
-		case key.Matches(msg, b.keymap.selectAll):
-			items := b.chaptersC.Items()
-			if len(items) == 0 {
-				break
-			}
-
-			for _, item := range items {
-				item := item.(*listItem)
-				item.marked = true
-				chapter := item.internal.(*source.Chapter)
-				b.selectedChapters[chapter] = struct{}{}
-			}
-		case key.Matches(msg, b.keymap.clearSelection):
-			items := b.chaptersC.Items()
-			if len(items) == 0 {
-				break
-			}
-
-			for _, item := range items {
-				item := item.(*listItem)
-				item.marked = false
-				chapter := item.internal.(*source.Chapter)
-				delete(b.selectedChapters, chapter)
-			}
 		case key.Matches(msg, b.keymap.read):
 			if b.chaptersC.SelectedItem() == nil {
 				break
@@ -615,46 +443,6 @@ func (b *statefulBubble) updateChapters(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	b.chaptersC, cmd = b.chaptersC.Update(msg)
-	return b, cmd
-}
-
-func (b *statefulBubble) updateAnilistSelect(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch {
-		case b.anilistC.FilterState() == list.Filtering:
-			break
-		case key.Matches(msg, b.keymap.openURL):
-			if b.anilistC.SelectedItem() == nil {
-				break
-			}
-
-			m, _ := b.anilistC.SelectedItem().(*listItem).internal.(*anilist.Manga)
-			err := open.Start(m.SiteURL)
-			if err != nil {
-				b.raiseError(err)
-			}
-		case key.Matches(msg, b.keymap.confirm, b.keymap.selectOne):
-			if b.anilistC.SelectedItem() == nil {
-				break
-			}
-
-			manga := b.anilistC.SelectedItem().(*listItem).internal.(*anilist.Manga)
-			err := anilist.SetRelation(b.selectedManga.Name, manga)
-			if err != nil {
-				b.raiseError(err)
-				break
-			}
-
-			b.previousState()
-			cmd = b.chaptersC.NewStatusMessage(fmt.Sprintf(`Linked to %s %s`, style.Fg(color.Orange)(manga.Name()), style.Faint(urlOrEmpty(manga.SiteURL))))
-			return b, cmd
-		}
-	}
-
-	b.anilistC, cmd = b.anilistC.Update(msg)
 	return b, cmd
 }
 

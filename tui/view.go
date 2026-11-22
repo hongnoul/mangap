@@ -34,8 +34,6 @@ func (b *statefulBubble) View() string {
 		return b.viewMangas()
 	case chaptersState:
 		return b.viewChapters()
-	case anilistSelectState:
-		return b.viewAniList()
 	case confirmState:
 		return b.viewConfirm()
 	case readState:
@@ -192,10 +190,6 @@ func (b *statefulBubble) gridList() *list.Model {
 		return &b.chaptersC
 	}
 	return nil
-}
-
-func (b *statefulBubble) viewAniList() string {
-	return listExtraPaddingStyle.Render(b.anilistC.View())
 }
 
 func (b *statefulBubble) viewConfirm() string {

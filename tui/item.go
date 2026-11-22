@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"github.com/hongnoul/mangaz/anilist"
 	"github.com/hongnoul/mangaz/history"
 	"github.com/hongnoul/mangaz/icon"
 	"github.com/hongnoul/mangaz/installer"
@@ -29,8 +28,6 @@ func (t *listItem) getMark() string {
 	switch t.internal.(type) {
 	case *source.Chapter:
 		return style.Bold(icon.Get(icon.Mark))
-	case *anilist.Manga:
-		return icon.Get(icon.Link)
 	case *provider.Provider:
 		return icon.Get(icon.Search)
 	default:
@@ -95,8 +92,6 @@ func (t *listItem) Description() (description string) {
 		}
 
 		description = sb.String()
-	case *anilist.Manga:
-		description = urlOrEmpty(e.SiteURL)
 	}
 
 	return
@@ -110,8 +105,6 @@ func (t *listItem) FilterValue() string {
 		return e.Name
 	case *history.SavedChapter:
 		return e.MangaName
-	case *anilist.Manga:
-		return e.Name()
 	case *provider.Provider:
 		return e.Name
 	case *installer.Scraper:
