@@ -12,7 +12,8 @@ import (
 // homeKeys lists every TUI keybind, grouped, for the home screen.
 var homeKeys = [][2]string{
 	{"enter", "search / open"},
-	{"tab", "accept suggestion"},
+	{"tab", "complete suggestion"},
+	{"↑ / ↓", "pick suggestion"},
 	{"ctrl+s", "source settings"},
 	{"j / k", "down / up"},
 	{"l / h", "open / back"},
@@ -44,23 +45,7 @@ func (b *statefulBubble) viewHome() string {
 
 	boxW := imin(60, w-4)
 	b.inputC.Width = imax(boxW-6-lipgloss.Width(b.inputC.Prompt), 10)
-	box := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(color.Purple).
-		Padding(0, 1).
-		Width(boxW).
-		Render(b.inputC.View())
-
-	hint := ""
-	if b.searchSuggestion.IsPresent() {
-		sug := b.searchSuggestion.MustGet()
-		if max := boxW - 22; len(sug) > max {
-			sug = sug[:imax(max, 1)] + "…"
-		}
-		hint = fmt.Sprintf("Search %s ?  %s",
-			style.Fg(color.Orange)(sug),
-			style.Faint("tab to accept"))
-	}
+	box := b.searchBox(boxW)
 
 	keys := keysGrid(w)
 	art := style.Fg(color.Purple)(strings.Join(homeArt, "\n"))
@@ -69,11 +54,8 @@ func (b *statefulBubble) viewHome() string {
 	// then art.
 	full := h + 2
 	center := []string{box}
-	if hint != "" {
-		center = append(center, hint)
-	}
 	used := lipgloss.Height(lipgloss.JoinVertical(lipgloss.Center, center...))
-	showKeys := used+1+lipgloss.Height(keys) <= full
+	showKeys := len(b.searchSuggestions) == 0 && used+1+lipgloss.Height(keys) <= full
 	if showKeys {
 		used += 1 + lipgloss.Height(keys)
 	}
@@ -90,6 +72,46 @@ func (b *statefulBubble) viewHome() string {
 
 	block := lipgloss.JoinVertical(lipgloss.Center, parts...)
 	return lipgloss.Place(w+4, h+2, lipgloss.Center, lipgloss.Center, block)
+}
+
+// searchBox renders the search bar. With suggestions it expands downward
+// like a browser search box: the input on top, a divider, then one row per
+// suggestion, all inside the same border.
+func (b *statefulBubble) searchBox(boxW int) string {
+	inner := boxW - 2 // Width includes padding, not border
+	rows := []string{b.inputC.View()}
+
+	if len(b.searchSuggestions) > 0 {
+		rows = append(rows, style.Fg(color.Purple)(strings.Repeat("─", inner)))
+		for i, s := range b.searchSuggestions {
+			if max := inner - 4; lipgloss.Width(s) > max {
+				r := []rune(s)
+				if len(r) > max-1 {
+					r = r[:imax(max-1, 1)]
+				}
+				s = string(r) + "…"
+			}
+			line := "⌕ " + s
+			if i == b.suggestionIdx {
+				line = lipgloss.NewStyle().
+					Foreground(color.Orange).
+					Bold(true).
+					Width(inner).
+					Render("› " + s)
+			} else {
+				line = style.Faint(line)
+			}
+			rows = append(rows, line)
+		}
+		rows = append(rows, style.Faint("↑/↓ select · tab complete · enter search"))
+	}
+
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(color.Purple).
+		Padding(0, 1).
+		Width(boxW).
+		Render(strings.Join(rows, "\n"))
 }
 
 // keysGrid lays homeKeys out in as many columns as fit (max 3).

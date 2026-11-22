@@ -72,7 +72,10 @@ type statefulBubble struct {
 	failedChapters   []*source.Chapter
 	succededChapters []*source.Chapter
 
-	searchSuggestion mo.Option[string]
+	// search bar dropdown: matching past queries, and the highlighted
+	// row (-1 means none, the typed text is used as is)
+	searchSuggestions []string
+	suggestionIdx     int
 
 	sourceSettings *sourceSettings
 }
@@ -170,6 +173,7 @@ func newBubble() *statefulBubble {
 	bubble := statefulBubble{
 		statesHistory: util.Stack[state]{},
 		keymap:        keymap,
+		suggestionIdx: -1,
 
 		scrapersLoadedChannel:       make(chan []*installer.Scraper),
 		scraperInstalledChannel:     make(chan *installer.Scraper),

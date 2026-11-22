@@ -2,6 +2,8 @@ package tui
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
@@ -20,7 +22,6 @@ import (
 	"github.com/hongnoul/mangaz/style"
 	"github.com/hongnoul/mangaz/util"
 	"github.com/samber/lo"
-	"github.com/samber/mo"
 	"github.com/spf13/viper"
 	"golang.org/x/exp/slices"
 	"time"
@@ -50,6 +51,10 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			switch b.state {
 			case searchState:
+				if len(b.searchSuggestions) > 0 {
+					b.clearSuggestions()
+					return b, nil
+				}
 				b.inputC.SetValue("")
 			case chaptersState:
 				if b.chaptersC.FilterState() != list.Unfiltered {
@@ -400,7 +405,12 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, b.keymap.confirm) && b.inputC.Value() != "":
+		case key.Matches(msg, b.keymap.confirm) && (b.inputC.Value() != "" || b.suggestionIdx >= 0):
+			if b.suggestionIdx >= 0 && b.suggestionIdx < len(b.searchSuggestions) {
+				b.inputC.SetValue(b.searchSuggestions[b.suggestionIdx])
+				b.inputC.SetCursor(len(b.inputC.Value()))
+			}
+			b.clearSuggestions()
 			b.startLoading()
 			b.newState(loadingState)
 			go query.Remember(b.inputC.Value(), 1)
@@ -408,24 +418,30 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, b.keymap.sourceSettings):
 			b.openSourceSettings()
 			return b, nil
-		case key.Matches(msg, b.keymap.acceptSearchSuggestion) && b.searchSuggestion.IsPresent():
-			b.inputC.SetValue(b.searchSuggestion.MustGet())
-			b.searchSuggestion = mo.None[string]()
+		case msg.String() == "down" || msg.String() == "ctrl+n":
+			if n := len(b.searchSuggestions); n > 0 {
+				b.suggestionIdx = (b.suggestionIdx+2)%(n+1) - 1
+			}
+			return b, nil
+		case msg.String() == "up" || msg.String() == "ctrl+p":
+			if n := len(b.searchSuggestions); n > 0 {
+				b.suggestionIdx = (b.suggestionIdx+n+1)%(n+1) - 1
+			}
+			return b, nil
+		case key.Matches(msg, b.keymap.acceptSearchSuggestion) && len(b.searchSuggestions) > 0:
+			i := imax(b.suggestionIdx, 0)
+			b.inputC.SetValue(b.searchSuggestions[i])
 			b.inputC.SetCursor(len(b.inputC.Value()))
+			b.refreshSuggestions()
 			return b, nil
 		}
 	}
 
+	prev := b.inputC.Value()
 	b.inputC, cmd = b.inputC.Update(msg)
 
-	if b.inputC.Value() != "" {
-		if suggestion, ok := query.Suggest(b.inputC.Value()).Get(); ok && suggestion != b.inputC.Value() {
-			b.searchSuggestion = mo.Some(suggestion)
-		} else {
-			b.searchSuggestion = mo.None[string]()
-		}
-	} else if b.searchSuggestion.IsPresent() {
-		b.searchSuggestion = mo.None[string]()
+	if b.inputC.Value() != prev || (b.inputC.Value() == "" && len(b.searchSuggestions) > 0) {
+		b.refreshSuggestions()
 	}
 
 	return b, cmd
@@ -754,4 +770,35 @@ func (b *statefulBubble) updateError(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return b, cmd
+}
+
+// maxSearchSuggestions caps the dropdown under the search bar.
+const maxSearchSuggestions = 6
+
+// refreshSuggestions recomputes the dropdown for the current input.
+// The exact typed text is left out since it's already in the bar.
+func (b *statefulBubble) refreshSuggestions() {
+	b.suggestionIdx = -1
+	b.searchSuggestions = nil
+
+	value := b.inputC.Value()
+	if strings.TrimSpace(value) == "" {
+		return
+	}
+
+	typed := strings.ToLower(strings.TrimSpace(value))
+	for _, s := range query.SuggestMany(value) {
+		if s == typed {
+			continue
+		}
+		b.searchSuggestions = append(b.searchSuggestions, s)
+		if len(b.searchSuggestions) == maxSearchSuggestions {
+			break
+		}
+	}
+}
+
+func (b *statefulBubble) clearSuggestions() {
+	b.searchSuggestions = nil
+	b.suggestionIdx = -1
 }

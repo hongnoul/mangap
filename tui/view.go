@@ -76,14 +76,12 @@ func (b *statefulBubble) viewSearch() string {
 		b.inputC.View(),
 	}
 
-	if b.searchSuggestion.IsPresent() {
-		lines = append(
-			lines,
-			"",
-			fmt.Sprintf("Search %s ?", style.Fg(color.Orange)(b.searchSuggestion.MustGet())),
-			"",
-			fmt.Sprintf("Press %s to accept", style.Bold(style.Faint(b.keymap.acceptSearchSuggestion.Help().Key))),
-		)
+	for i, s := range b.searchSuggestions {
+		if i == b.suggestionIdx {
+			lines = append(lines, style.Fg(color.Orange)("> "+s))
+		} else {
+			lines = append(lines, style.Faint("  "+s))
+		}
 	}
 
 	return b.renderLines(
