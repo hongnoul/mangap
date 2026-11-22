@@ -20,6 +20,8 @@ func SuggestMany(query string) []string {
 
 	query = sanitize(query)
 
+	mu.Lock()
+	defer mu.Unlock()
 	var records []*queryRecord
 
 	if prev, ok := suggestionCache[query]; ok {

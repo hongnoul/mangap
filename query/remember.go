@@ -5,6 +5,8 @@ package query
 func Remember(query string, weight int) error {
 	query = sanitize(query)
 
+	mu.Lock()
+	defer mu.Unlock()
 	cached, expired, err := cacher.Get()
 	if expired || err != nil {
 		cached = map[string]*queryRecord{}

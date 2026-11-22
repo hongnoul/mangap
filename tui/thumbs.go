@@ -94,8 +94,10 @@ type thumbReadyMsg struct{}
 
 // thumbState is one thumbnail's progress.
 type thumbState struct {
-	id    int // kitty image id, 0 until something was transmitted
-	level int // 0 nothing shown, 1 low-res, 2 full-res
+	id int // kitty image id, 0 until something was transmitted
+	// level is what the terminal holds right now: 0 nothing (never sent,
+	// or freed because it scrolled out of the window), 1 low-res, 2 full.
+	level int
 	fail  bool
 	// low is the low-res PNG, kept (a few KB) so a full raster can be
 	// swapped back to it without decoding the source again.
@@ -138,7 +140,10 @@ type thumbs struct {
 	// One worker pool per priority: on-screen first, then the pages
 	// around it, then the low-res sweep of everything else.
 	lanes [prioVisible + 1]chan struct{}
-	// hot keys get the full raster; everything else stays low-res.
+	// hot keys (the window around the cursor) live in the terminal with
+	// the full raster. Everything else is only prepared in memory: some
+	// terminals cap the image store (gwae: 64 per pane) and silently drop
+	// transfers past it, so the whole list can never be resident.
 	hot map[string]bool
 	// Cell span every thumbnail is drawn at; set by the layout.
 	cols, rows int
@@ -177,8 +182,8 @@ func (t *thumbs) SetSpan(cols, rows int) {
 		return
 	}
 	t.cols, t.rows = cols, rows
-	// Re-send every low-res raster at the new span (cheap, cached bytes).
-	// Hot ones are promoted to full again by the next frame's want.
+	// Re-send every resident low-res raster at the new span (cheap, cached
+	// bytes). Hot ones are promoted to full again by the next frame's want.
 	var buf []byte
 	for _, st := range t.state {
 		if st.level == 0 || st.low == nil {
@@ -236,8 +241,9 @@ func (t *thumbs) WantChapter(c *source.Chapter, prio int) {
 	})
 }
 
-// want schedules whatever key still needs: the low-res raster if nothing
-// is shown, the full one if key is hot. Safe to call on every frame.
+// want schedules whatever key still needs: the low-res raster prepared in
+// memory, and for hot keys the full one in the terminal. Safe to call on
+// every frame.
 func (t *thumbs) want(key string, prio int, locate func() (url, referer string, err error)) {
 	if !t.active() || key == "" {
 		return
@@ -248,7 +254,7 @@ func (t *thumbs) want(key string, prio int, locate func() (url, referer string, 
 		st = &thumbState{}
 		t.state[key] = st
 	}
-	need := !st.fail && (st.level == 0 || (st.level == 1 && t.hot[key]))
+	need := !st.fail && (st.low == nil || (st.level < 2 && t.hot[key]))
 	if !need || (st.busy && (st.running || prio <= st.queued)) {
 		t.mu.Unlock()
 		return
@@ -334,16 +340,23 @@ func (t *thumbs) work(key string, st *thumbState, locate func() (string, string,
 	}
 
 	t.mu.Lock()
-	needLow := st.level == 0
+	needLow := st.low == nil
 	t.mu.Unlock()
 	if needLow {
-		t.sendLow(st, img)
+		t.makeLow(st, img)
 	}
 	t.mu.Lock()
 	hot := t.hot[key]
+	var buf []byte
+	if hot && st.level == 0 && st.low != nil {
+		// Preview first: a few KB that reach the terminal at once.
+		st.level = 1
+		buf = t.appendLow(nil, st)
+	}
 	t.mu.Unlock()
+	t.write(buf)
 	if hot {
-		t.sendFull(st, img)
+		t.sendFull(key, st, img)
 	}
 }
 
@@ -362,7 +375,9 @@ func (t *thumbs) pixels(cols, rows int, low bool) (int, int) {
 	return w, h
 }
 
-func (t *thumbs) sendLow(st *thumbState, img image.Image) {
+// makeLow renders the low-res raster into memory. It reaches the terminal
+// only while the key is hot (see work and Retain).
+func (t *thumbs) makeLow(st *thumbState, img image.Image) {
 	t.mu.Lock()
 	cols, rows := t.cols, t.rows
 	t.mu.Unlock()
@@ -373,15 +388,10 @@ func (t *thumbs) sendLow(st *thumbState, img image.Image) {
 	}
 	t.mu.Lock()
 	st.low, st.lowW, st.lowH = res.PNG, res.W, res.H
-	if st.level == 0 {
-		st.level = 1
-	}
-	buf := t.appendLow(nil, st)
 	t.mu.Unlock()
-	t.write(buf)
 }
 
-func (t *thumbs) sendFull(st *thumbState, img image.Image) {
+func (t *thumbs) sendFull(key string, st *thumbState, img image.Image) {
 	t.mu.Lock()
 	cols, rows := t.cols, t.rows
 	t.mu.Unlock()
@@ -391,9 +401,9 @@ func (t *thumbs) sendFull(st *thumbState, img image.Image) {
 		return
 	}
 	t.mu.Lock()
-	if cols != t.cols || rows != t.rows {
+	if cols != t.cols || rows != t.rows || !t.hot[key] {
 		t.mu.Unlock()
-		return // resized meanwhile; the next frame asks again
+		return // resized or scrolled away meanwhile; the next frame asks again
 	}
 	buf := t.appendTransmit(nil, st, res.PNG, res.W, res.H)
 	st.level = 2
@@ -495,7 +505,7 @@ func (t *thumbs) Cells(key string, r int) string {
 	cols := t.cols
 	st := t.state[key]
 	id := 0
-	if st != nil && st.cols == t.cols && st.rows == t.rows {
+	if st != nil && st.level > 0 && st.cols == t.cols && st.rows == t.rows {
 		id = st.id
 	}
 	t.mu.Unlock()
@@ -560,25 +570,34 @@ func (m *mutedExec) Run() error {
 	return err
 }
 
-// Retain marks keep as hot (full-res) and swaps every other full raster
-// back to its low-res version. The terminal's image store is finite, so
-// only the pages around the cursor hold full rasters, while the low-res
-// copies (a few KB each) stay for the whole list.
+// Retain makes keep (the pages around the cursor) the only images in the
+// terminal: everything else is freed, and kept keys whose low-res raster
+// is already in memory are sent at once, so scrolling never shows blanks.
+// The terminal's image store is finite (gwae drops transfers past 64 per
+// pane, silently), so only this window may be resident; low-res copies
+// for the rest of the list stay in memory, a few KB each.
 func (t *thumbs) Retain(keep map[string]bool) {
 	if !t.enabled {
 		return
 	}
 	t.mu.Lock()
 	t.hot = keep
-	var buf []byte
+	// Frees go first: a delete in the middle of a transfer aborts it.
+	var del, buf []byte
 	for key, st := range t.state {
-		if st.level == 2 && !keep[key] && st.low != nil {
+		switch {
+		case st.level > 0 && !keep[key]:
+			del = append(del, "\x1b_Ga=d,d=I,i="...)
+			del = strconv.AppendInt(del, int64(st.id), 10)
+			del = append(del, ",q=2\x1b\\"...)
+			st.level = 0
+		case st.level == 0 && keep[key] && st.low != nil:
 			st.level = 1
 			buf = t.appendLow(buf, st)
 		}
 	}
 	t.mu.Unlock()
-	t.write(buf)
+	t.write(append(del, buf...))
 }
 
 // localImage is the thumbnail for a file in the downloads archive: an
