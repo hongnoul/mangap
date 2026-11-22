@@ -16,4 +16,5 @@ const (
 	readState
 	downloadState
 	downloadDoneState
+	sourceSettingsState
 )

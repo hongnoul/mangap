@@ -129,6 +129,8 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return b.updateScrapersInstall(msg)
 	case errorState:
 		return b.updateError(msg)
+	case sourceSettingsState:
+		return b.updateSourceSettings(msg)
 	}
 
 	panic("unreachable")
@@ -215,6 +217,12 @@ func (b *statefulBubble) updateLoading(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		cmds = append(cmds, b.mangasC.SetItems(items))
+		b.mangasC.Title = "Mangas"
+		for _, s := range b.selectedSources {
+			if a, ok := s.(*provider.Auto); ok && a.Last() != nil {
+				b.mangasC.Title = "Mangas via " + a.Last().Name()
+			}
+		}
 		b.newState(mangasState)
 		b.stopLoading()
 	case []*source.Chapter:
@@ -308,13 +316,7 @@ func (b *statefulBubble) updateHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, b.keymap.selectOne, b.keymap.confirm):
 			if b.historyC.SelectedItem() != nil {
 				selected := b.historyC.SelectedItem().(*listItem).internal.(*history.SavedChapter)
-				providers := lo.Map(b.sourcesC.Items(), func(i list.Item, _ int) *provider.Provider {
-					return i.(*listItem).internal.(*provider.Provider)
-				})
-
-				p, ok := lo.Find(providers, func(p *provider.Provider) bool {
-					return p.ID == selected.SourceID
-				})
+				p, ok := provider.GetByID(selected.SourceID)
 
 				if !ok {
 					err := fmt.Errorf("provider %s not found", selected.SourceID)
@@ -340,6 +342,9 @@ func (b *statefulBubble) updateSources(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case b.sourcesC.FilterState() == list.Filtering:
 			break
+		case key.Matches(msg, b.keymap.sourceSettings):
+			b.openSourceSettings()
+			return b, nil
 		case key.Matches(msg, b.keymap.selectAll):
 			for _, item := range b.sourcesC.Items() {
 				item := item.(*listItem)
@@ -398,6 +403,9 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 			b.newState(loadingState)
 			go query.Remember(b.inputC.Value(), 1)
 			return b, tea.Batch(b.searchManga(b.inputC.Value()), b.waitForMangas(), b.spinnerC.Tick)
+		case key.Matches(msg, b.keymap.sourceSettings):
+			b.openSourceSettings()
+			return b, nil
 		case key.Matches(msg, b.keymap.acceptSearchSuggestion) && b.searchSuggestion.IsPresent():
 			b.inputC.SetValue(b.searchSuggestion.MustGet())
 			b.searchSuggestion = mo.None[string]()

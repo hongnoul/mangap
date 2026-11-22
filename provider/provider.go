@@ -85,3 +85,18 @@ func Get(name string) (*Provider, bool) {
 
 	return nil, false
 }
+
+// GetByID finds a builtin or custom provider by its ID.
+func GetByID(id string) (*Provider, bool) {
+	for _, p := range Builtins() {
+		if p.ID == id {
+			return p, true
+		}
+	}
+	for _, p := range Customs() {
+		if p.ID == id {
+			return p, true
+		}
+	}
+	return nil, false
+}

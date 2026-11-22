@@ -48,9 +48,26 @@ paths.
 
 ## Sources
 
-Built in: MangaDex, Manganelo, Manganato, Mangapill. Custom Lua scrapers still
-install from [mangal-scrapers](https://github.com/metafates/mangal-scrapers)
-(`mangaz sources install`).
+Built in: **Mangapill** (default) and **MangaDex** (fallback). Manganato and
+Manganelo were removed: both return nothing now.
+
+By default the TUI skips the source picker and goes straight to search
+(`sources.mode = auto`). Each search tries the sources in `sources.order`
+and shows the first one with results; the list title says which one
+answered. A source that errors, finds nothing, or takes over 8s passes to
+the next. Once you open a manga it stays on that source.
+
+Press `ctrl+s` on the search screen for the source settings:
+
+- `j`/`k` move, `J`/`K` reorder, `space` enable/disable, `m` switch
+  auto/manual, `enter` save, `esc` cancel.
+- Manual mode brings back the old picker on start.
+- `-S <name>` on the command line still forces specific sources.
+
+Custom Lua scrapers still install from
+[mangal-scrapers](https://github.com/metafates/mangal-scrapers)
+(`mangaz sources install`). They show up in the settings screen, disabled
+until you turn them on.
 
 ## License
 

@@ -108,6 +108,12 @@ mangaz inline -S Mangadex -q "chainsaw man" -m first -j`,
 			sources = append(sources, src)
 		}
 
+		if len(sources) == 0 {
+			auto, err := provider.NewAuto()
+			handleErr(err)
+			sources = append(sources, auto)
+		}
+
 		query := lo.Must(cmd.Flags().GetString("query"))
 
 		output := lo.Must(cmd.Flags().GetString("output"))

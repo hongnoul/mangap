@@ -34,7 +34,7 @@ type Configuration struct {
 	// BaseURL of the source
 	BaseURL string
 	// GenerateSearchURL function to create search URL from the query.
-	// E.g. "one piece" -> "https://manganelo.com/search/story/one%20piece"
+	// E.g. "one piece" -> "https://example.com/search?q=one+piece"
 	GenerateSearchURL func(query string) string
 
 	// MangaExtractor is responsible for finding manga elements and extracting required data from them

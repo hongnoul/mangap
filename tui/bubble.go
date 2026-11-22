@@ -75,6 +75,8 @@ type statefulBubble struct {
 	succededChapters []*source.Chapter
 
 	searchSuggestion mo.Option[string]
+
+	sourceSettings *sourceSettings
 }
 
 func (b *statefulBubble) raiseError(err error) {

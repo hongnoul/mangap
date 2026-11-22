@@ -10,7 +10,12 @@ import (
 )
 
 func (b *statefulBubble) Init() tea.Cmd {
-	if names := viper.GetStringSlice(key.DownloaderDefaultSources); b.state != historyState && len(names) != 0 {
+	if b.state == historyState || b.state == scrapersInstallState {
+		return tea.Batch(textinput.Blink, b.loadProviders())
+	}
+
+	// Explicit sources (-S flag or downloader.default_sources) win.
+	if names := viper.GetStringSlice(key.DownloaderDefaultSources); len(names) != 0 {
 		var providers []*provider.Provider
 
 		for _, name := range names {
@@ -25,6 +30,11 @@ func (b *statefulBubble) Init() tea.Cmd {
 
 		b.setState(loadingState)
 		return tea.Batch(b.startLoading(), b.loadSources(providers), b.waitForSourcesLoaded())
+	}
+
+	// Auto mode: straight to search, sources tried in priority order.
+	if b.state == searchState {
+		return textinput.Blink
 	}
 
 	return tea.Batch(textinput.Blink, b.loadProviders())

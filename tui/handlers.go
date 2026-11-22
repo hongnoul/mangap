@@ -145,7 +145,7 @@ func (b *statefulBubble) waitForSourcesLoaded() tea.Cmd {
 func (b *statefulBubble) searchManga(query string) tea.Cmd {
 	return func() tea.Msg {
 		log.Info("searching for " + query)
-		b.progressStatus = fmt.Sprintf("Searching among %s", util.Quantify(len(b.selectedSources), "source", "sources"))
+		b.progressStatus = "Searching " + autoChain(b.selectedSources)
 
 		var mangas = make([]*source.Manga, 0)
 

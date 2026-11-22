@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestManganelo(t *testing.T) {
+func TestMangapill(t *testing.T) {
 	Convey("Given a mangapill instance", t, func() {
 		mangapill := generic.New(Config)
 		Convey("When searching for a manga", func() {

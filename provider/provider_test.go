@@ -1,23 +1,19 @@
 package provider
 
 import (
-	"github.com/hongnoul/mangaz/provider/manganelo"
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+
+	"github.com/hongnoul/mangaz/provider/mangapill"
 )
 
 func TestGet(t *testing.T) {
-	Convey("When trying to get a valid provider", t, func() {
-		_, ok := Get(manganelo.Config.Name)
-		Convey("Then ok should be true", func() {
-			So(ok, ShouldBeTrue)
-		})
-	})
-
-	Convey("When trying to get an invalid provider", t, func() {
-		_, ok := Get("kek")
-		Convey("Then ok should be false", func() {
-			So(ok, ShouldBeFalse)
-		})
-	})
+	if _, ok := Get(mangapill.Config.Name); !ok {
+		t.Fatal("mangapill should be a builtin")
+	}
+	if _, ok := Get("kek"); ok {
+		t.Fatal("unknown provider found")
+	}
+	if b := Builtins(); len(b) != 2 || b[0].Name != "Mangapill" || b[1].Name != "Mangadex" {
+		t.Fatalf("builtins = %v, want [Mangapill Mangadex]", b)
+	}
 }
