@@ -30,36 +30,9 @@ var homeKeys = [][2]string{
 	{"ctrl+c", "quit"},
 }
 
-// searchBox renders the search bar. With suggestions it expands downward
-// like a browser search box: the input on top, a divider, then one row per
-// suggestion, all inside the same border.
+// searchBox renders the search bar as a single bordered input row.
 func (b *statefulBubble) searchBox(boxW int) string {
-	inner := boxW - 2 // Width includes padding, not border
 	rows := []string{b.inputC.View()}
-
-	if len(b.searchSuggestions) > 0 {
-		rows = append(rows, style.Fg(color.Purple)(strings.Repeat("─", inner)))
-		for i, s := range b.searchSuggestions {
-			if max := inner - 4; lipgloss.Width(s) > max {
-				r := []rune(s)
-				if len(r) > max-1 {
-					r = r[:imax(max-1, 1)]
-				}
-				s = string(r) + "…"
-			}
-			var line string
-			if i == b.suggestionIdx {
-				line = lipgloss.NewStyle().
-					Reverse(true).
-					Bold(true).
-					Width(inner).
-					Render(s)
-			} else {
-				line = style.Faint(s)
-			}
-			rows = append(rows, line)
-		}
-	}
 
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).

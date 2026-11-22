@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -694,32 +693,11 @@ func (b *statefulBubble) updateError(msg tea.Msg) (tea.Model, tea.Cmd) {
 // maxSearchSuggestions caps the dropdown under the search bar.
 const maxSearchSuggestions = 6
 
-// refreshSuggestions recomputes the dropdown for the current input.
-// The exact typed text is left out since it's already in the bar.
+// refreshSuggestions clears suggestion state. The text dropdown was
+// removed since the live thumbnail results already show the matches.
 func (b *statefulBubble) refreshSuggestions() {
 	b.suggestionIdx = -1
 	b.searchSuggestions = nil
-
-	value := b.inputC.Value()
-	if strings.TrimSpace(value) == "" {
-		return
-	}
-
-	typed := strings.ToLower(strings.TrimSpace(value))
-	for _, s := range query.SuggestMany(value) {
-		if s == typed {
-			continue
-		}
-		b.searchSuggestions = append(b.searchSuggestions, s)
-		if len(b.searchSuggestions) == maxSearchSuggestions {
-			break
-		}
-	}
-
-	// Default the highlight to the top suggestion.
-	if len(b.searchSuggestions) > 0 {
-		b.suggestionIdx = 0
-	}
 }
 
 func (b *statefulBubble) clearSuggestions() {

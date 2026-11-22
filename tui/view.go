@@ -79,14 +79,6 @@ func (b *statefulBubble) viewSearch() string {
 		b.inputC.View(),
 	}
 
-	for i, s := range b.searchSuggestions {
-		if i == b.suggestionIdx {
-			lines = append(lines, style.Fg(color.Orange)("> "+s))
-		} else {
-			lines = append(lines, style.Faint("  "+s))
-		}
-	}
-
 	return b.renderLines(
 		true,
 		lines,
