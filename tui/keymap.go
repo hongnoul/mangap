@@ -111,11 +111,11 @@ func newStatefulKeymap() *statefulKeymap {
 			help("↓", "down"),
 		),
 		left: k(
-			keys("left"),
+			keys("left", "ctrl+k"),
 			help("←", "prev page"),
 		),
 		right: k(
-			keys("right"),
+			keys("right", "ctrl+j"),
 			help("→", "next page"),
 		),
 		top: k(
