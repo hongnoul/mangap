@@ -12,9 +12,9 @@ import (
 // homeKeys lists every TUI keybind, grouped, for the home screen.
 var homeKeys = [][2]string{
 	{"enter", "search / open"},
-	{"tab", "complete suggestion"},
+	{"tab / shift+tab", "next / prev result"},
 	{"↑ / ↓", "pick suggestion"},
-	{"ctrl+j / k", "jump to / from results"},
+	{"ctrl+j / k", "next / prev result"},
 	{"ctrl+s", "source settings"},
 	{"j / k", "down / up"},
 	{"l / h", "open / back"},

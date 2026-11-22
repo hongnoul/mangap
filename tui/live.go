@@ -8,9 +8,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hongnoul/mangap/log"
 	"github.com/hongnoul/mangap/source"
-	"github.com/hongnoul/mangap/style"
-	"github.com/hongnoul/mangap/util"
-	"github.com/muesli/reflow/truncate"
 )
 
 // Live search: while typing on the search screen, the top manga for the
@@ -34,7 +31,6 @@ func (b *statefulBubble) scheduleLive() tea.Cmd {
 	b.liveSeq++
 	seq, q := b.liveSeq, b.inputC.Value()
 	if q == "" {
-		b.liveStatus = ""
 		b.mangasC.SetItems(nil)
 		return nil
 	}
@@ -45,7 +41,6 @@ func (b *statefulBubble) runLive(m liveTickMsg) tea.Cmd {
 	if m.seq != b.liveSeq || len(b.selectedSources) == 0 {
 		return nil
 	}
-	b.liveStatus = "Searching…"
 	srcs := b.selectedSources
 	return func() tea.Msg {
 		var all []*source.Manga
@@ -65,7 +60,6 @@ func (b *statefulBubble) applyLive(m liveResultMsg) tea.Cmd {
 	if m.seq != b.liveSeq {
 		return nil
 	}
-	b.liveStatus = util.Quantify(len(m.mangas), "result", "results")
 	items := make([]list.Item, len(m.mangas))
 	for i, mg := range m.mangas {
 		items[i] = &listItem{internal: mg}
@@ -90,13 +84,7 @@ func (b *statefulBubble) viewLive() string {
 	}
 	box = lipgloss.PlaceHorizontal(full, lipgloss.Center, box)
 
-	status := b.liveStatus
-	if b.state == searchState && len(b.mangasC.Items()) > 0 {
-		status += style.Faint("  ·  ctrl+j/k open results")
-	} else if b.state == mangasState {
-		status += style.Faint("  ·  ctrl+j/k or esc back to search")
-	}
-	header := box + "\n  " + truncate.StringWithTail(status, uint(imax(full-4, 1)), "…")
+	header := box
 
 	H := b.height + 2 - lipgloss.Height(header)
 	if b.inputC.Value() == "" && b.state == searchState {

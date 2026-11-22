@@ -78,9 +78,7 @@ type statefulBubble struct {
 	sourceSettings *sourceSettings
 
 	// live search (see live.go)
-	liveSeq    int
-	liveStatus string
-	liveMode   bool // manga results entered from live search
+	liveSeq int
 
 	thumbs  *thumbs
 	preview *thumbs // large image of the selected item, right pane

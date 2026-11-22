@@ -31,8 +31,7 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return b, nil // a cover landed: the repaint after Update shows it
 	}
 	if km, ok := msg.(tea.KeyMsg); ok {
-		liveToggle := b.liveMode && b.state == mangasState && (km.String() == "ctrl+j" || km.String() == "ctrl+k")
-		if l := b.gridList(); l != nil && !liveToggle && l.FilterState() != list.Filtering {
+		if l := b.gridList(); l != nil && l.FilterState() != list.Filtering {
 			if b.grid.key(km.String()) || b.grid.nav(l, km.String()) {
 				b.applyVisual()
 				return b, nil
@@ -76,12 +75,6 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				cmd = onListBack(&b.chaptersC)
 			case mangasState:
-				if b.liveMode {
-					b.liveMode = false
-					b.inputC.Focus()
-					b.previousState()
-					return b, nil
-				}
 				if b.mangasC.FilterState() != list.Unfiltered {
 					b.mangasC, cmd = b.mangasC.Update(msg)
 					return b, cmd
@@ -338,6 +331,19 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
+		case key.Matches(msg, b.keymap.confirm) && len(b.mangasC.Items()) > 0:
+			// Open the highlighted live result.
+			m, ok := b.mangasC.SelectedItem().(*listItem).internal.(*source.Manga)
+			if !ok {
+				break
+			}
+			b.liveSeq++
+			b.clearSuggestions()
+			b.selectedManga = m
+			go query.Remember(b.inputC.Value(), 1)
+			go query.Remember(m.Name, 2)
+			b.newState(loadingState)
+			return b, tea.Batch(b.getChapters(m), b.waitForChapters(), b.startLoading(), b.spinnerC.Tick)
 		case key.Matches(msg, b.keymap.confirm) && (b.inputC.Value() != "" || b.suggestionIdx >= 0):
 			if b.suggestionIdx >= 0 && b.suggestionIdx < len(b.searchSuggestions) {
 				b.inputC.SetValue(b.searchSuggestions[b.suggestionIdx])
@@ -345,7 +351,6 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			b.clearSuggestions()
 			b.liveSeq++ // drop in-flight live lookups
-			b.liveMode = false
 			b.startLoading()
 			b.newState(loadingState)
 			go query.Remember(b.inputC.Value(), 1)
@@ -353,12 +358,15 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, b.keymap.sourceSettings):
 			b.openSourceSettings()
 			return b, nil
-		case (msg.String() == "ctrl+j" || msg.String() == "ctrl+k") && len(b.mangasC.Items()) > 0:
-			// Dive into the live manga results; esc comes back here.
-			b.clearSuggestions()
-			b.inputC.Blur()
-			b.liveMode = true
-			b.newState(mangasState)
+		case len(b.mangasC.Items()) > 0 && lo.Contains([]string{"ctrl+j", "ctrl+k", "tab", "shift+tab"}, msg.String()):
+			// Walk the live results while typing stays in the bar.
+			n, i := len(b.mangasC.Items()), b.mangasC.Index()
+			if s := msg.String(); s == "ctrl+j" || s == "tab" {
+				i = (i + 1) % n
+			} else {
+				i = (i - 1 + n) % n
+			}
+			b.mangasC.Select(i)
 			return b, nil
 		case msg.String() == "down" || msg.String() == "ctrl+n":
 			if n := len(b.searchSuggestions); n > 0 {
@@ -414,12 +422,6 @@ func (b *statefulBubble) updateMangas(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case b.mangasC.FilterState() == list.Filtering:
 			break
-		case b.liveMode && (msg.String() == "ctrl+j" || msg.String() == "ctrl+k"):
-			// Toggle back up to the search bar.
-			b.liveMode = false
-			b.inputC.Focus()
-			b.previousState()
-			return b, nil
 		case key.Matches(msg, b.keymap.confirm):
 			if b.mangasC.SelectedItem() == nil {
 				break
