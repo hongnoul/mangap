@@ -74,6 +74,11 @@ func (b *statefulBubble) dropdownOptions() []string {
 func (b *statefulBubble) updateDropdown(km tea.KeyMsg) (tea.Model, tea.Cmd) {
 	d := b.dropdown
 	n := len(b.dropdownOptions())
+	if isCtrlSlash(km) {
+		b.dropdown = nil
+		b.showKeys = !b.showKeys
+		return b, nil
+	}
 	switch km.String() {
 	case "up", "k", "ctrl+p", "shift+tab":
 		if n > 0 {
@@ -157,6 +162,12 @@ func (b *statefulBubble) viewDropdown(w int) string {
 		Padding(0, 1).
 		Width(imax(w-2, 4)).
 		Render(strings.Join(lines, "\n"))
+}
+
+// isCtrlSlash matches ctrl+/, which most terminals send as ctrl+_ (0x1f).
+func isCtrlSlash(km tea.KeyMsg) bool {
+	s := km.String()
+	return s == "ctrl+/" || s == "ctrl+_" || s == "ctrl+7"
 }
 
 // stripFaint drops ANSI styling so the highlighted row renders uniformly.

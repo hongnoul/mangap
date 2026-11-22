@@ -379,6 +379,9 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case msg.String() == "ctrl+l":
 			b.openDropdown(languageDropdown)
 			return b, nil
+		case isCtrlSlash(msg):
+			b.showKeys = !b.showKeys
+			return b, nil
 		case len(b.sourceChoices) > 0 && (msg.String() == "ctrl+o" ||
 			(b.inputC.Value() == "" && (msg.String() == "left" || msg.String() == "right"))):
 			d := 1

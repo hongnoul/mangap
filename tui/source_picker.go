@@ -72,22 +72,22 @@ func (b *statefulBubble) sourcePicker(w int) string {
 			Align(lipgloss.Center).
 			Render(label)
 	}
-	leftW := (w - 1) / 2
-	rightW := w - 1 - leftW
 	srcLabel := style.Faint("Source  ") + bold.Render(n)
 	if bd := b.pingC.badge(b.sourceChoices[b.sourceIdx]); bd != "" {
 		srcLabel += "  " + bd
 	}
-	src := box(leftW, srcLabel+style.Faint(" (ctrl+s)"))
-	lng := box(rightW, style.Faint("Language  ")+bold.Render(lang.name)+style.Faint(" (ctrl+l)"))
-	row := lipgloss.JoinHorizontal(lipgloss.Top, src, " ", lng)
-	if b.dropdown == nil {
-		return row
+	parts := []string{box(w, srcLabel+style.Faint(" (ctrl+s)"))}
+	if b.dropdown != nil && b.dropdown.kind == sourceDropdown {
+		parts = append(parts, b.viewDropdown(w))
 	}
-	// Expanded list sits under the box it belongs to.
-	if b.dropdown.kind == sourceDropdown {
-		return lipgloss.JoinVertical(lipgloss.Left, row, b.viewDropdown(leftW))
+	parts = append(parts, box(w, style.Faint("Language  ")+bold.Render(lang.name)+style.Faint(" (ctrl+l)")))
+	if b.dropdown != nil && b.dropdown.kind == languageDropdown {
+		parts = append(parts, b.viewDropdown(w))
 	}
-	return lipgloss.JoinVertical(lipgloss.Left, row,
-		lipgloss.NewStyle().PaddingLeft(leftW+1).Render(b.viewDropdown(rightW)))
+	word := "show"
+	if b.showKeys {
+		word = "hide"
+	}
+	parts = append(parts, box(w, style.Faint("Keybinds  ")+bold.Render(word)+style.Faint(" (ctrl+/)")))
+	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }

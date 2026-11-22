@@ -82,6 +82,7 @@ type statefulBubble struct {
 	sourceChoices []string
 	sourceIdx     int
 	dropdown      *dropdown // open source/language picker, nil when closed
+	showKeys      bool      // home keybind cheatsheet expanded (ctrl+/)
 
 	// live search (see live.go)
 	liveSeq int

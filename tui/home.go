@@ -18,6 +18,7 @@ var homeKeys = [][2]string{
 	{"ctrl+s", "pick source"},
 	{"ctrl+l", "pick language"},
 	{"ctrl+o", "next source"},
+	{"ctrl+/", "toggle keybinds"},
 	{"j / k", "down / up"},
 	{"l / h", "open / back"},
 	{"hjkl", "move in grid"},
@@ -95,7 +96,7 @@ func (b *statefulBubble) homeBody(w, h int) string {
 	keys := keysGrid(w - 4)
 	var parts []string
 	used := 0
-	if lipgloss.Height(keys) <= h && lipgloss.Width(keys) <= w && len(b.searchSuggestions) == 0 {
+	if b.showKeys && lipgloss.Height(keys) <= h && lipgloss.Width(keys) <= w && len(b.searchSuggestions) == 0 {
 		used = lipgloss.Height(keys)
 	} else {
 		keys = ""
