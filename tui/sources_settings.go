@@ -239,7 +239,7 @@ func (b *statefulBubble) updateSourceSettings(msg tea.Msg) (tea.Model, tea.Cmd) 
 		b.statesHistory = util.Stack[state]{}
 		b.setState(searchState)
 		b.inputC.Focus()
-		return b, nil
+		return b, b.pingC.start() // enabled set may have changed
 	default:
 		if key.Matches(km, b.keymap.back) {
 			b.sourceSettings = nil

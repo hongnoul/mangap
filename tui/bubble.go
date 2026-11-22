@@ -32,6 +32,7 @@ type statefulBubble struct {
 	// components
 	spinnerC         spinner.Model
 	loaderC          loader
+	pingC            pinger
 	inputC           textinput.Model
 	scrapersInstallC list.Model
 	historyC         list.Model
@@ -246,6 +247,7 @@ func newBubble() *statefulBubble {
 	bubble.spinnerC.Spinner = spinner.Dot
 	bubble.spinnerC.Style = lipgloss.NewStyle()
 	bubble.loaderC = newLoader()
+	bubble.pingC = newPinger()
 
 	bubble.inputC = textinput.New()
 	bubble.inputC.Placeholder = "Search"

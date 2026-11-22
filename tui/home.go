@@ -92,6 +92,7 @@ func imax(a, b int) int {
 // art and keys, centered in w x h, dropping pieces that do not fit.
 func (b *statefulBubble) homeBody(w, h int) string {
 	keys := keysGrid(w - 4)
+	status := b.pingC.view(w - 4)
 	var parts []string
 	used := 0
 	if lipgloss.Height(keys) <= h && lipgloss.Width(keys) <= w && len(b.searchSuggestions) == 0 {
@@ -99,8 +100,21 @@ func (b *statefulBubble) homeBody(w, h int) string {
 	} else {
 		keys = ""
 	}
+	// Source status sits between the art and the keys; it is the first
+	// thing dropped after the keys when space runs out.
+	if status != "" && len(b.searchSuggestions) == 0 && used+lipgloss.Height(status)+1 <= h {
+		used += lipgloss.Height(status) + 1
+	} else {
+		status = ""
+	}
 	if used+len(homeArt)+1 <= h && w >= lipgloss.Width(homeArt[0]) {
 		parts = append(parts, strings.Join(homeArt, "\n"))
+		if keys != "" || status != "" {
+			parts = append(parts, "")
+		}
+	}
+	if status != "" {
+		parts = append(parts, status)
 		if keys != "" {
 			parts = append(parts, "")
 		}

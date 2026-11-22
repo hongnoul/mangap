@@ -29,11 +29,18 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return b, nil // a cover landed: the repaint after Update shows it
 	}
 	if t, ok := msg.(loaderTickMsg); ok {
+		if b.pingC.bar.owns(t) {
+			return b, b.pingC.bar.update(t)
+		}
 		switch b.state {
 		case loadingState, readState, downloadState:
 			return b, b.loaderC.update(t)
 		}
 		b.loaderC.stop() // left the loading screens: stop repainting
+		return b, nil
+	}
+	if m, ok := msg.(pingResultMsg); ok {
+		b.pingC.update(m)
 		return b, nil
 	}
 	if km, ok := msg.(tea.KeyMsg); ok {

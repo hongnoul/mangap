@@ -34,7 +34,7 @@ func (b *statefulBubble) Init() tea.Cmd {
 
 	// Auto mode: straight to search, sources tried in priority order.
 	if b.state == searchState {
-		return textinput.Blink
+		return tea.Batch(textinput.Blink, b.pingC.start())
 	}
 
 	return tea.Batch(textinput.Blink, b.loadProviders())

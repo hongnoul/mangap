@@ -15,15 +15,17 @@ const CustomProviderExtension = ".lua"
 // missing chapters).
 var builtinProviders = []*Provider{
 	{
-		ID:   mangapill.Config.ID(),
-		Name: mangapill.Config.Name,
+		ID:      mangapill.Config.ID(),
+		Name:    mangapill.Config.Name,
+		PingURL: mangapill.Config.BaseURL,
 		CreateSource: func() (source.Source, error) {
 			return generic.New(mangapill.Config), nil
 		},
 	},
 	{
-		ID:   mangadex.ID,
-		Name: mangadex.Name,
+		ID:      mangadex.ID,
+		Name:    mangadex.Name,
+		PingURL: "https://api.mangadex.org/ping",
 		CreateSource: func() (source.Source, error) {
 			return mangadex.New(), nil
 		},

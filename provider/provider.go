@@ -12,8 +12,11 @@ import (
 )
 
 type Provider struct {
-	ID           string
-	Name         string
+	ID   string
+	Name string
+	// PingURL is a cheap endpoint the TUI hits to show whether the source
+	// is reachable. Empty means unknown (custom Lua sources).
+	PingURL      string
 	UsesHeadless bool
 	IsCustom     bool
 	CreateSource func() (source.Source, error)
