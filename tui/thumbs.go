@@ -195,14 +195,25 @@ func (t *thumbs) WantManga(m *source.Manga, prio int) {
 	t.want(u, prio, func() (string, string, error) { return u, ref, nil })
 }
 
-// WantChapter requests a chapter's first page. Scraper sources only:
-// MangaDex would download the whole chapter to learn its first page.
+// firstPager is a source that can locate a chapter's first page image
+// without downloading the whole chapter.
+type firstPager interface {
+	FirstPageURL(*source.Chapter) (string, error)
+}
+
+// WantChapter requests a chapter's first page from sources that can
+// locate it cheaply (scrapers, MangaDex via one at-home lookup).
 func (t *thumbs) WantChapter(c *source.Chapter, prio int) {
 	if c == nil || c.Manga == nil || c.URL == "" {
 		return
 	}
-	sc, ok := c.Source().(*generic.Scraper)
+	sc, ok := c.Source().(firstPager)
 	if !ok {
+		return
+	}
+	// MangaDex's at-home endpoint is rate limited (40/min), so only the
+	// rows on and around the screen are fetched, never the whole list.
+	if _, scraper := sc.(*generic.Scraper); !scraper && prio == prioSweep {
 		return
 	}
 	t.want(c.URL, prio, func() (string, string, error) {
