@@ -75,6 +75,19 @@ Custom Lua scrapers still install from
 (`mangaz sources install`). They show up in the settings screen, disabled
 until you turn them on.
 
+## Anilist
+
+```
+mangaz integration anilist
+```
+
+Your browser opens, you click "Authorize", done. Chapters you read are then
+marked as read on your Anilist list. Over SSH, add `--no-browser` and paste the
+URL you land on after authorizing. To use your own API client instead of the
+bundled one, create it at https://anilist.co/settings/developer with redirect
+URL `http://localhost:47563/callback` and pass `--client-id <id>`. Log out with
+`--disable`.
+
 ## License
 
 MIT. See [LICENSE](LICENSE). Original work copyright (c) 2022 metafates.
