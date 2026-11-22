@@ -92,15 +92,15 @@ func (b *statefulBubble) viewSearch() string {
 }
 
 func (b *statefulBubble) viewMangas() string {
+	if b.liveMode {
+		return b.viewLive()
+	}
 	return b.viewGrid(&b.mangasC, mangaCard, func(th *thumbs, it list.Item, prio int) {
 		th.WantManga(it.(*listItem).internal.(*source.Manga), prio)
 	})
 }
 
 func (b *statefulBubble) viewChapters() string {
-	if b.liveMode {
-		return b.viewLive()
-	}
 	return b.viewGrid(&b.chaptersC, chapterCard, func(th *thumbs, it list.Item, prio int) {
 		th.WantChapter(it.(*listItem).internal.(*source.Chapter), prio)
 	})

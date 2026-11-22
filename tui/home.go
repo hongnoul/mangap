@@ -14,7 +14,7 @@ var homeKeys = [][2]string{
 	{"enter", "search / open"},
 	{"tab", "complete suggestion"},
 	{"↑ / ↓", "pick suggestion"},
-	{"ctrl+j / k", "jump to / from chapters"},
+	{"ctrl+j / k", "jump to / from results"},
 	{"ctrl+s", "source settings"},
 	{"j / k", "down / up"},
 	{"l / h", "open / back"},
