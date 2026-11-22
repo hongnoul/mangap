@@ -1,11 +1,13 @@
 package tui
 
 import (
+	"os"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/termenv"
 	"github.com/hongnoul/mangaz/provider"
 	"github.com/hongnoul/mangaz/source"
+	"github.com/muesli/termenv"
 )
 
 type Options struct {
@@ -40,5 +42,10 @@ func Run(options *Options) error {
 		bubble.newState(sourcesState)
 	}
 
-	return tea.NewProgram(bubble, tea.WithAltScreen()).Start()
+	out := &syncOut{f: os.Stdout}
+	*bubble.thumbs = *newThumbs(out)
+	p := tea.NewProgram(bubble, tea.WithAltScreen(), tea.WithOutput(out))
+	bubble.thumbs.send = p.Send
+	defer bubble.thumbs.Clear()
+	return p.Start()
 }

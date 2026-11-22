@@ -91,15 +91,16 @@ func (b *statefulBubble) searchBox(boxW int) string {
 				}
 				s = string(r) + "…"
 			}
-			line := "⌕ " + s
+			var line string
 			if i == b.suggestionIdx {
 				line = lipgloss.NewStyle().
-					Foreground(color.Orange).
+					Background(color.Purple).
+					Foreground(lipgloss.Color("#ffffff")).
 					Bold(true).
 					Width(inner).
-					Render("› " + s)
+					Render(s)
 			} else {
-				line = style.Faint(line)
+				line = style.Faint(s)
 			}
 			rows = append(rows, line)
 		}

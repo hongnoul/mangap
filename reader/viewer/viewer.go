@@ -52,6 +52,9 @@ func GridFor(vp Viewport) Grid {
 
 // Target is one frame: everything that changes the pixels.
 type Target struct {
+	// Chapter tells frames of different chapters apart: the reader keeps
+	// neighbor chapters warm in the same id cache.
+	Chapter  int
 	Page     int // 0-based first page of the sheet
 	Grid     Grid
 	Rotation int
@@ -63,7 +66,7 @@ type Target struct {
 // transport: two rotations/directions of a page are different
 // pixels, exactly like two raster sizes.
 func (t Target) Key() string {
-	s := fmt.Sprintf("%d@%dx%dr%d", t.Page, t.Grid.PxW, t.Grid.PxH, t.Rotation)
+	s := fmt.Sprintf("c%d/%d@%dx%dr%d", t.Chapter, t.Page, t.Grid.PxW, t.Grid.PxH, t.Rotation)
 	if t.Spread {
 		s += "s"
 		if t.RTL {
@@ -75,6 +78,7 @@ func (t Target) Key() string {
 
 // State is the reader's view state.
 type State struct {
+	Chapter  int // stamped into every Target
 	Pages    int
 	Page     int // 0-based
 	Rotation int
@@ -167,10 +171,38 @@ func (s *State) prevSheet(p int) int {
 // Physical maps a physical left/right press to a reading-order flip:
 // in RTL, left is forward (the next page is on the left).
 func (s *State) Physical(left bool) {
+	s.Flip(s.PhysicalDelta(left))
+}
+
+// PhysicalDelta is the reading-order flip a physical press means.
+func (s *State) PhysicalDelta(left bool) int {
 	if left == s.RTL {
-		s.Flip(1)
-	} else {
-		s.Flip(-1)
+		return 1
+	}
+	return -1
+}
+
+// AtEnd reports whether no further sheet exists in direction dir.
+func (s *State) AtEnd(dir int) bool {
+	p := s.SheetStart(s.Page)
+	if dir > 0 {
+		return s.nextSheet(p) == p
+	}
+	return s.prevSheet(p) == p
+}
+
+// SheetsLeft counts flips remaining before the chapter edge in dir.
+func (s *State) SheetsLeft(dir int) int {
+	p, n := s.SheetStart(s.Page), 0
+	for {
+		q := s.nextSheet(p)
+		if dir < 0 {
+			q = s.prevSheet(p)
+		}
+		if q == p {
+			return n
+		}
+		p, n = q, n+1
 	}
 }
 
@@ -201,7 +233,7 @@ func (s *State) Target(g Grid) Target {
 
 // TargetAt is the frame for the sheet at page p.
 func (s *State) TargetAt(p int, g Grid) Target {
-	return Target{Page: s.SheetStart(p), Grid: g, Rotation: s.Rotation,
+	return Target{Chapter: s.Chapter, Page: s.SheetStart(p), Grid: g, Rotation: s.Rotation,
 		Spread: s.Spread, RTL: s.RTL}
 }
 

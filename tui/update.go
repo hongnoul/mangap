@@ -31,6 +31,9 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	msg = b.vimHL(msg)
+	if _, ok := msg.(thumbReadyMsg); ok {
+		return b, nil // a cover landed: the repaint after Update shows it
+	}
 
 	switch msg := msg.(type) {
 	case error:
@@ -224,12 +227,8 @@ func (b *statefulBubble) updateLoading(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		cmds = append(cmds, b.mangasC.SetItems(items))
-		b.mangasC.Title = "Mangas"
-		for _, s := range b.selectedSources {
-			if a, ok := s.(*provider.Auto); ok && a.Last() != nil {
-				b.mangasC.Title = "Mangas via " + a.Last().Name()
-			}
-		}
+		b.thumbs.Clear()
+		b.thumbs.Load(msg)
 		b.newState(mangasState)
 		b.stopLoading()
 	case []*source.Chapter:

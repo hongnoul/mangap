@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/hongnoul/mangaz/color"
 	key2 "github.com/hongnoul/mangaz/key"
 	"github.com/hongnoul/mangaz/provider"
@@ -196,9 +197,11 @@ func (b *statefulBubble) viewSourceSettings() string {
 		}
 		line := fmt.Sprintf("%s %s %s %s", num, box, r.p.Name, style.Faint(kind))
 		if i == ss.cursor {
-			line = style.Fg(color.Purple)("> ") + line
-		} else {
-			line = "  " + line
+			line = lipgloss.NewStyle().
+				Background(color.Purple).
+				Foreground(lipgloss.Color("#ffffff")).
+				Bold(true).
+				Render(fmt.Sprintf("%s [%s] %s %s", num, map[bool]string{true: "x", false: " "}[r.enabled], r.p.Name, kind))
 		}
 		lines = append(lines, line)
 	}

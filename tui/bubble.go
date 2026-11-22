@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hongnoul/mangaz/anilist"
+	"github.com/hongnoul/mangaz/color"
 	"github.com/hongnoul/mangaz/history"
 	"github.com/hongnoul/mangaz/installer"
 	key2 "github.com/hongnoul/mangaz/key"
@@ -78,6 +79,8 @@ type statefulBubble struct {
 	suggestionIdx     int
 
 	sourceSettings *sourceSettings
+
+	thumbs *thumbs
 }
 
 func (b *statefulBubble) raiseError(err error) {
@@ -202,13 +205,16 @@ func newBubble() *statefulBubble {
 		delegate := list.NewDefaultDelegate()
 		delegate.SetSpacing(viper.GetInt(key2.TUIItemSpacing))
 		delegate.ShowDescription = description
-		delegate.Styles.SelectedTitle = lipgloss.NewStyle().
-			Border(lipgloss.ThickBorder(), false, false, false, true).
-			Bold(true).
-			Padding(0, 0, 0, 1)
-		delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Copy()
-
-		delegate.Styles.SelectedDesc = delegate.Styles.SelectedTitle.Copy().Bold(false)
+		highlight := lipgloss.NewStyle().
+			Background(color.Purple).
+			Foreground(lipgloss.Color("#ffffff")).
+			Padding(0, 1)
+		delegate.Styles.SelectedTitle = highlight.Copy().Bold(true)
+		delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Copy().Padding(0, 1)
+		delegate.Styles.NormalDesc = delegate.Styles.NormalDesc.Copy().Padding(0, 1)
+		delegate.Styles.SelectedDesc = highlight.Copy()
+		delegate.Styles.DimmedTitle = delegate.Styles.DimmedTitle.Copy().Padding(0, 1)
+		delegate.Styles.DimmedDesc = delegate.Styles.DimmedDesc.Copy().Padding(0, 1)
 
 		listC := list.New([]list.Item{}, delegate, 0, 0)
 		listC.KeyMap = bubble.keymap.forList()
@@ -242,7 +248,7 @@ func newBubble() *statefulBubble {
 	bubble.inputC = textinput.New()
 	bubble.inputC.Placeholder = "Search"
 	bubble.inputC.CharLimit = 60
-	bubble.inputC.Prompt = viper.GetString(key2.TUISearchPromptString)
+	bubble.inputC.Prompt = ""
 
 	bubble.progressC = progress.New(progress.WithDefaultGradient())
 
@@ -270,6 +276,11 @@ func newBubble() *statefulBubble {
 		),
 	})
 	bubble.mangasC.SetStatusBarItemName("manga", "mangas")
+	// No "Mangas via X" title or "N mangas" count: just the results.
+	bubble.mangasC.SetShowTitle(false)
+	bubble.mangasC.SetShowStatusBar(false)
+	bubble.thumbs = newThumbs(nil)
+	bubble.mangasC.SetDelegate(mangaDelegate{th: bubble.thumbs})
 
 	bubble.chaptersC = makeList("Chapters", showURLs, &listOptions{
 		TitleStyle: mo.Some(
