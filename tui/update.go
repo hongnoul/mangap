@@ -418,12 +418,12 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, b.keymap.sourceSettings):
 			b.openSourceSettings()
 			return b, nil
-		case msg.String() == "down" || msg.String() == "ctrl+n":
+		case msg.String() == "down" || msg.String() == "ctrl+n" || msg.String() == "ctrl+j":
 			if n := len(b.searchSuggestions); n > 0 {
 				b.suggestionIdx = (b.suggestionIdx+2)%(n+1) - 1
 			}
 			return b, nil
-		case msg.String() == "up" || msg.String() == "ctrl+p":
+		case msg.String() == "up" || msg.String() == "ctrl+p" || msg.String() == "ctrl+k":
 			if n := len(b.searchSuggestions); n > 0 {
 				b.suggestionIdx = (b.suggestionIdx+n+1)%(n+1) - 1
 			}

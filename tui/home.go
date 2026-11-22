@@ -13,7 +13,7 @@ import (
 var homeKeys = [][2]string{
 	{"enter", "search / open"},
 	{"tab", "complete suggestion"},
-	{"↑ / ↓", "pick suggestion"},
+	{"↑ / ↓ / ctrl+k / ctrl+j", "pick suggestion"},
 	{"ctrl+s", "source settings"},
 	{"j / k", "down / up"},
 	{"l / h", "open / back"},
