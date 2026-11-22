@@ -75,8 +75,7 @@ func (b *statefulBubble) updateDropdown(km tea.KeyMsg) (tea.Model, tea.Cmd) {
 	d := b.dropdown
 	n := len(b.dropdownOptions())
 	if isKeysToggle(km) {
-		b.dropdown = nil
-		b.showKeys = true
+		b.showKeys = !b.showKeys // picker stays open
 		return b, nil
 	}
 	switch km.String() {
