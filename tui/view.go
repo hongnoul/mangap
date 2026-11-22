@@ -110,13 +110,36 @@ func (b *statefulBubble) viewGrid(l *list.Model, toCard func(list.Item) card, wa
 	if l.FilterState() == list.Filtering {
 		return listExtraPaddingStyle.Render(l.View())
 	}
-	x, y := listExtraPaddingStyle.GetFrameSize()
-	w, h := b.width+4-x, b.height+2-y
-	body := b.grid.render(l, b.thumbs, w, h, toCard, want)
+	// Full terminal size; the grid gets the height minus the indicator
+	// line and the bottom margin, and is centered in the full height so it
+	// sits where it would with no pagination UI.
+	W, H := b.width+4, b.height+2
+	const sideMargin = 2
+	gridH := H - 4 // 1 top + indicator + 1 below it + 1 slack
+	body, footer := b.grid.render(l, b.thumbs, W-2*sideMargin, gridH, toCard, want)
 	if msg := strings.TrimSpace(l.Title); msg != "" && l.ShowTitle() {
 		body = msg + "\n" + body
 	}
-	return listExtraPaddingStyle.Render(body)
+
+	bodyH := lipgloss.Height(body)
+	top := imax((H-bodyH)/2, 0)
+	if top+bodyH > H-2 {
+		top = imax(H-2-bodyH, 0)
+	}
+	lines := make([]string, 0, H)
+	for i := 0; i < top; i++ {
+		lines = append(lines, "")
+	}
+	pad := strings.Repeat(" ", sideMargin)
+	for _, ln := range strings.Split(body, "\n") {
+		lines = append(lines, pad+ln)
+	}
+	for len(lines) < H-2 {
+		lines = append(lines, "")
+	}
+	lines = lines[:H-2]
+	lines = append(lines, lipgloss.PlaceHorizontal(W, lipgloss.Center, lipgloss.NewStyle().Faint(true).Render(footer)), "")
+	return strings.Join(lines, "\n")
 }
 
 // gridList is the list shown as a grid in the current state, if any.

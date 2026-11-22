@@ -82,14 +82,16 @@ type card struct {
 	selected bool
 }
 
-// render draws the grid of the list's current page. want is called for
-// each card on screen (visible=true) and for the next page (prefetch).
-func (g *grid) render(l *list.Model, th *thumbs, width, height int, toCard func(list.Item) card, want func(list.Item, bool)) string {
+// render draws the grid of the list's current page and returns it with
+// the page indicator separately, so the caller can center the grid and
+// pin the indicator to the bottom. want is called for each card on screen
+// (visible=true) and for the next page (prefetch). height is the space
+// for the grid alone.
+func (g *grid) render(l *list.Model, th *thumbs, width, height int, toCard func(list.Item) card, want func(list.Item, bool)) (body, footer string) {
 	items := l.VisibleItems()
 	if len(items) == 0 {
-		return "No results"
+		return "No results", ""
 	}
-	height-- // footer line
 	g.fit(height)
 	cardW, cardH, thumbW, thumbH := g.cardGeometry(width, height)
 	if th.enabled {
@@ -131,8 +133,7 @@ func (g *grid) render(l *list.Model, th *thumbs, width, height int, toCard func(
 	}
 
 	pages := (len(items) + perPage - 1) / perPage
-	footer := fmt.Sprintf("%d/%d", page+1, pages)
-	return strings.Join(rowsOut, "\n") + "\n" + lipgloss.NewStyle().Faint(true).Render(footer)
+	return strings.Join(rowsOut, "\n"), fmt.Sprintf("%d/%d", page+1, pages)
 }
 
 func renderCard(cd card, th *thumbs, cardW, cardH, thumbW, thumbH int) string {
