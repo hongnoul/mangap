@@ -85,7 +85,8 @@ func (b *statefulBubble) viewLive() string {
 	box = lipgloss.PlaceHorizontal(full, lipgloss.Center, box)
 
 	header := box
-	if len(b.sourceChoices) > 0 {
+	homeView := b.inputC.Value() == "" && b.state == searchState
+	if len(b.sourceChoices) > 0 && homeView {
 		header += "\n" + lipgloss.PlaceHorizontal(full, lipgloss.Center, b.sourcePicker())
 	}
 
@@ -101,9 +102,6 @@ func (b *statefulBubble) viewLive() string {
 	// Card height comes from the resting layout (collapsed bar, five
 	// rows), so an open dropdown drops rows rather than shrinking them.
 	restGridH := b.height + 2 - 3 - 2
-	if len(b.sourceChoices) > 0 {
-		restGridH-- // source picker row
-	}
 	b.grid.fixedCardH = imax(restGridH/singleColRows, 2)
 	defer func() { b.grid.fixedCardH = 0 }()
 	grid := b.viewGridH(&b.mangasC, mangaCard, func(th *thumbs, it list.Item, prio int) {
