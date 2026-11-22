@@ -286,6 +286,7 @@ func newBubble() *statefulBubble {
 		),
 	})
 	bubble.chaptersC.SetStatusBarItemName("chapter", "chapters")
+	bubble.chaptersC.SetDelegate(chapterDelegate{th: bubble.thumbs})
 
 	bubble.anilistC = makeList("Anilist Mangas", showURLs, &listOptions{
 		TitleStyle: mo.Some(

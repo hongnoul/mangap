@@ -14,6 +14,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hongnoul/mangaz/constant"
 	"github.com/hongnoul/mangaz/network"
+	"github.com/hongnoul/mangaz/provider/generic"
 	"github.com/hongnoul/mangaz/reader/kitty"
 	"github.com/hongnoul/mangaz/reader/render"
 	"github.com/hongnoul/mangaz/reader/term"
@@ -57,11 +58,14 @@ type thumbs struct {
 	send    func(tea.Msg)
 
 	mu    sync.Mutex
-	ids   map[string]int  // cover url -> image id
+	ids   map[string]int  // thumbnail key -> image id
 	ready map[int]bool    // transmitted
 	busy  map[string]bool // fetch in flight
 	next  int
 	sem   chan struct{}
+	// pagesMu serializes scraper page lookups: the generic scraper's
+	// page cache is a plain map written from colly callbacks.
+	pagesMu sync.Mutex
 }
 
 func newThumbs(out *syncOut) *thumbs {
@@ -83,38 +87,60 @@ func coverURL(m *source.Manga) string {
 
 // Load starts fetching covers for mangas that do not have one yet.
 func (t *thumbs) Load(mangas []*source.Manga) {
-	if !t.enabled {
-		return
-	}
 	for _, m := range mangas {
-		u := coverURL(m)
+		u, ref := coverURL(m), m.URL
 		if u == "" {
 			continue
 		}
-		t.mu.Lock()
-		_, have := t.ids[u]
-		if have || t.busy[u] {
-			t.mu.Unlock()
-			continue
-		}
-		t.busy[u] = true
-		t.mu.Unlock()
-		go t.fetch(u, m.URL)
+		t.Want(u, func() ([]byte, error) { return get(u, ref) })
 	}
 }
 
-func (t *thumbs) fetch(u, referer string) {
-	t.sem <- struct{}{}
-	defer func() { <-t.sem }()
-	defer func() {
-		t.mu.Lock()
-		delete(t.busy, u)
-		t.mu.Unlock()
-	}()
+// WantChapter fetches the first page of a chapter as its thumbnail. Only
+// scraper sources qualify: their page list is one small HTML request,
+// while MangaDex would download the whole chapter to name its pages.
+func (t *thumbs) WantChapter(c *source.Chapter) {
+	if c == nil || c.Manga == nil || c.URL == "" {
+		return
+	}
+	if _, ok := c.Source().(*generic.Scraper); !ok {
+		return
+	}
+	t.Want(c.URL, func() ([]byte, error) {
+		t.pagesMu.Lock()
+		pages, err := c.Source().PagesOf(c)
+		t.pagesMu.Unlock()
+		if err != nil {
+			return nil, err
+		}
+		if len(pages) == 0 || pages[0] == nil || pages[0].URL == "" {
+			return nil, fmt.Errorf("no pages")
+		}
+		return get(pages[0].URL, c.URL)
+	})
+}
 
+// Want fetches and transmits the image for key once. Safe to call on
+// every render: repeat calls for a known or in-flight key are free.
+func (t *thumbs) Want(key string, fetch func() ([]byte, error)) {
+	if !t.enabled || key == "" {
+		return
+	}
+	t.mu.Lock()
+	_, have := t.ids[key]
+	if have || t.busy[key] {
+		t.mu.Unlock()
+		return
+	}
+	t.busy[key] = true
+	t.mu.Unlock()
+	go t.fetch(key, fetch)
+}
+
+func get(u, referer string) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, u, nil)
 	if err != nil {
-		return
+		return nil, err
 	}
 	req.Header.Set("User-Agent", constant.UserAgent)
 	if referer != "" {
@@ -122,13 +148,30 @@ func (t *thumbs) fetch(u, referer string) {
 	}
 	resp, err := network.Client.Do(req)
 	if err != nil {
-		return
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return
+		return nil, fmt.Errorf("%s: %s", u, resp.Status)
 	}
-	data, err := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+	return io.ReadAll(io.LimitReader(resp.Body, 16<<20))
+}
+
+func (t *thumbs) fetch(key string, fetch func() ([]byte, error)) {
+	t.sem <- struct{}{}
+	defer func() { <-t.sem }()
+
+	ok := false
+	defer func() {
+		t.mu.Lock()
+		delete(t.busy, key)
+		if !ok {
+			t.ids[key] = 0 // remember the failure, don't refetch every frame
+		}
+		t.mu.Unlock()
+	}()
+
+	data, err := fetch()
 	if err != nil {
 		return
 	}
@@ -159,9 +202,10 @@ func (t *thumbs) fetch(u, referer string) {
 	}
 
 	t.mu.Lock()
-	t.ids[u] = id
+	t.ids[key] = id
 	t.ready[id] = true
 	t.mu.Unlock()
+	ok = true
 	if t.send != nil {
 		t.send(thumbReadyMsg{})
 	}
@@ -170,13 +214,13 @@ func (t *thumbs) fetch(u, referer string) {
 // Cells returns row r (0-based) of the thumbnail for m: placeholder cells
 // when the cover is in the terminal, blanks otherwise. Always thumbCols
 // cells wide.
-func (t *thumbs) Cells(m *source.Manga, r int) string {
+func (t *thumbs) Cells(key string, r int) string {
 	blank := strings.Repeat(" ", thumbCols)
 	if !t.enabled {
 		return blank
 	}
 	t.mu.Lock()
-	id, ok := t.ids[coverURL(m)]
+	id, ok := t.ids[key]
 	ok = ok && t.ready[id]
 	t.mu.Unlock()
 	if !ok {
