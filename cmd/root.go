@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"github.com/hongnoul/mangaz/color"
 	"github.com/hongnoul/mangaz/constant"
 	"github.com/hongnoul/mangaz/converter"
@@ -96,16 +98,20 @@ var rootCmd = &cobra.Command{
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
+	// Monochrome everywhere (TUI, mini, CLI output): no colors, only
+	// bold/faint/reverse.
+	lipgloss.SetColorProfile(termenv.Ascii)
+
 	if viper.GetBool(key.CliColored) {
 		// colored cobra injection
 		cc.Init(&cc.Config{
 			RootCmd:       rootCmd,
-			Headings:      cc.HiCyan + cc.Bold + cc.Underline,
-			Commands:      cc.HiYellow + cc.Bold,
+			Headings:      cc.Bold + cc.Underline,
+			Commands:      cc.Bold,
 			Example:       cc.Italic,
 			ExecName:      cc.Bold,
 			Flags:         cc.Bold,
-			FlagsDataType: cc.Italic + cc.HiBlue,
+			FlagsDataType: cc.Italic,
 		})
 	}
 

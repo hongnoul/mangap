@@ -2,6 +2,8 @@ package tui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"github.com/hongnoul/mangaz/provider"
 	"github.com/hongnoul/mangaz/source"
 )
@@ -12,6 +14,9 @@ type Options struct {
 }
 
 func Run(options *Options) error {
+	// Monochrome UI: drop every color (ours and the bubbles defaults) and
+	// keep bold/faint/reverse for emphasis.
+	lipgloss.SetColorProfile(termenv.Ascii)
 
 	bubble := newBubble()
 

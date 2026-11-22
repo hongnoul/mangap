@@ -2,12 +2,11 @@ package style
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hongnoul/mangaz/color"
 )
 
 var (
-	Title      = NewColored(color.New("230"), color.New("62")).Padding(0, 1).Render
-	ErrorTitle = NewColored(color.New("230"), color.Red).Padding(0, 1).Render
+	Title      = New().Reverse(true).Bold(true).Padding(0, 1).Render
+	ErrorTitle = New().Reverse(true).Bold(true).Padding(0, 1).Render
 )
 
 func Tag(foreground, background lipgloss.Color) func(string) string {
