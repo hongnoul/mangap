@@ -86,7 +86,9 @@ type statefulBubble struct {
 
 	// live search (see live.go)
 	liveSeq int
-	live    liveState
+	// chaptersPending: loading chapters for a live result; keep the grid up.
+	chaptersPending bool
+	live            liveState
 
 	thumbs  *thumbs
 	preview *thumbs // large image of the selected item, right pane
@@ -101,6 +103,9 @@ func (b *statefulBubble) raiseError(err error) {
 }
 
 func (b *statefulBubble) setState(s state) {
+	if s != loadingState {
+		b.chaptersPending = false
+	}
 	b.state = s
 	b.keymap.setState(s)
 }

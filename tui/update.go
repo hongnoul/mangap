@@ -408,6 +408,7 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 			go query.Remember(b.inputC.Value(), 1)
 			go query.Remember(m.Name, 2)
 			b.newState(loadingState)
+			b.chaptersPending = true
 			return b, tea.Batch(b.getChapters(m), b.waitForChapters(), b.startLoading(), b.spinnerC.Tick)
 		case key.Matches(msg, b.keymap.confirm) && (b.inputC.Value() != "" || b.suggestionIdx >= 0):
 			if b.suggestionIdx >= 0 && b.suggestionIdx < len(b.searchSuggestions) {

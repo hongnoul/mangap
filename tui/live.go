@@ -3,7 +3,6 @@ package tui
 import (
 	"context"
 	"errors"
-
 	"strings"
 	"time"
 
@@ -671,7 +670,7 @@ func overlayLines(base, top string, row int) string {
 // viewLiveBase renders the search screen under header, ignoring dropdowns.
 func (b *statefulBubble) viewLiveBase(header string, full, pickerW int) string {
 	// Hero layout (art + boxes) until there are results to show.
-	homeView := b.state == loadingState ||
+	homeView := (b.state == loadingState && !b.chaptersPending) ||
 		(b.state == searchState && (b.inputC.Value() == "" || len(b.mangasC.Items()) == 0))
 	footer := ""
 	if len(b.sourceChoices) > 0 && homeView {
@@ -679,12 +678,11 @@ func (b *statefulBubble) viewLiveBase(header string, full, pickerW int) string {
 	}
 
 	H := b.height + 2 - lipgloss.Height(header)
-	if b.state == loadingState {
-		// Loader bar sits right under the search box.
-		bar := lipgloss.PlaceHorizontal(full, lipgloss.Center, b.loaderC.view(pickerW))
-		header += "\n" + bar
-		H -= lipgloss.Height(bar)
+	if b.state == downloadState || b.state == readState {
+		return b.viewDownloadHero(header, full, pickerW, H)
 	}
+	// No loader bar while searching: the loading UI is reserved for
+	// fetching chapters into the viewer (viewDownloadHero).
 	if homeView {
 		// Empty bar: art and keys fill the middle, the status box sits at
 		// the very bottom.
@@ -720,4 +718,16 @@ func (b *statefulBubble) viewLiveBase(header string, full, pickerW int) string {
 		th.WantManga(it.(*listItem).internal.(*source.Manga), prio)
 	}, H, true)
 	return header + "\n" + grid
+}
+
+// viewDownloadHero keeps the hero layout (search box + art) while a chapter
+// downloads. The active chapter and queue show at the top of the
+// Downloaded box, with a spinner on the right.
+func (b *statefulBubble) viewDownloadHero(header string, full, pickerW, H int) string {
+	dl := lipgloss.PlaceHorizontal(full, lipgloss.Center, b.downloadedBox(pickerW))
+	bodyH := H - lipgloss.Height(dl) - 1
+	if bodyH < 1 {
+		return header + "\n" + dl
+	}
+	return header + "\n" + b.homeBody(full, bodyH) + "\n" + dl
 }
