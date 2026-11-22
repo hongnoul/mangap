@@ -85,7 +85,7 @@ func (b *statefulBubble) sourcePicker(w int) string {
 	if b.showKeys {
 		word = "hide"
 	}
-	lines = append(lines, row(style.Faint("Keybinds  ")+bold.Render(word), "ctrl+/"))
+	lines = append(lines, row(style.Faint("Keybinds  ")+bold.Render(word), "ctrl+g"))
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("5")).

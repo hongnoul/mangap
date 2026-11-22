@@ -74,7 +74,7 @@ func (b *statefulBubble) dropdownOptions() []string {
 func (b *statefulBubble) updateDropdown(km tea.KeyMsg) (tea.Model, tea.Cmd) {
 	d := b.dropdown
 	n := len(b.dropdownOptions())
-	if isCtrlSlash(km) {
+	if isKeysToggle(km) {
 		b.dropdown = nil
 		b.showKeys = !b.showKeys
 		return b, nil
@@ -164,10 +164,9 @@ func (b *statefulBubble) viewDropdown(w int) string {
 		Render(strings.Join(lines, "\n"))
 }
 
-// isCtrlSlash matches ctrl+/, which most terminals send as ctrl+_ (0x1f).
-func isCtrlSlash(km tea.KeyMsg) bool {
-	s := km.String()
-	return s == "ctrl+/" || s == "ctrl+_" || s == "ctrl+7"
+// isKeysToggle matches ctrl+g ("guide"), which toggles the keybind cheatsheet.
+func isKeysToggle(km tea.KeyMsg) bool {
+	return km.String() == "ctrl+g"
 }
 
 // stripFaint drops ANSI styling so the highlighted row renders uniformly.

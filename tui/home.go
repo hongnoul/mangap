@@ -18,7 +18,7 @@ var homeKeys = [][2]string{
 	{"ctrl+s", "pick source"},
 	{"ctrl+l", "pick language"},
 	{"ctrl+o", "next source"},
-	{"ctrl+/", "toggle keybinds"},
+	{"ctrl+g", "toggle keybinds"},
 	{"j / k", "down / up"},
 	{"l / h", "open / back"},
 	{"hjkl", "move in grid"},
