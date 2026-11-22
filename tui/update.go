@@ -395,6 +395,16 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case isKeysToggle(msg):
 			b.showKeys = !b.showKeys
 			return b, nil
+		case msg.String() == "ctrl+r":
+			if err := b.toggleViewer(); err != nil {
+				b.raiseError(err)
+			}
+			return b, nil
+		case msg.String() == "ctrl+t":
+			if err := b.toggleThumbnails(); err != nil {
+				b.raiseError(err)
+			}
+			return b, nil
 		case b.showKeys && msg.String() == "esc":
 			b.showKeys = false
 			return b, nil
@@ -610,6 +620,19 @@ func (b *statefulBubble) updateRead(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case readyToReadMsg:
 		downloader.SaveReadHistory(msg.chapter)
+		if !useTerminalViewer() {
+			// External viewer: hand off a PDF and stay in the TUI.
+			name := msg.chapter.Name
+			if msg.chapter.Manga != nil {
+				name = msg.chapter.Manga.Name + " - " + name
+			}
+			src := msg.src
+			return b, func() tea.Msg {
+				defer src.Close()
+				_, err := reader.OpenExternal(src, name)
+				return readFinishedMsg{err: err, chapter: msg.chapter}
+			}
+		}
 		opt, nb := downloader.ReaderOptionsFor(msg.chapter)
 		rc := reader.NewCommand(msg.src, opt)
 		// Mute now, not in mutedExec.Run: tea.Exec's ReleaseTerminal leaves

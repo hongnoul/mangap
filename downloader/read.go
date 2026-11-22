@@ -116,6 +116,10 @@ func Read(chapter *source.Chapter, progress func(string)) error {
 	defer src.Close()
 
 	SaveReadHistory(chapter)
+	if !reader.UseTerminal(viper.GetString(key.ReaderViewer)) {
+		_, err := reader.OpenExternal(src, chapter.Manga.Name+" - "+chapter.Name)
+		return err
+	}
 	opt, nb := ReaderOptionsFor(chapter)
 	res, err := reader.Run(src, opt)
 	last := chapter

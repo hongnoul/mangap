@@ -3,7 +3,7 @@ package key
 // DefinedFieldsCount is the number of fields defined in this package.
 // You have to manually update this number when you add a new field
 // to check later if every field has a defined default value
-const DefinedFieldsCount = 51
+const DefinedFieldsCount = 53
 
 const (
 	DownloaderPath                = "downloader.path"
@@ -34,6 +34,7 @@ const (
 
 const (
 	ReaderDirection = "reader.direction"
+	ReaderViewer    = "reader.viewer"
 )
 
 // RemovedReaderKeys configured external viewers. mangap reads chapters
@@ -91,6 +92,7 @@ const (
 	TUIReadOnEnter        = "tui.read_on_enter"
 	TUISearchPromptString = "tui.search_prompt"
 	TUIShowURLs           = "tui.show_urls"
+	TUIThumbnails         = "tui.thumbnails"
 	TUIShowDownloadedPath = "tui.show_downloaded_path"
 	TUIReverseChapters    = "tui.reverse_chapters"
 )

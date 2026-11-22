@@ -17,6 +17,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hongnoul/mangap/archive"
 	"github.com/hongnoul/mangap/constant"
+	key2 "github.com/hongnoul/mangap/key"
 	"github.com/hongnoul/mangap/network"
 	"github.com/hongnoul/mangap/provider/generic"
 	"github.com/hongnoul/mangap/reader/kitty"
@@ -25,6 +26,7 @@ import (
 	"github.com/hongnoul/mangap/reader/term"
 	"github.com/hongnoul/mangap/source"
 	"github.com/hongnoul/mangap/where"
+	"github.com/spf13/viper"
 )
 
 // Thumbnail image ids start well above the reader's 10..249 range and are
@@ -159,6 +161,12 @@ func newThumbs(out *syncOut) *thumbs {
 	}
 }
 
+// active reports whether thumbnails are drawn: the terminal supports
+// kitty graphics and the tui.thumbnails preference is on.
+func (t *thumbs) active() bool {
+	return t.enabled && viper.GetBool(key2.TUIThumbnails)
+}
+
 // SetSpan changes the thumbnail cell box. Transmitted images are
 // re-spanned in the terminal (zero bytes), and full rasters re-render in
 // the background at the new pixel size.
@@ -231,7 +239,7 @@ func (t *thumbs) WantChapter(c *source.Chapter, prio int) {
 // want schedules whatever key still needs: the low-res raster if nothing
 // is shown, the full one if key is hot. Safe to call on every frame.
 func (t *thumbs) want(key string, prio int, locate func() (url, referer string, err error)) {
-	if !t.enabled || key == "" {
+	if !t.active() || key == "" {
 		return
 	}
 	t.mu.Lock()

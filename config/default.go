@@ -254,6 +254,13 @@ Available options are: emoji, kaomoji, plain, squares, nerd (nerd-font required)
 Available options are: rtl, ltr`,
 	},
 	{
+		key.ReaderViewer,
+		"auto",
+		`Where chapters open. auto and terminal use the built-in kitty graphics
+reader when the terminal supports it, external opens a PDF in the system viewer
+Available options are: auto, terminal, external`,
+	},
+	{
 		key.HistorySaveOnRead,
 		true,
 		"Save history on chapter read",
@@ -379,6 +386,11 @@ panic, fatal, error, warn, info, debug, trace`,
 		key.TUIShowURLs,
 		false,
 		"Show URLs in the TUI (under list items and in status lines)",
+	},
+	{
+		key.TUIThumbnails,
+		true,
+		"Load cover and page thumbnails in the TUI. Off shows a compact text list",
 	},
 	{
 		key.TUIReverseChapters,

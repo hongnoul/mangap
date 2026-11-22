@@ -99,7 +99,7 @@ func (g *grid) render(l *list.Model, th *thumbs, width, height int, toCard func(
 	}
 	g.fit(height)
 	cardW, cardH, thumbW, thumbH := g.cardGeometry(width, height)
-	if th.enabled {
+	if th.active() {
 		th.SetSpan(thumbW, thumbH)
 	} else {
 		// No images: one text line per card, rows fill the height.
@@ -116,7 +116,7 @@ func (g *grid) render(l *list.Model, th *thumbs, width, height int, toCard func(
 	// Full res for this page, the next two and the previous one; low-res
 	// for everything else, swept outward from the cursor.
 	lo, hi := imax(start-perPage, 0), imin(end+2*perPage, len(items))
-	if th.enabled {
+	if th.active() {
 		keep := make(map[string]bool, hi-lo)
 		for i := lo; i < hi; i++ {
 			keep[toCard(items[i]).thumbKey] = true

@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	key2 "github.com/hongnoul/mangap/key"
 	"github.com/hongnoul/mangap/provider"
+	"github.com/hongnoul/mangap/reader/term"
 	"github.com/hongnoul/mangap/source"
 	"github.com/hongnoul/mangap/style"
 	"github.com/spf13/viper"
@@ -73,6 +74,22 @@ func (b *statefulBubble) sourcePicker(w int) string {
 	lines := []string{row(srcLabel, "ctrl+s")}
 	if !b.languageLocked() { // Mangapill is English only, hide the row
 		lines = append(lines, row(style.Faint("Language  ")+bold.Render(lang.name), "ctrl+l"))
+	}
+	viewer := "in terminal"
+	if !useTerminalViewer() {
+		viewer = "external"
+	}
+	if term.SupportsKittyGraphics() {
+		lines = append(lines, row(style.Faint("Viewer    ")+bold.Render(viewer), "ctrl+r"))
+	} else {
+		lines = append(lines, row(style.Faint("Viewer    ")+bold.Render(viewer), "no kitty graphics"))
+	}
+	if b.thumbs.enabled {
+		th := "on"
+		if !viper.GetBool(key2.TUIThumbnails) {
+			th = "off"
+		}
+		lines = append(lines, row(style.Faint("Thumbs    ")+bold.Render(th), "ctrl+t"))
 	}
 	word := "show"
 	if b.showKeys {

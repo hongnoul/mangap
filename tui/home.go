@@ -20,6 +20,8 @@ var homeKeys = [][2]string{
 	{"ctrl+o", "next source"},
 	{"ctrl+d", "downloads"},
 	{"ctrl+g", "toggle keybinds"},
+	{"ctrl+r", "terminal / external viewer"},
+	{"ctrl+t", "toggle thumbnails"},
 	{"j / k", "down / up"},
 	{"l / h", "open / back"},
 	{"hjkl", "move in grid"},

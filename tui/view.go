@@ -125,7 +125,7 @@ func (b *statefulBubble) viewGridH(l *list.Model, toCard func(list.Item) card, w
 	// pagination UI.
 	full := b.width + 4
 	W := full
-	showPreview := b.thumbs.enabled && full >= maxListW+minPreviewW
+	showPreview := b.thumbs.active() && full >= maxListW+minPreviewW
 	if showPreview {
 		W = maxListW
 	}
