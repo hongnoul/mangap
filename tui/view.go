@@ -26,7 +26,7 @@ func (b *statefulBubble) View() string {
 	case sourcesState:
 		return b.viewSources()
 	case searchState:
-		return b.viewSearch()
+		return b.viewHome()
 	case mangasState:
 		return b.viewMangas()
 	case chaptersState:
