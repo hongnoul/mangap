@@ -16,9 +16,7 @@ var Config = &generic.Configuration{
 	ReverseChapters: true,
 	BaseURL:         "https://mangapill.com",
 	GenerateSearchURL: func(query string) string {
-		query = strings.ReplaceAll(query, " ", "+")
-		query = strings.ToLower(query)
-		query = strings.TrimSpace(query)
+		query = strings.TrimSpace(strings.ToLower(query))
 		template := "https://mangapill.com/search?q=%s&type=&status="
 		return fmt.Sprintf(template, url.QueryEscape(query))
 	},
