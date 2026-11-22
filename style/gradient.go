@@ -68,6 +68,45 @@ func Gradient(lines []string) string {
 	return b.String()
 }
 
+// Paint colors each visible rune of lines with the hex color returned by
+// colorAt(x, y, r). An empty color leaves the rune unstyled. Spaces and
+// blank braille cells are never styled. Without color support it returns
+// the plain text.
+func Paint(lines []string, colorAt func(x, y int, r rune) string) string {
+	p := colorProfile()
+	if p == termenv.Ascii {
+		return strings.Join(lines, "\n")
+	}
+
+	var b strings.Builder
+	for y, l := range lines {
+		if y > 0 {
+			b.WriteByte('\n')
+		}
+		prev := ""
+		for x, r := range []rune(l) {
+			c := ""
+			if r != ' ' && r != '\u2800' {
+				c = colorAt(x, y, r)
+			}
+			if c != prev {
+				if prev != "" {
+					b.WriteString(termenv.CSI + termenv.ResetSeq + "m")
+				}
+				if c != "" {
+					b.WriteString(termenv.CSI + p.Color(c).Sequence(false) + "m")
+				}
+				prev = c
+			}
+			b.WriteRune(r)
+		}
+		if prev != "" {
+			b.WriteString(termenv.CSI + termenv.ResetSeq + "m")
+		}
+	}
+	return b.String()
+}
+
 // gradientAt returns the hex color at t in [0, 1] along GradientStops.
 func gradientAt(t float64) string {
 	segments := len(GradientStops) - 1
