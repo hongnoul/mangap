@@ -3,7 +3,7 @@ package key
 // DefinedFieldsCount is the number of fields defined in this package.
 // You have to manually update this number when you add a new field
 // to check later if every field has a defined default value
-const DefinedFieldsCount = 50
+const DefinedFieldsCount = 51
 
 const (
 	DownloaderPath                = "downloader.path"
@@ -83,6 +83,7 @@ const (
 	AnilistID                = "anilist.id"
 	AnilistSecret            = "anilist.secret"
 	AnilistCode              = "anilist.code"
+	AnilistToken             = "anilist.token"
 	AnilistLinkOnMangaSelect = "anilist.link_on_manga_select"
 )
 

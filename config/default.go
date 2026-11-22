@@ -349,6 +349,11 @@ panic, fatal, error, warn, info, debug, trace`,
 		"Anilist code to use for authentication",
 	},
 	{
+		key.AnilistToken,
+		"",
+		"Anilist access token, set by `mangaz integration anilist`",
+	},
+	{
 		key.AnilistID,
 		"",
 		"Anilist ID to use for authentication",

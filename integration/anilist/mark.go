@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hongnoul/mangaz/anilist"
+	"github.com/hongnoul/mangaz/key"
 	"github.com/hongnoul/mangaz/log"
 	"github.com/hongnoul/mangaz/source"
+	"github.com/spf13/viper"
 	"net/http"
 	"strconv"
 )
@@ -20,6 +22,9 @@ mutation ($ID: Int, $progress: Int) {
 `
 
 func (a *Anilist) MarkRead(chapter *source.Chapter) error {
+	if a.token == "" {
+		a.token = viper.GetString(key.AnilistToken)
+	}
 	if a.token == "" {
 		err := a.login()
 		if err != nil {
@@ -73,6 +78,10 @@ func (a *Anilist) MarkRead(chapter *source.Chapter) error {
 	if err != nil {
 		log.Error(err)
 		return err
+	}
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return fmt.Errorf("anilist session expired, run `mangaz integration anilist` to log in again")
 	}
 
 	if resp.StatusCode != http.StatusOK {
