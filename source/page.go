@@ -37,7 +37,7 @@ func (p *Page) request() (*http.Request, error) {
 	}
 
 	req.Header.Set("Referer", p.Chapter.URL)
-	req.Header.Set("User-Agent", constant.UserAgent)
+	req.Header.Set("User-Agent", constant.UserAgentFor(p.URL))
 	return req, nil
 }
 

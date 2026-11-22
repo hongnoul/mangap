@@ -437,7 +437,7 @@ func get(u, referer string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", constant.UserAgent)
+	req.Header.Set("User-Agent", constant.UserAgentFor(u))
 	if referer != "" {
 		req.Header.Set("Referer", referer)
 	}
