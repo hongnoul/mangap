@@ -28,7 +28,6 @@ type sourceRow struct {
 type sourceSettings struct {
 	rows   []sourceRow
 	cursor int
-	auto   bool
 	status string
 	lang   int // index into languages
 }
@@ -95,9 +94,6 @@ func (ss *sourceSettings) langWarning() string {
 		if r.p.ID == mangadex.ID {
 			return ""
 		}
-		if ss.auto {
-			return r.p.Name + " is English only and ranks above MangaDex (press p to fix)"
-		}
 	}
 	return "MangaDex is disabled, so this language is unused (press p to fix)"
 }
@@ -124,7 +120,6 @@ func newSourceSettings() *sourceSettings {
 	}
 
 	ss := &sourceSettings{
-		auto: provider.IsAuto(),
 		lang: languageIndex(viper.GetString(key2.MangadexLanguage)),
 	}
 	seen := map[string]bool{}
@@ -172,12 +167,8 @@ func (ss *sourceSettings) save() error {
 	if disabled == nil {
 		disabled = []string{}
 	}
-	mode := "auto"
-	if !ss.auto {
-		mode = "manual"
-	}
 	viper.Set(key2.MangadexLanguage, languages[ss.lang].code)
-	return provider.SaveSourcePrefs(mode, order, disabled)
+	return provider.SaveSourcePrefs(order, disabled)
 }
 
 func (b *statefulBubble) openSourceSettings() {
@@ -207,8 +198,6 @@ func (b *statefulBubble) updateSourceSettings(msg tea.Msg) (tea.Model, tea.Cmd) 
 		ss.move(1)
 	case " ", "x":
 		ss.rows[ss.cursor].enabled = !ss.rows[ss.cursor].enabled
-	case "m", "tab":
-		ss.auto = !ss.auto
 	case "l", "right":
 		ss.cycleLang(1)
 	case "h", "left":
@@ -222,8 +211,8 @@ func (b *statefulBubble) updateSourceSettings(msg tea.Msg) (tea.Model, tea.Cmd) 
 				n++
 			}
 		}
-		if ss.auto && n == 0 {
-			ss.status = "Enable at least one source for auto mode"
+		if n == 0 {
+			ss.status = "Enable at least one source"
 			return b, nil
 		}
 		if err := ss.save(); err != nil {
@@ -231,32 +220,26 @@ func (b *statefulBubble) updateSourceSettings(msg tea.Msg) (tea.Model, tea.Cmd) 
 			return b, nil
 		}
 		b.sourceSettings = nil
-		if ss.auto {
-			// Back to the search screen, keeping the picked source.
-			prev := ""
-			if b.sourceIdx < len(b.sourceChoices) {
-				prev = b.sourceChoices[b.sourceIdx]
+		// Back to the search screen, keeping the picked source.
+		prev := ""
+		if b.sourceIdx < len(b.sourceChoices) {
+			prev = b.sourceChoices[b.sourceIdx]
+		}
+		b.sourceChoices = sourceChoices()
+		idx := defaultSourceIdx(b.sourceChoices)
+		for i, n := range b.sourceChoices {
+			if n == prev {
+				idx = i
 			}
-			b.sourceChoices = sourceChoices()
-			idx := defaultSourceIdx(b.sourceChoices)
-			for i, n := range b.sourceChoices {
-				if n == prev {
-					idx = i
-				}
-			}
-			if err := b.pickSource(idx); err != nil {
-				b.raiseError(err)
-				return b, nil
-			}
-			b.statesHistory = util.Stack[state]{}
-			b.setState(searchState)
-			b.inputC.Focus()
+		}
+		if err := b.pickSource(idx); err != nil {
+			b.raiseError(err)
 			return b, nil
 		}
-		// Manual: pick sources from the list, like mangal did.
 		b.statesHistory = util.Stack[state]{}
-		b.setState(sourcesState)
-		return b, b.loadProviders()
+		b.setState(searchState)
+		b.inputC.Focus()
+		return b, nil
 	default:
 		if key.Matches(km, b.keymap.back) {
 			b.sourceSettings = nil
@@ -272,15 +255,9 @@ func (b *statefulBubble) viewSourceSettings() string {
 		return ""
 	}
 
-	mode := style.Fg(color.Green)("auto") + style.Faint(": first source with results, top to bottom")
-	if !ss.auto {
-		mode = style.Fg(color.Orange)("manual") + style.Faint(": pick sources on start")
-	}
-
 	lines := []string{
 		style.Title("Sources"),
 		"",
-		"Mode      " + mode,
 		"Language  " + style.Fg(color.Green)(languages[ss.lang].name) +
 			style.Faint(fmt.Sprintf(" (%s): MangaDex only, Mangapill is English", languages[ss.lang].code)),
 	}
@@ -320,24 +297,18 @@ func (b *statefulBubble) viewSourceSettings() string {
 	}
 	lines = append(lines,
 		style.Faint(strings.Join([]string{
-			"j/k move", "J/K reorder", "space toggle", "m mode", "h/l language", "p prefer MangaDex", "enter save", "esc cancel",
+			"j/k move", "J/K reorder", "space toggle", "h/l language", "p prefer MangaDex", "enter save", "esc cancel",
 		}, " • ")),
 	)
 
 	return b.renderLines(false, lines)
 }
 
-// autoChain is "Mangapill, then Mangadex" for status lines.
-func autoChain(srcs []source.Source) string {
+// sourceNames is "Mangapill, Mangadex" for status lines.
+func sourceNames(srcs []source.Source) string {
 	var names []string
 	for _, s := range srcs {
-		if a, ok := s.(*provider.Auto); ok {
-			for _, x := range a.Sources {
-				names = append(names, x.Name())
-			}
-		} else {
-			names = append(names, s.Name())
-		}
+		names = append(names, s.Name())
 	}
-	return strings.Join(names, ", then ")
+	return strings.Join(names, ", ")
 }

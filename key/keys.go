@@ -67,7 +67,6 @@ const (
 )
 
 const (
-	SourcesMode     = "sources.mode"
 	SourcesOrder    = "sources.order"
 	SourcesDisabled = "sources.disabled"
 )

@@ -109,9 +109,13 @@ mangap inline -S Mangadex -q "chainsaw man" -m first -j`,
 		}
 
 		if len(sources) == 0 {
-			auto, err := provider.NewAuto()
+			ps := provider.Ordered()
+			if len(ps) == 0 {
+				handleErr(errors.New("no sources enabled"))
+			}
+			src, err := ps[0].CreateSource()
 			handleErr(err)
-			sources = append(sources, auto)
+			sources = append(sources, src)
 		}
 
 		query := lo.Must(cmd.Flags().GetString("query"))

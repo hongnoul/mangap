@@ -269,22 +269,14 @@ Available options are: rtl, ltr`,
 		"Show query suggestions in when searching",
 	},
 	{
-		key.SourcesMode,
-		"auto",
-		`How the TUI picks sources.
-auto: search sources.order top to bottom, use the first with results (no picker).
-manual: pick sources from a list on start (old behavior).
-Change it in the TUI with ctrl+s on the search screen.`,
-	},
-	{
 		key.SourcesOrder,
 		[]string{"Mangapill", "Mangadex"},
-		`Source priority for auto mode, first is tried first`,
+		`Order of sources in the TUI source picker`,
 	},
 	{
 		key.SourcesDisabled,
 		[]string{},
-		`Sources skipped in auto mode`,
+		`Sources hidden from the TUI source picker`,
 	},
 	{
 		key.MangadexLanguage,

@@ -10,13 +10,10 @@ import (
 )
 
 // sourceChoices lists the home screen picker entries: every provider in
-// priority order.
+// the order set in source settings (ctrl+s), disabled ones left out.
 func sourceChoices() []string {
 	var names []string
-	for _, p := range provider.Builtins() {
-		names = append(names, p.Name)
-	}
-	for _, p := range provider.Customs() {
+	for _, p := range provider.Ordered() {
 		names = append(names, p.Name)
 	}
 	return names

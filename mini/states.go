@@ -41,11 +41,6 @@ func (m *mini) handleSourceSelectState() error {
 		if err != nil {
 			return err
 		}
-	} else if provider.IsAuto() {
-		m.selectedSource, err = provider.NewAuto()
-		if err != nil {
-			return err
-		}
 	} else {
 		var providers []*provider.Provider
 		providers = append(providers, provider.Builtins()...)
