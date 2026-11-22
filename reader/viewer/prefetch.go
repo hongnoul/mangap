@@ -52,6 +52,13 @@ type Prefetcher struct {
 
 // NewPrefetcher starts workers lanes (default: CPU count, at least 3).
 func NewPrefetcher(src pages.Source, workers int) *Prefetcher {
+	return NewPrefetcherReady(src, workers, make(chan struct{}, 1))
+}
+
+// NewPrefetcherReady is NewPrefetcher signaling on a caller-owned Ready
+// channel, so one loop can wait on several prefetchers (the reader keeps
+// neighbor chapters warm).
+func NewPrefetcherReady(src pages.Source, workers int, ready chan struct{}) *Prefetcher {
 	if workers <= 0 {
 		workers = runtime.NumCPU()
 		if workers > 6 {
@@ -68,7 +75,7 @@ func NewPrefetcher(src pages.Source, workers int) *Prefetcher {
 		wanted:        map[string]bool{},
 		awaited:       map[string]bool{},
 		decoded:       newDecodeCache(16),
-		Ready:         make(chan struct{}, 1),
+		Ready:         ready,
 		NativeDensity: true,
 	}
 	p.cond = sync.NewCond(&p.mu)
