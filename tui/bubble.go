@@ -222,6 +222,11 @@ func newBubble() *statefulBubble {
 			listC.Styles.Title = titleStyle
 		}
 
+		listC.SetShowPagination(false)
+		listC.SetShowHelp(false)
+		listC.SetShowStatusBar(false)
+		listC.SetShowTitle(false)
+
 		//listC.StatusMessageLifetime = time.Second * 5
 		listC.StatusMessageLifetime = time.Hour * 999 // forever
 
