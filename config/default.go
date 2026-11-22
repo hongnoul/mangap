@@ -385,8 +385,8 @@ panic, fatal, error, warn, info, debug, trace`,
 	},
 	{
 		key.TUIShowURLs,
-		true,
-		"Show URLs under list items",
+		false,
+		"Show URLs in the TUI (under list items and in status lines)",
 	},
 	{
 		key.TUIReverseChapters,

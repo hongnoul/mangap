@@ -237,7 +237,8 @@ func newBubble() *statefulBubble {
 
 	bubble.progressC = progress.New(progress.WithDefaultGradient())
 
-	bubble.scrapersInstallC = makeList("Install Scrapers", true, &listOptions{
+	showURLs := viper.GetBool(key2.TUIShowURLs)
+	bubble.scrapersInstallC = makeList("Install Scrapers", showURLs, &listOptions{
 		TitleStyle: mo.Some(
 			lipgloss.NewStyle().Reverse(true).Bold(true).Padding(0, 1),
 		),
@@ -254,7 +255,6 @@ func newBubble() *statefulBubble {
 	})
 	bubble.sourcesC.SetStatusBarItemName("source", "sources")
 
-	showURLs := viper.GetBool(key2.TUIShowURLs)
 	bubble.mangasC = makeList("Mangas", showURLs, &listOptions{
 		TitleStyle: mo.Some(
 			lipgloss.NewStyle().Reverse(true).Bold(true).Padding(0, 1),

@@ -6,9 +6,11 @@ import (
 	"github.com/hongnoul/mangaz/history"
 	"github.com/hongnoul/mangaz/icon"
 	"github.com/hongnoul/mangaz/installer"
+	"github.com/hongnoul/mangaz/key"
 	"github.com/hongnoul/mangaz/provider"
 	"github.com/hongnoul/mangaz/source"
 	"github.com/hongnoul/mangaz/style"
+	"github.com/spf13/viper"
 	"strings"
 )
 
@@ -66,11 +68,11 @@ func (t *listItem) Title() (title string) {
 func (t *listItem) Description() (description string) {
 	switch e := t.internal.(type) {
 	case *source.Chapter:
-		description = e.URL
+		description = urlOrEmpty(e.URL)
 	case *source.Manga:
-		description = e.URL
+		description = urlOrEmpty(e.URL)
 	case *installer.Scraper:
-		description = e.GithubURL()
+		description = urlOrEmpty(e.GithubURL())
 	case *history.SavedChapter:
 		description = fmt.Sprintf("%s : %d / %d", e.Name, e.Index, e.MangaChaptersTotal)
 	case *provider.Provider:
@@ -87,7 +89,7 @@ func (t *listItem) Description() (description string) {
 
 		description = sb.String()
 	case *anilist.Manga:
-		description = e.SiteURL
+		description = urlOrEmpty(e.SiteURL)
 	}
 
 	return
@@ -110,4 +112,12 @@ func (t *listItem) FilterValue() string {
 	default:
 		return ""
 	}
+}
+
+// urlOrEmpty hides URLs unless tui.show_urls is set. "o" still opens them.
+func urlOrEmpty(u string) string {
+	if viper.GetBool(key.TUIShowURLs) {
+		return u
+	}
+	return ""
 }
