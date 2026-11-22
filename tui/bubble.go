@@ -79,8 +79,9 @@ type statefulBubble struct {
 
 	sourceSettings *sourceSettings
 
-	thumbs *thumbs
-	grid   *grid
+	thumbs  *thumbs
+	preview *thumbs // large image of the selected item, right pane
+	grid    *grid
 }
 
 func (b *statefulBubble) raiseError(err error) {
@@ -279,6 +280,7 @@ func newBubble() *statefulBubble {
 	bubble.mangasC.SetShowTitle(false)
 	bubble.mangasC.SetShowStatusBar(false)
 	bubble.thumbs = newThumbs(nil)
+	bubble.preview = newThumbs(nil)
 	bubble.grid = newGrid()
 
 	bubble.chaptersC = makeList("Chapters", showURLs, &listOptions{

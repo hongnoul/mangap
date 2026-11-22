@@ -19,7 +19,6 @@ var homeKeys = [][2]string{
 	{"l / h", "open / back"},
 	{"hjkl", "move in grid"},
 	{"← / →", "prev / next page"},
-	{"[ / ]", "1 / 2 columns"},
 	{"g / G", "top / bottom"},
 	{"/", "filter list"},
 	{"esc", "back"},

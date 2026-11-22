@@ -10,6 +10,7 @@ import (
 	"github.com/hongnoul/mangaz/source"
 	"github.com/hongnoul/mangaz/style"
 	"github.com/hongnoul/mangaz/util"
+	"github.com/muesli/reflow/truncate"
 	"github.com/muesli/reflow/wrap"
 	"github.com/spf13/viper"
 	"math/rand"
@@ -93,30 +94,41 @@ func (b *statefulBubble) viewSearch() string {
 }
 
 func (b *statefulBubble) viewMangas() string {
-	return b.viewGrid(&b.mangasC, mangaCard, func(it list.Item, visible bool) {
-		b.thumbs.WantManga(it.(*listItem).internal.(*source.Manga), visible)
+	return b.viewGrid(&b.mangasC, mangaCard, func(th *thumbs, it list.Item, visible bool) {
+		th.WantManga(it.(*listItem).internal.(*source.Manga), visible)
 	})
 }
 
 func (b *statefulBubble) viewChapters() string {
-	return b.viewGrid(&b.chaptersC, chapterCard, func(it list.Item, visible bool) {
-		b.thumbs.WantChapter(it.(*listItem).internal.(*source.Chapter), visible)
+	return b.viewGrid(&b.chaptersC, chapterCard, func(th *thumbs, it list.Item, visible bool) {
+		th.WantChapter(it.(*listItem).internal.(*source.Chapter), visible)
 	})
 }
 
+// List column width cap; past it the right side becomes a preview pane.
+const (
+	maxListW    = 64
+	minPreviewW = 30
+)
+
 // viewGrid draws a thumbnail grid, or the list's own view while filtering
 // (the filter input lives there).
-func (b *statefulBubble) viewGrid(l *list.Model, toCard func(list.Item) card, want func(list.Item, bool)) string {
+func (b *statefulBubble) viewGrid(l *list.Model, toCard func(list.Item) card, want func(*thumbs, list.Item, bool)) string {
 	if l.FilterState() == list.Filtering {
 		return listExtraPaddingStyle.Render(l.View())
 	}
 	// Full terminal size; the grid gets the height minus the indicator
 	// line and the bottom margin, and is centered in the full height so it
 	// sits where it would with no pagination UI.
-	W, H := b.width+4, b.height+2
+	full, H := b.width+4, b.height+2
+	W := full
+	showPreview := b.thumbs.enabled && full >= maxListW+minPreviewW
+	if showPreview {
+		W = maxListW
+	}
 	const sideMargin = 2
 	gridH := H - 4 // 1 top + indicator + 1 below it + 1 slack
-	body, footer := b.grid.render(l, b.thumbs, W-2*sideMargin, gridH, toCard, want)
+	body, footer := b.grid.render(l, b.thumbs, W-2*sideMargin, gridH, toCard, func(it list.Item, v bool) { want(b.thumbs, it, v) })
 	if msg := strings.TrimSpace(l.Title); msg != "" && l.ShowTitle() {
 		body = msg + "\n" + body
 	}
@@ -139,6 +151,33 @@ func (b *statefulBubble) viewGrid(l *list.Model, toCard func(list.Item) card, wa
 	}
 	lines = lines[:H-2]
 	lines = append(lines, lipgloss.PlaceHorizontal(W, lipgloss.Center, lipgloss.NewStyle().Faint(true).Render(footer)), "")
+	left := strings.Join(lines, "\n")
+	if !showPreview {
+		return left
+	}
+	left = lipgloss.NewStyle().Width(W).MaxWidth(W).Render(left)
+	return lipgloss.JoinHorizontal(lipgloss.Top, left, b.viewPreviewPane(l, toCard, want, full-W, H))
+}
+
+// viewPreviewPane shows the selected item large: the manga cover or the
+// chapter's first page, fitted to the pane, with its title underneath.
+func (b *statefulBubble) viewPreviewPane(l *list.Model, toCard func(list.Item) card, want func(*thumbs, list.Item, bool), w, h int) string {
+	it := l.SelectedItem()
+	if it == nil {
+		return ""
+	}
+	cd := toCard(it)
+	imgW, imgH := imax(w-2, 4), imax(h-4, 2)
+	b.preview.SetSpan(imgW, imgH)
+	want(b.preview, it, true)
+
+	lines := make([]string, 0, h)
+	lines = append(lines, "")
+	for r := 0; r < imgH; r++ {
+		lines = append(lines, b.preview.Cells(cd.thumbKey, r))
+	}
+	lines = append(lines, "", lipgloss.PlaceHorizontal(imgW, lipgloss.Center,
+		truncate.StringWithTail(cd.title, uint(imgW), "…")))
 	return strings.Join(lines, "\n")
 }
 

@@ -235,6 +235,7 @@ func (b *statefulBubble) updateLoading(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		cmds = append(cmds, b.mangasC.SetItems(items))
 		b.thumbs.Clear()
+		b.preview.Clear()
 		b.newState(mangasState)
 		b.stopLoading()
 	case []*source.Chapter:

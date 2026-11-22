@@ -17,7 +17,7 @@ import (
 // cards instead of cramped ones.
 
 const (
-	defaultGridCols = 2
+	defaultGridCols = 1
 	singleColRows   = 5
 	maxGridRows     = 4
 	minGridRows     = 1
@@ -37,15 +37,7 @@ func newGrid() *grid { return &grid{cols: defaultGridCols, rows: maxGridRows} }
 
 // key handles [ and ] (one / two columns).
 func (g *grid) key(k string) bool {
-	switch k {
-	case "[":
-		g.cols = 1
-	case "]":
-		g.cols = 2
-	default:
-		return false
-	}
-	return true
+	return false // single column only
 }
 
 // fit sets rows for the available height.
