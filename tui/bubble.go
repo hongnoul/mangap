@@ -77,6 +77,12 @@ type statefulBubble struct {
 
 	sourceSettings *sourceSettings
 
+	// live search (see live.go)
+	liveSeq    int
+	liveManga  *source.Manga
+	liveStatus string
+	liveMode   bool // chapters screen entered from live search
+
 	thumbs  *thumbs
 	preview *thumbs // large image of the selected item, right pane
 	grid    *grid
@@ -273,6 +279,7 @@ func newBubble() *statefulBubble {
 	bubble.mangasC.SetShowTitle(false)
 	bubble.mangasC.SetShowStatusBar(false)
 	bubble.thumbs = newThumbs(nil)
+	bubble.thumbs.fill = true
 	bubble.preview = newThumbs(nil)
 	bubble.grid = newGrid()
 

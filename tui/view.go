@@ -29,7 +29,7 @@ func (b *statefulBubble) View() string {
 	case sourcesState:
 		return b.viewSources()
 	case searchState:
-		return b.viewHome()
+		return b.viewLive()
 	case mangasState:
 		return b.viewMangas()
 	case chaptersState:
@@ -98,6 +98,9 @@ func (b *statefulBubble) viewMangas() string {
 }
 
 func (b *statefulBubble) viewChapters() string {
+	if b.liveMode {
+		return b.viewLive()
+	}
 	return b.viewGrid(&b.chaptersC, chapterCard, func(th *thumbs, it list.Item, prio int) {
 		th.WantChapter(it.(*listItem).internal.(*source.Chapter), prio)
 	})
@@ -112,13 +115,17 @@ const (
 // viewGrid draws a thumbnail grid, or the list's own view while filtering
 // (the filter input lives there).
 func (b *statefulBubble) viewGrid(l *list.Model, toCard func(list.Item) card, want func(*thumbs, list.Item, int)) string {
+	return b.viewGridH(l, toCard, want, b.height+2)
+}
+
+func (b *statefulBubble) viewGridH(l *list.Model, toCard func(list.Item) card, want func(*thumbs, list.Item, int), H int) string {
 	if l.FilterState() == list.Filtering {
 		return listExtraPaddingStyle.Render(l.View())
 	}
-	// Full terminal size; the grid gets the height minus the indicator
-	// line and the bottom margin, and is centered in the full height so it
-	// sits where it would with no pagination UI.
-	full, H := b.width+4, b.height+2
+	// The grid gets the height minus the indicator line and the bottom
+	// margin, and is centered in H so it sits where it would with no
+	// pagination UI.
+	full := b.width + 4
 	W := full
 	showPreview := b.thumbs.enabled && full >= maxListW+minPreviewW
 	if showPreview {

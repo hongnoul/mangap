@@ -56,9 +56,10 @@ func (g *grid) perPage() int { return g.cols * g.rows }
 func (g *grid) cardGeometry(width, height int) (cardW, cardH, thumbW, thumbH int) {
 	cardW = imax(width/g.cols, 10)
 	cardH = imax(height/g.rows, 2)
-	// Thumbnail fills the card height minus a 1-row gap, kept cover-shaped
-	// and never wider than ~45% of the card so the title has room.
-	thumbH = imax(cardH-1, 1)
+	// Thumbnail fills the whole card height so it lines up with the row
+	// highlight, kept cover-shaped and never wider than ~45% of the card
+	// so the title has room.
+	thumbH = cardH
 	thumbW = int(float64(thumbH)*coverWPerH + 0.5)
 	if lim := cardW * 45 / 100; thumbW > lim {
 		thumbW = imax(lim, 2)

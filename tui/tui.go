@@ -46,6 +46,7 @@ func Run(options *Options) error {
 
 	out := &syncOut{f: os.Stdout}
 	*bubble.thumbs = *newThumbs(out)
+	bubble.thumbs.fill = true
 	*bubble.preview = *newThumbs(out)
 	bubble.preview.next = previewBaseID
 	p := tea.NewProgram(bubble, tea.WithAltScreen(), tea.WithOutput(out))
