@@ -31,7 +31,7 @@ const (
 	pingPending pingState = iota
 	pingUp
 	pingFailed
-	pingLocal // custom source: nothing to ping
+	pingLocal // custom source with no URL to ping
 )
 
 type pingRow struct {

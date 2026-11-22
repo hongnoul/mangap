@@ -15,7 +15,8 @@ type Provider struct {
 	ID   string
 	Name string
 	// PingURL is a cheap endpoint the TUI hits to show whether the source
-	// is reachable. Empty means unknown (custom Lua sources).
+	// is reachable. Custom Lua sources use their `-- @url` header (or the
+	// first URL in the script). Empty means unknown.
 	PingURL      string
 	UsesHeadless bool
 	IsCustom     bool
@@ -62,6 +63,7 @@ func Customs() []*Provider {
 		providers[i] = &Provider{
 			ID:           custom.IDfromName(name),
 			UsesHeadless: usesHeadless,
+			PingURL:      customPingURL(path),
 			IsCustom:     true,
 			Name:         name,
 			CreateSource: func() (source.Source, error) {

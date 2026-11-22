@@ -52,21 +52,19 @@ func (b *statefulBubble) pickSource(i int) error {
 }
 
 // sourcePicker renders the source row under the search bar.
-func (b *statefulBubble) sourcePicker() string {
-	var parts []string
-	for i, n := range b.sourceChoices {
-		if strings.EqualFold(n, "mangapill") {
-			n += " (Recommended)"
-		}
-		box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
-		if i == b.sourceIdx {
-			box = box.Bold(true).BorderForeground(lipgloss.Color("5")).Foreground(lipgloss.Color("5"))
-		} else {
-			box = box.Faint(true).BorderForeground(lipgloss.Color("8"))
-		}
-		parts = append(parts, box.Render(n), " ")
+func (b *statefulBubble) sourcePicker(w int) string {
+	if b.sourceIdx >= len(b.sourceChoices) {
+		return ""
 	}
-	hint := lipgloss.NewStyle().PaddingTop(1).Render(style.Faint(" (ctrl+o / ← →)"))
-	parts = append(parts, hint)
-	return lipgloss.JoinHorizontal(lipgloss.Top, parts...)
+	n := b.sourceChoices[b.sourceIdx]
+	if strings.EqualFold(n, "mangapill") {
+		n += " (Recommended)"
+	}
+	label := style.Faint("Source  ") + lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5")).Render(n)
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("5")).
+		Width(imax(w-2, 4)).
+		Align(lipgloss.Center).
+		Render(label)
 }
