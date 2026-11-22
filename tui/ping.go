@@ -3,7 +3,6 @@ package tui
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,16 +10,15 @@ import (
 	"github.com/hongnoul/mangap/network"
 	"github.com/hongnoul/mangap/provider"
 	"github.com/hongnoul/mangap/style"
-	"github.com/muesli/reflow/truncate"
 )
 
 const (
 	pingTimeout = 8 * time.Second
-	pingBarW    = 12
+	pingBarW    = 4
 	pingOK      = "#34d399" // aurora green
 	pingSlow    = "#fbbf24"
 	pingDown    = "#f87171"
-	pingSlowAt  = 800 * time.Millisecond
+	pingSlowAt  = 300 * time.Millisecond
 )
 
 type pingState int
@@ -33,48 +31,47 @@ const (
 )
 
 type pingRow struct {
-	name    string
-	state   pingState
-	latency time.Duration // server response (warm TTFB)
-	rtt     time.Duration // network round trip (TCP handshake)
-	detail  string
+	state  pingState
+	rtt    time.Duration // TCP handshake round trip
+	detail string
 }
 
-// pinger checks every enabled source on the home screen, showing an
-// Aurora shimmer per row until its answer lands.
+// pinger measures network RTT to every enabled source, starting at init.
+// Results are shown inside the source selector, keyed by source name.
 type pinger struct {
-	rows []pingRow
-	bar  loader
-	gen  int
+	rows  map[string]*pingRow
+	names []string // ping order, for shimmer offsets
+	bar   loader
+	gen   int
 }
 
 type pingResultMsg struct {
-	gen     int
-	idx     int
-	ok      bool
-	latency time.Duration
-	rtt     time.Duration
-	detail  string
+	gen    int
+	name   string
+	rtt    time.Duration
+	detail string
 }
 
 func newPinger() pinger {
-	return pinger{bar: newLoaderWith(spinners.Aurora)}
+	return pinger{bar: newLoaderWith(spinners.Aurora), rows: map[string]*pingRow{}}
 }
 
 // start (re)pings every enabled source. Stale answers from an earlier run
 // are dropped by gen.
 func (p *pinger) start() tea.Cmd {
 	p.gen++
-	p.rows = nil
+	p.rows = map[string]*pingRow{}
+	p.names = nil
 	var cmds []tea.Cmd
 	for _, prov := range provider.Ordered() {
-		row := pingRow{name: prov.Name}
+		row := &pingRow{}
 		if prov.PingURL == "" {
 			row.state = pingLocal
 		} else {
-			cmds = append(cmds, pingCmd(p.gen, len(p.rows), prov.PingURL))
+			cmds = append(cmds, pingCmd(p.gen, prov.Name, prov.PingURL))
 		}
-		p.rows = append(p.rows, row)
+		p.rows[prov.Name] = row
+		p.names = append(p.names, prov.Name)
 	}
 	if len(cmds) == 0 {
 		p.bar.stop()
@@ -83,25 +80,23 @@ func (p *pinger) start() tea.Cmd {
 	return tea.Batch(append(cmds, p.bar.start())...)
 }
 
-func pingCmd(gen, idx int, url string) tea.Cmd {
+func pingCmd(gen int, name, url string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), pingTimeout)
 		defer cancel()
-		r := network.Probe(ctx, url)
-		return pingResultMsg{gen: gen, idx: idx, ok: r.OK, latency: r.Latency, rtt: r.RTT, detail: r.Detail}
+		rtt, detail := network.PingRTT(ctx, url)
+		return pingResultMsg{gen: gen, name: name, rtt: rtt, detail: detail}
 	}
 }
 
 // update stores a result and stops the shimmer once every row settled.
 func (p *pinger) update(msg pingResultMsg) {
-	if msg.gen != p.gen || msg.idx >= len(p.rows) {
+	r, ok := p.rows[msg.name]
+	if msg.gen != p.gen || !ok {
 		return
 	}
-	r := &p.rows[msg.idx]
-	r.latency = msg.latency
-	r.rtt = msg.rtt
-	r.detail = msg.detail
-	if msg.ok {
+	r.rtt, r.detail = msg.rtt, msg.detail
+	if msg.detail == "" {
 		r.state = pingUp
 	} else {
 		r.state = pingFailed
@@ -120,47 +115,35 @@ func (p *pinger) pending() bool {
 	return false
 }
 
-// view renders one line per source:
-//
-//	Mangapill  ░▒▓█▓▒░░▒▓█▓  checking
-//	Mangadex   ●  online       54ms  rtt 27ms
-//
-// The main number is server response time on a warm connection; rtt is
-// the raw network round trip.
-func (p *pinger) view(maxW int) string {
-	if len(p.rows) == 0 {
+// badge is the compact status for one source: "● 27ms", a shimmer while
+// checking, "● timeout" when down, or "" when unknown (disabled source).
+func (p *pinger) badge(name string) string {
+	r, ok := p.rows[name]
+	if !ok {
 		return ""
-	}
-	nameW := 0
-	for _, r := range p.rows {
-		nameW = imax(nameW, len([]rune(r.name)))
 	}
 	dot := func(c string) string {
 		return style.Paint([]string{"●"}, func(int, int, rune) string { return c })
 	}
-	var lines []string
-	for i, r := range p.rows {
-		name := fmt.Sprintf("%-*s", nameW, r.name)
-		var status string
-		switch r.state {
-		case pingPending:
-			status = p.bar.viewAt(pingBarW, i*3) + "  " + style.Faint("checking")
-		case pingUp:
-			c, word := pingOK, "online"
-			if r.latency >= pingSlowAt {
-				c, word = pingSlow, "slow"
+	switch r.state {
+	case pingPending:
+		off := 0
+		for i, n := range p.names {
+			if n == name {
+				off = i * 3
 			}
-			status = fmt.Sprintf("%s %-*s%5dms", dot(c), pingBarW-1, word, r.latency.Milliseconds())
-			if r.rtt > 0 {
-				status += style.Faint(fmt.Sprintf("  rtt %dms", r.rtt.Milliseconds()))
-			}
-		case pingFailed:
-			status = fmt.Sprintf("%s %-*s%s", dot(pingDown), pingBarW-1, "offline", style.Faint(r.detail))
-		case pingLocal:
-			status = style.Faint(fmt.Sprintf("○ %-*s", pingBarW-1, "custom"))
 		}
-		line := style.Bold(name) + "  " + status
-		lines = append(lines, truncate.String(line, uint(imax(maxW, 1))))
+		return p.bar.viewAt(pingBarW, off)
+	case pingUp:
+		c := pingOK
+		if r.rtt >= pingSlowAt {
+			c = pingSlow
+		}
+		return dot(c) + style.Faint(fmt.Sprintf(" %dms", r.rtt.Milliseconds()))
+	case pingFailed:
+		return dot(pingDown) + style.Faint(" "+r.detail)
+	case pingLocal:
+		return style.Faint("○ local")
 	}
-	return strings.Join(lines, "\n")
+	return ""
 }

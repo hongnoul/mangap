@@ -74,7 +74,11 @@ func (b *statefulBubble) sourcePicker(w int) string {
 	}
 	leftW := (w - 1) / 2
 	rightW := w - 1 - leftW
-	src := box(leftW, style.Faint("Source  ")+bold.Render(n)+style.Faint(" (ctrl+s)"))
+	srcLabel := style.Faint("Source  ") + bold.Render(n)
+	if bd := b.pingC.badge(b.sourceChoices[b.sourceIdx]); bd != "" {
+		srcLabel += "  " + bd
+	}
+	src := box(leftW, srcLabel+style.Faint(" (ctrl+s)"))
 	lng := box(rightW, style.Faint("Language  ")+bold.Render(lang.name)+style.Faint(" (ctrl+l)"))
 	row := lipgloss.JoinHorizontal(lipgloss.Top, src, " ", lng)
 	if b.dropdown == nil {

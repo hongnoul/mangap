@@ -193,3 +193,23 @@ func tcpRTT(ctx context.Context, u *url.URL) time.Duration {
 	}
 	return best
 }
+
+// PingRTT measures only the network round trip to rawURL's host: the
+// fastest of RTTSamples TCP handshakes. No HTTP request is sent. detail
+// is a short reason when the host cannot be reached.
+func PingRTT(ctx context.Context, rawURL string) (rtt time.Duration, detail string) {
+	u, err := url.Parse(rawURL)
+	if err != nil || u.Host == "" {
+		return 0, "bad url"
+	}
+	if _, err := net.DefaultResolver.LookupIPAddr(ctx, u.Hostname()); err != nil {
+		return 0, describeErr(ctx, err)
+	}
+	if rtt = tcpRTT(ctx, u); rtt == 0 {
+		if ctx.Err() != nil {
+			return 0, "timeout"
+		}
+		return 0, "unreachable"
+	}
+	return rtt, ""
+}

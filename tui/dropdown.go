@@ -43,11 +43,23 @@ func (b *statefulBubble) dropdownOptions() []string {
 	}
 	if b.dropdown.kind == sourceDropdown {
 		var out []string
+		w := 0
 		for _, n := range b.sourceChoices {
 			if strings.EqualFold(n, "mangapill") {
 				n += " (Recommended)"
 			}
-			out = append(out, n)
+			w = imax(w, lipgloss.Width(n))
+		}
+		for _, n := range b.sourceChoices {
+			label := n
+			if strings.EqualFold(n, "mangapill") {
+				label += " (Recommended)"
+			}
+			label += strings.Repeat(" ", w-lipgloss.Width(label))
+			if bd := b.pingC.badge(n); bd != "" {
+				label += "  " + bd
+			}
+			out = append(out, label)
 		}
 		return out
 	}
@@ -125,9 +137,12 @@ func (b *statefulBubble) viewDropdown(w int) string {
 	var lines []string
 	for i := start; i < end; i++ {
 		line := "  " + opts[i]
-		if i == d.cursor {
+		if i == d.cursor && d.kind == languageDropdown {
 			line = lipgloss.NewStyle().Reverse(true).Bold(true).Width(inner).
 				Render("> " + stripFaint(opts[i]))
+		} else if i == d.cursor {
+			// Keep the colored ping badge, only mark and bold the name.
+			line = lipgloss.NewStyle().Bold(true).Render("> ") + opts[i]
 		}
 		lines = append(lines, line)
 	}
