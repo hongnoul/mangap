@@ -58,10 +58,7 @@ func (b *statefulBubble) sourcePicker(w int) string {
 	if b.sourceIdx >= len(b.sourceChoices) {
 		return ""
 	}
-	n := b.sourceChoices[b.sourceIdx]
-	if strings.EqualFold(n, "mangapill") {
-		n += " (Recommended)"
-	}
+	n := b.sourceChoices[b.sourceIdx] // "(Recommended)" only shows in the ctrl+s picker
 	bold := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5"))
 	lang := languages[languageIndex(viper.GetString(key2.MangadexLanguage))]
 	srcLabel := style.Faint("Source    ") + bold.Render(n)
