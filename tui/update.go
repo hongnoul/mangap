@@ -813,6 +813,11 @@ func (b *statefulBubble) refreshSuggestions() {
 			break
 		}
 	}
+
+	// Default the highlight to the top suggestion.
+	if len(b.searchSuggestions) > 0 {
+		b.suggestionIdx = 0
+	}
 }
 
 func (b *statefulBubble) clearSuggestions() {
