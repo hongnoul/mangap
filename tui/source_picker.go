@@ -4,9 +4,11 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	key2 "github.com/hongnoul/mangap/key"
 	"github.com/hongnoul/mangap/provider"
 	"github.com/hongnoul/mangap/source"
 	"github.com/hongnoul/mangap/style"
+	"github.com/spf13/viper"
 )
 
 // sourceChoices lists the home screen picker entries: every provider in
@@ -51,6 +53,13 @@ func (b *statefulBubble) pickSource(i int) error {
 	return nil
 }
 
+// cycleHomeLanguage moves the MangaDex language preference by d and saves it.
+func cycleHomeLanguage(d int) error {
+	n := len(languages)
+	i := languageIndex(viper.GetString(key2.MangadexLanguage))
+	return provider.SaveMangadexLanguage(languages[((i+d)%n+n)%n].code)
+}
+
 // sourcePicker renders the source row under the search bar.
 func (b *statefulBubble) sourcePicker(w int) string {
 	if b.sourceIdx >= len(b.sourceChoices) {
@@ -60,7 +69,10 @@ func (b *statefulBubble) sourcePicker(w int) string {
 	if strings.EqualFold(n, "mangapill") {
 		n += " (Recommended)"
 	}
-	label := style.Faint("Source  ") + lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5")).Render(n)
+	bold := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("5"))
+	lang := languages[languageIndex(viper.GetString(key2.MangadexLanguage))]
+	label := style.Faint("Source  ") + bold.Render(n) +
+		style.Faint("   Language  ") + bold.Render(lang.name) + style.Faint(" (ctrl+l)")
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("5")).

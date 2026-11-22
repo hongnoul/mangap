@@ -31,7 +31,7 @@ func New() *Mangadex {
 		client: mangodex.NewDexClient(),
 	}
 
-	dex.cache.mangas = newCacher[[]*source.Manga](ID + "_mangas")
+	dex.cache.mangas = newCacher[[]*source.Manga](ID + "_mangas_v2") // v2: entries carry cover URLs
 	dex.cache.chapters = newCacher[[]*source.Chapter](ID + "_chapters")
 
 	return dex

@@ -373,6 +373,12 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, b.keymap.sourceSettings):
 			b.openSourceSettings()
 			return b, nil
+		case msg.String() == "ctrl+l":
+			if err := cycleHomeLanguage(1); err != nil {
+				b.raiseError(err)
+				return b, nil
+			}
+			return b, b.scheduleLive()
 		case len(b.sourceChoices) > 0 && (msg.String() == "ctrl+o" ||
 			(b.inputC.Value() == "" && (msg.String() == "left" || msg.String() == "right"))):
 			d := 1

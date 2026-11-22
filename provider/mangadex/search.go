@@ -1,6 +1,7 @@
 package mangadex
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/darylhjd/mangodex"
 	"github.com/hongnoul/mangap/key"
@@ -36,6 +37,8 @@ func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
 
 	params.Set("order[followedCount]", "desc")
 	params.Set("title", query)
+	// Embed cover_art relationships so cover file names come back inline.
+	params.Add("includes[]", mangodex.CoverArtRel)
 
 	mangaList, err := m.client.Manga.GetMangaList(params)
 	if err != nil {
@@ -54,9 +57,37 @@ func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
 			Source: m,
 		}
 
+		if cover := coverURL(&manga); cover != "" {
+			m.Metadata.Cover.ExtraLarge = cover
+			m.Metadata.Cover.Large = cover + ".512.jpg"
+			m.Metadata.Cover.Medium = cover + ".256.jpg"
+		}
+
 		mangas = append(mangas, &m)
 	}
 
 	_ = m.cache.mangas.Set(query, mangas)
 	return mangas, nil
+}
+
+// coverURL builds the full-size cover URL from an embedded cover_art
+// relationship, or "" if the response carried none.
+func coverURL(manga *mangodex.Manga) string {
+	for _, rel := range manga.Relationships {
+		if rel.Type != mangodex.CoverArtRel {
+			continue
+		}
+		raw, ok := rel.Attributes.(*json.RawMessage)
+		if !ok || raw == nil {
+			continue
+		}
+		var attrs struct {
+			FileName string `json:"fileName"`
+		}
+		if json.Unmarshal(*raw, &attrs) != nil || attrs.FileName == "" {
+			continue
+		}
+		return fmt.Sprintf("https://uploads.mangadex.org/covers/%s/%s", manga.ID, attrs.FileName)
+	}
+	return ""
 }

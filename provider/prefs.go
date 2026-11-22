@@ -54,3 +54,13 @@ func SaveSourcePrefs(order, disabled []string) error {
 	}
 	return err
 }
+
+// SaveMangadexLanguage persists the preferred MangaDex language.
+func SaveMangadexLanguage(code string) error {
+	viper.Set(key.MangadexLanguage, code)
+	err := viper.WriteConfig()
+	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+		return viper.SafeWriteConfig()
+	}
+	return err
+}
