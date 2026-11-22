@@ -112,10 +112,12 @@ const (
 // viewGrid draws a thumbnail grid, or the list's own view while filtering
 // (the filter input lives there).
 func (b *statefulBubble) viewGrid(l *list.Model, toCard func(list.Item) card, want func(*thumbs, list.Item, int)) string {
-	return b.viewGridH(l, toCard, want, b.height+2)
+	return b.viewGridH(l, toCard, want, b.height+2, false)
 }
 
-func (b *statefulBubble) viewGridH(l *list.Model, toCard func(list.Item) card, want func(*thumbs, list.Item, int), H int) string {
+// viewGridH draws the grid in H rows. anchorTop puts it flush at the top
+// (under the search bar) instead of centering it.
+func (b *statefulBubble) viewGridH(l *list.Model, toCard func(list.Item) card, want func(*thumbs, list.Item, int), H int, anchorTop bool) string {
 	if l.FilterState() == list.Filtering {
 		return listExtraPaddingStyle.Render(l.View())
 	}
@@ -137,6 +139,9 @@ func (b *statefulBubble) viewGridH(l *list.Model, toCard func(list.Item) card, w
 
 	bodyH := lipgloss.Height(body)
 	top := imax((H-bodyH)/2, 0)
+	if anchorTop {
+		top = 0
+	}
 	if top+bodyH > H-2 {
 		top = imax(H-2-bodyH, 0)
 	}

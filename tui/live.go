@@ -95,8 +95,13 @@ func (b *statefulBubble) viewLive() string {
 	if len(b.mangasC.Items()) == 0 || H < 4 {
 		return header
 	}
+	// Card height comes from the resting layout (collapsed bar, five
+	// rows), so an open dropdown drops rows rather than shrinking them.
+	restGridH := b.height + 2 - 3 - 2
+	b.grid.fixedCardH = imax(restGridH/singleColRows, 2)
+	defer func() { b.grid.fixedCardH = 0 }()
 	grid := b.viewGridH(&b.mangasC, mangaCard, func(th *thumbs, it list.Item, prio int) {
 		th.WantManga(it.(*listItem).internal.(*source.Manga), prio)
-	}, H)
+	}, H, true)
 	return header + "\n" + grid
 }

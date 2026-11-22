@@ -58,7 +58,6 @@ func (b *statefulBubble) searchBox(boxW int) string {
 			}
 			rows = append(rows, line)
 		}
-		rows = append(rows, style.Faint("↑/↓ select · tab complete · enter search"))
 	}
 
 	return lipgloss.NewStyle().

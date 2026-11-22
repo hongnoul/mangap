@@ -31,6 +31,9 @@ const (
 
 type grid struct {
 	cols, rows int
+	// fixedCardH, when > 0, pins the card height: a shorter area shows
+	// fewer rows instead of squashing them.
+	fixedCardH int
 }
 
 func newGrid() *grid { return &grid{cols: defaultGridCols, rows: maxGridRows} }
@@ -42,6 +45,10 @@ func (g *grid) key(k string) bool {
 
 // fit sets rows for the available height.
 func (g *grid) fit(height int) {
+	if g.fixedCardH > 0 {
+		g.rows = imax(1, imin(singleColRows, height/g.fixedCardH))
+		return
+	}
 	if g.cols == 1 {
 		g.rows = singleColRows
 		return
@@ -56,6 +63,9 @@ func (g *grid) perPage() int { return g.cols * g.rows }
 func (g *grid) cardGeometry(width, height int) (cardW, cardH, thumbW, thumbH int) {
 	cardW = imax(width/g.cols, 10)
 	cardH = imax(height/g.rows, 2)
+	if g.fixedCardH > 0 {
+		cardH = g.fixedCardH
+	}
 	// Thumbnail fills the whole card height so it lines up with the row
 	// highlight, kept cover-shaped and never wider than ~45% of the card
 	// so the title has room.
