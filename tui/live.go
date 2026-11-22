@@ -119,13 +119,21 @@ func overlayLines(base, top string, row int) string {
 
 // viewLiveBase renders the search screen under header, ignoring dropdowns.
 func (b *statefulBubble) viewLiveBase(header string, full, pickerW int) string {
-	homeView := b.inputC.Value() == "" && b.state == searchState
+	// Hero layout (art + boxes) until there are results to show.
+	homeView := b.state == loadingState ||
+		(b.state == searchState && (b.inputC.Value() == "" || len(b.mangasC.Items()) == 0))
 	footer := ""
 	if len(b.sourceChoices) > 0 && homeView {
 		footer = lipgloss.PlaceHorizontal(full, lipgloss.Center, b.sourcePicker(pickerW))
 	}
 
 	H := b.height + 2 - lipgloss.Height(header)
+	if b.state == loadingState {
+		// Loader bar sits right under the search box.
+		bar := lipgloss.PlaceHorizontal(full, lipgloss.Center, b.loaderC.view(pickerW))
+		header += "\n" + bar
+		H -= lipgloss.Height(bar)
+	}
 	if homeView {
 		// Empty bar: art and keys fill the middle, the status box sits at
 		// the very bottom.

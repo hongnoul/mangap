@@ -50,6 +50,11 @@ func (b *statefulBubble) View() string {
 }
 
 func (b *statefulBubble) viewLoading() string {
+	// Searching from the hero screen keeps the hero layout (boxes, art)
+	// with the loader in place of results.
+	if b.statesHistory.Len() > 0 && b.statesHistory.Peek() == searchState {
+		return b.viewLive()
+	}
 	lines := []string{
 		style.Title("Loading"),
 		"",
