@@ -205,6 +205,8 @@ func (b *statefulBubble) updateLoading(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, func() tea.Msg {
 				return msg
 			})
+		} else {
+			cmds = append(cmds, b.showChapters(msg))
 		}
 	case []source.Source:
 		b.selectedSources = msg
@@ -433,25 +435,7 @@ func (b *statefulBubble) updateMangas(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return b, tea.Batch(b.getChapters(m), b.waitForChapters(), b.startLoading())
 		}
 	case []*source.Chapter:
-		items := make([]list.Item, len(msg))
-
-		if viper.GetBool(key2.TUIReverseChapters) {
-			for i, c := range msg {
-				items[len(msg)-i-1] = &listItem{internal: c}
-			}
-		} else {
-			for i, c := range msg {
-				items[i] = &listItem{internal: c}
-			}
-		}
-
-		cmd = b.chaptersC.SetItems(items)
-		b.clearChapterSelection()
-		b.newState(chaptersState)
-		b.stopLoading()
-		cmd = tea.Batch(cmd, b.selectBookmark())
-
-		return b, cmd
+		return b, b.showChapters(msg)
 	}
 
 	b.mangasC, cmd = b.mangasC.Update(msg)
@@ -718,4 +702,23 @@ func (b *statefulBubble) refreshSuggestions() {
 func (b *statefulBubble) clearSuggestions() {
 	b.searchSuggestions = nil
 	b.suggestionIdx = -1
+}
+
+// showChapters fills the chapter list and switches to it.
+func (b *statefulBubble) showChapters(chapters []*source.Chapter) tea.Cmd {
+	items := make([]list.Item, len(chapters))
+	reverse := viper.GetBool(key2.TUIReverseChapters)
+	for i, c := range chapters {
+		if reverse {
+			items[len(chapters)-i-1] = &listItem{internal: c}
+		} else {
+			items[i] = &listItem{internal: c}
+		}
+	}
+
+	cmd := b.chaptersC.SetItems(items)
+	b.clearChapterSelection()
+	b.newState(chaptersState)
+	b.stopLoading()
+	return tea.Batch(cmd, b.selectBookmark())
 }
