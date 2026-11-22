@@ -692,7 +692,7 @@ func (b *statefulBubble) updateRead(msg tea.Msg) (tea.Model, tea.Cmd) {
 		downloader.SaveReadHistory(msg.chapter)
 		opt, nb := downloader.ReaderOptionsFor(msg.chapter)
 		return b, tea.Exec(
-			reader.NewCommand(msg.src, opt),
+			&mutedExec{ExecCommand: reader.NewCommand(msg.src, opt), out: b.thumbs.out},
 			func(err error) tea.Msg {
 				last := msg.chapter
 				if nb != nil {

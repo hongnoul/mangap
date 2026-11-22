@@ -43,12 +43,28 @@ const (
 type syncOut struct {
 	mu sync.Mutex
 	f  *os.File
+	// muted drops writes while another program (the reader) owns the
+	// terminal. Without it bubbletea's ticker repaints the TUI onto the
+	// main screen, which is left behind as garbage after quitting.
+	muted bool
 }
 
 func (s *syncOut) Write(p []byte) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.muted {
+		return len(p), nil
+	}
 	return s.f.Write(p)
+}
+
+func (s *syncOut) setMuted(m bool) {
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	s.muted = m
+	s.mu.Unlock()
 }
 func (s *syncOut) Read(p []byte) (int, error) { return s.f.Read(p) }
 func (s *syncOut) Fd() uintptr                { return s.f.Fd() }
@@ -367,4 +383,18 @@ func (t *thumbs) Clear() {
 	if len(buf) > 0 {
 		_, _ = t.out.Write(buf)
 	}
+}
+
+// mutedExec silences the TUI's output while cmd owns the terminal.
+// tea.Exec has already left the alt screen when Run starts; any repaint
+// during the read would land on the main screen and survive exit.
+type mutedExec struct {
+	tea.ExecCommand
+	out *syncOut
+}
+
+func (m *mutedExec) Run() error {
+	m.out.setMuted(true)
+	defer m.out.setMuted(false)
+	return m.ExecCommand.Run()
 }
