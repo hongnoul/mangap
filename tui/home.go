@@ -17,6 +17,7 @@ var homeKeys = [][2]string{
 	{"ctrl+s", "source settings"},
 	{"j / k", "down / up"},
 	{"l / h", "open / back"},
+	{"hjkl", "move in grid"},
 	{"← / →", "prev / next page"},
 	{"[ / ]", "1 / 2 columns"},
 	{"g / G", "top / bottom"},

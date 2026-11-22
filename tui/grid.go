@@ -179,8 +179,9 @@ func chapterCard(it list.Item) card {
 	return card{thumbKey: c.URL, title: li.Title(), sub: c.Volume}
 }
 
-// gridNav moves the list cursor through the grid. j/k (and arrows) move a
-// row, h/l stay as back/open, and ctrl+j/ctrl+k or left/right page.
+// nav moves the list cursor through the grid: h/j/k/l go left, down, up,
+// right one card (up/down arrows too), ctrl+j/ctrl+k or left/right arrows
+// flip a page, g/G jump to the ends. esc/enter (back/open) fall through.
 // Returns true when the key was handled.
 func (g *grid) nav(l *list.Model, k string) bool {
 	n := len(l.VisibleItems())
@@ -206,9 +207,11 @@ func (g *grid) nav(l *list.Model, k string) bool {
 		to = imin(cur+g.perPage(), n-1)
 	case "left", "ctrl+k", "pgup":
 		to = imax(cur-g.perPage(), 0)
-	case "w":
+	case "h":
+		// Left one card; from the left column wrap to the end of the
+		// previous row so h walks the whole list in reading order.
 		to = imax(cur-1, 0)
-	case "e":
+	case "l":
 		to = imin(cur+1, n-1)
 	case "g", "home":
 		to = 0
