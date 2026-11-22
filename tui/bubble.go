@@ -81,6 +81,7 @@ type statefulBubble struct {
 	// home screen source picker (see source_picker.go)
 	sourceChoices []string
 	sourceIdx     int
+	dropdown      *dropdown // open source/language picker, nil when closed
 
 	// live search (see live.go)
 	liveSeq int

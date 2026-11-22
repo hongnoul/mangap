@@ -86,7 +86,7 @@ func (b *statefulBubble) viewLive() string {
 
 	header := box
 	homeView := b.inputC.Value() == "" && b.state == searchState
-	if len(b.sourceChoices) > 0 && homeView {
+	if len(b.sourceChoices) > 0 && (homeView || b.dropdown != nil) {
 		header += "\n" + lipgloss.PlaceHorizontal(full, lipgloss.Center, b.sourcePicker(lipgloss.Width(b.searchBox(boxW))))
 	}
 

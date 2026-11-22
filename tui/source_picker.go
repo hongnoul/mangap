@@ -53,13 +53,6 @@ func (b *statefulBubble) pickSource(i int) error {
 	return nil
 }
 
-// cycleHomeLanguage moves the MangaDex language preference by d and saves it.
-func cycleHomeLanguage(d int) error {
-	n := len(languages)
-	i := languageIndex(viper.GetString(key2.MangadexLanguage))
-	return provider.SaveMangadexLanguage(languages[((i+d)%n+n)%n].code)
-}
-
 // sourcePicker renders the source row under the search bar.
 func (b *statefulBubble) sourcePicker(w int) string {
 	if b.sourceIdx >= len(b.sourceChoices) {
@@ -81,7 +74,16 @@ func (b *statefulBubble) sourcePicker(w int) string {
 	}
 	leftW := (w - 1) / 2
 	rightW := w - 1 - leftW
-	src := box(leftW, style.Faint("Source  ")+bold.Render(n)+style.Faint(" (ctrl+o)"))
+	src := box(leftW, style.Faint("Source  ")+bold.Render(n)+style.Faint(" (ctrl+s)"))
 	lng := box(rightW, style.Faint("Language  ")+bold.Render(lang.name)+style.Faint(" (ctrl+l)"))
-	return lipgloss.JoinHorizontal(lipgloss.Top, src, " ", lng)
+	row := lipgloss.JoinHorizontal(lipgloss.Top, src, " ", lng)
+	if b.dropdown == nil {
+		return row
+	}
+	// Expanded list sits under the box it belongs to.
+	if b.dropdown.kind == sourceDropdown {
+		return lipgloss.JoinVertical(lipgloss.Left, row, b.viewDropdown(leftW))
+	}
+	return lipgloss.JoinVertical(lipgloss.Left, row,
+		lipgloss.NewStyle().PaddingLeft(leftW+1).Render(b.viewDropdown(rightW)))
 }

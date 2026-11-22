@@ -345,6 +345,9 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if b.dropdown != nil {
+			return b.updateDropdown(msg)
+		}
 		switch {
 		case key.Matches(msg, b.keymap.confirm) && len(b.mangasC.Items()) > 0:
 			// Open the highlighted live result.
@@ -371,14 +374,11 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 			go query.Remember(b.inputC.Value(), 1)
 			return b, tea.Batch(b.searchManga(b.inputC.Value()), b.waitForMangas(), b.spinnerC.Tick)
 		case key.Matches(msg, b.keymap.sourceSettings):
-			b.openSourceSettings()
+			b.openDropdown(sourceDropdown)
 			return b, nil
 		case msg.String() == "ctrl+l":
-			if err := cycleHomeLanguage(1); err != nil {
-				b.raiseError(err)
-				return b, nil
-			}
-			return b, b.scheduleLive()
+			b.openDropdown(languageDropdown)
+			return b, nil
 		case len(b.sourceChoices) > 0 && (msg.String() == "ctrl+o" ||
 			(b.inputC.Value() == "" && (msg.String() == "left" || msg.String() == "right"))):
 			d := 1
