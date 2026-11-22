@@ -81,6 +81,10 @@ type thumbState struct {
 	full bool // the full-res raster replaced the preview
 	busy bool
 	fail bool
+	// queuedVisible: a job sits in the visible lane. started: a worker
+	// claimed the load, so later duplicate jobs drop out.
+	queuedVisible bool
+	started       bool
 	img  image.Image // decoded source, kept to re-raster on size change
 	cols int         // span the image was transmitted for
 	rows int
@@ -112,8 +116,8 @@ func newThumbs(out *syncOut) *thumbs {
 		out:      out,
 		state:    map[string]*thumbState{},
 		next:     thumbBaseID,
-		visible:  make(chan struct{}, 12),
-		prefetch: make(chan struct{}, 3),
+		visible:  make(chan struct{}, 16),
+		prefetch: make(chan struct{}, 6),
 		cols:     6,
 		rows:     4,
 	}
@@ -176,15 +180,27 @@ func (t *thumbs) want(key string, visible bool, locate func() (url, referer stri
 	}
 	t.mu.Lock()
 	st := t.state[key]
-	if st != nil && (st.busy || st.id != 0 || st.fail) {
+	if st != nil && (st.id != 0 || st.fail) {
 		t.mu.Unlock()
 		return
+	}
+	if st != nil && st.busy {
+		// Queued as a prefetch but now on screen (the user paged onto
+		// it): promote it with a second job in the visible lane, which
+		// races the stale one; whichever starts first does the load.
+		if !visible || st.queuedVisible || st.started {
+			t.mu.Unlock()
+			return
+		}
 	}
 	if st == nil {
 		st = &thumbState{}
 		t.state[key] = st
 	}
 	st.busy = true
+	if visible {
+		st.queuedVisible = true
+	}
 	t.mu.Unlock()
 
 	lane := t.prefetch
@@ -194,6 +210,13 @@ func (t *thumbs) want(key string, visible bool, locate func() (url, referer stri
 	go func() {
 		lane <- struct{}{}
 		defer func() { <-lane }()
+		t.mu.Lock()
+		if st.started {
+			t.mu.Unlock()
+			return
+		}
+		st.started = true
+		t.mu.Unlock()
 		t.load(key, locate)
 	}()
 }
@@ -215,12 +238,18 @@ func (t *thumbs) load(key string, locate func() (string, string, error)) {
 	path := cachePath(key)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		u, ref, err := locate()
-		if err != nil {
-			fail()
-			return
+		// One retry: a transient error would otherwise blank the card
+		// for the rest of the session.
+		for attempt := 0; attempt < 2; attempt++ {
+			var u, ref string
+			if u, ref, err = locate(); err == nil {
+				data, err = get(u, ref)
+			}
+			if err == nil {
+				break
+			}
 		}
-		if data, err = get(u, ref); err != nil {
+		if err != nil {
 			fail()
 			return
 		}

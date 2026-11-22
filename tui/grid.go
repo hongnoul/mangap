@@ -103,7 +103,11 @@ func (g *grid) render(l *list.Model, th *thumbs, width, height int, toCard func(
 	for i := start; i < end; i++ {
 		want(items[i], true)
 	}
-	for i := end; i < imin(end+perPage, len(items)); i++ {
+	// Prefetch the next two pages, then the previous one.
+	for i := end; i < imin(end+2*perPage, len(items)); i++ {
+		want(items[i], false)
+	}
+	for i := imax(start-perPage, 0); i < start; i++ {
 		want(items[i], false)
 	}
 
