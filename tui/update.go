@@ -367,6 +367,17 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, b.keymap.sourceSettings):
 			b.openSourceSettings()
 			return b, nil
+		case len(b.sourceChoices) > 0 && (msg.String() == "ctrl+o" ||
+			(b.inputC.Value() == "" && (msg.String() == "left" || msg.String() == "right"))):
+			d := 1
+			if msg.String() == "left" {
+				d = -1
+			}
+			if err := b.pickSource(b.sourceIdx + d); err != nil {
+				b.raiseError(err)
+				return b, nil
+			}
+			return b, b.scheduleLive()
 		case len(b.mangasC.Items()) > 0 && lo.Contains([]string{"ctrl+j", "ctrl+k", "tab", "shift+tab"}, msg.String()):
 			// Walk the live results while typing stays in the bar.
 			n, i := len(b.mangasC.Items()), b.mangasC.Index()

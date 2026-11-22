@@ -238,6 +238,8 @@ func (b *statefulBubble) updateSourceSettings(msg tea.Msg) (tea.Model, tea.Cmd) 
 				return b, nil
 			}
 			b.selectedSources = []source.Source{auto}
+			b.sourceChoices = sourceChoices()
+			b.sourceIdx = len(b.sourceChoices) - 1
 			b.statesHistory = util.Stack[state]{}
 			b.setState(searchState)
 			b.inputC.Focus()

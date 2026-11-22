@@ -8,7 +8,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hongnoul/mangap/provider"
-	"github.com/hongnoul/mangap/source"
 	"github.com/muesli/termenv"
 )
 
@@ -34,11 +33,10 @@ func Run(options *Options) error {
 
 		bubble.newState(historyState)
 	} else if provider.IsAuto() {
-		auto, err := provider.NewAuto()
-		if err != nil {
+		bubble.sourceChoices = sourceChoices()
+		if err := bubble.pickSource(defaultSourceIdx(bubble.sourceChoices)); err != nil {
 			return err
 		}
-		bubble.selectedSources = []source.Source{auto}
 		bubble.newState(searchState)
 	} else {
 		bubble.newState(sourcesState)

@@ -77,6 +77,10 @@ type statefulBubble struct {
 
 	sourceSettings *sourceSettings
 
+	// home screen source picker (see source_picker.go)
+	sourceChoices []string
+	sourceIdx     int
+
 	// live search (see live.go)
 	liveSeq int
 
