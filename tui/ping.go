@@ -3,8 +3,6 @@ package tui
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"time"
 
@@ -17,12 +15,12 @@ import (
 )
 
 const (
-	pingTimeout = 6 * time.Second
+	pingTimeout = 8 * time.Second
 	pingBarW    = 12
 	pingOK      = "#34d399" // aurora green
 	pingSlow    = "#fbbf24"
 	pingDown    = "#f87171"
-	pingSlowAt  = 1500 * time.Millisecond
+	pingSlowAt  = 800 * time.Millisecond
 )
 
 type pingState int
@@ -37,7 +35,8 @@ const (
 type pingRow struct {
 	name    string
 	state   pingState
-	latency time.Duration
+	latency time.Duration // server response (warm TTFB)
+	rtt     time.Duration // network round trip (TCP handshake)
 	detail  string
 }
 
@@ -54,6 +53,7 @@ type pingResultMsg struct {
 	idx     int
 	ok      bool
 	latency time.Duration
+	rtt     time.Duration
 	detail  string
 }
 
@@ -87,33 +87,8 @@ func pingCmd(gen, idx int, url string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), pingTimeout)
 		defer cancel()
-		res := pingResultMsg{gen: gen, idx: idx}
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-		if err != nil {
-			res.detail = "bad url"
-			return res
-		}
-		req.Header.Set("User-Agent", "mangap")
-		t0 := time.Now()
-		resp, err := network.Client.Do(req)
-		res.latency = time.Since(t0)
-		if err != nil {
-			if ctx.Err() != nil {
-				res.detail = "timeout"
-			} else {
-				res.detail = "unreachable"
-			}
-			return res
-		}
-		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4<<10))
-		_ = resp.Body.Close()
-		// Any answer below 500 means the host is up (Mangapill 405s HEAD-ish
-		// probes but serves pages fine).
-		res.ok = resp.StatusCode < 500
-		if !res.ok {
-			res.detail = fmt.Sprintf("HTTP %d", resp.StatusCode)
-		}
-		return res
+		r := network.Probe(ctx, url)
+		return pingResultMsg{gen: gen, idx: idx, ok: r.OK, latency: r.Latency, rtt: r.RTT, detail: r.Detail}
 	}
 }
 
@@ -124,6 +99,7 @@ func (p *pinger) update(msg pingResultMsg) {
 	}
 	r := &p.rows[msg.idx]
 	r.latency = msg.latency
+	r.rtt = msg.rtt
 	r.detail = msg.detail
 	if msg.ok {
 		r.state = pingUp
@@ -147,7 +123,10 @@ func (p *pinger) pending() bool {
 // view renders one line per source:
 //
 //	Mangapill  ░▒▓█▓▒░░▒▓█▓  checking
-//	Mangadex   ●  online     214ms
+//	Mangadex   ●  online       54ms  rtt 27ms
+//
+// The main number is server response time on a warm connection; rtt is
+// the raw network round trip.
 func (p *pinger) view(maxW int) string {
 	if len(p.rows) == 0 {
 		return ""
@@ -171,8 +150,10 @@ func (p *pinger) view(maxW int) string {
 			if r.latency >= pingSlowAt {
 				c, word = pingSlow, "slow"
 			}
-			status = fmt.Sprintf("%s %-*s%s", dot(c), pingBarW-1, word,
-				style.Faint(fmt.Sprintf("%5dms", r.latency.Milliseconds())))
+			status = fmt.Sprintf("%s %-*s%5dms", dot(c), pingBarW-1, word, r.latency.Milliseconds())
+			if r.rtt > 0 {
+				status += style.Faint(fmt.Sprintf("  rtt %dms", r.rtt.Milliseconds()))
+			}
 		case pingFailed:
 			status = fmt.Sprintf("%s %-*s%s", dot(pingDown), pingBarW-1, "offline", style.Faint(r.detail))
 		case pingLocal:
