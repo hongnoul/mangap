@@ -50,16 +50,18 @@ func (b *statefulBubble) View() string {
 }
 
 func (b *statefulBubble) viewLoading() string {
-	return b.renderLines(
-		true,
-		[]string{
-			style.Title("Loading"),
-			"",
-			b.loaderC.view(b.width),
-			"",
-			style.Truncate(b.width)(style.Faint(b.progressStatus)),
-		},
-	)
+	lines := []string{
+		style.Title("Loading"),
+		"",
+		b.loaderC.view(b.width),
+		"",
+		style.Truncate(b.width)(style.Faint(b.progressStatus)),
+	}
+	// Art fills the space between the status and the help line.
+	if artH := b.height - len(lines) - 1; artH >= len(homeArt) {
+		lines = append(lines, strings.Split(b.homeBody(b.width, artH), "\n")...)
+	}
+	return b.renderLines(true, lines)
 }
 
 func (b *statefulBubble) viewHistory() string {

@@ -145,8 +145,12 @@ func (b *statefulBubble) viewLiveBase(header string, full, pickerW int) string {
 		bodyH := H - lipgloss.Height(footer) - 1
 		return header + "\n" + b.homeBody(full, imax(bodyH, 0)) + "\n" + footer
 	}
-	if len(b.mangasC.Items()) == 0 || H < 4 {
+	if H < 4 {
 		return header
+	}
+	if len(b.mangasC.Items()) == 0 {
+		// No results (or still fetching): keep the art on screen.
+		return header + "\n" + b.homeBody(full, H-1)
 	}
 	// Card height comes from the resting layout (collapsed bar, five
 	// rows), so an open dropdown drops rows rather than shrinking them.
