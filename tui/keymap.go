@@ -24,7 +24,8 @@ type statefulKeymap struct {
 	filter,
 	up, down, left, right,
 	top, bottom,
-	showHelp key.Binding
+	showHelp,
+	vimHL key.Binding
 }
 
 func (k *statefulKeymap) setState(newState state) {
@@ -110,12 +111,12 @@ func newStatefulKeymap() *statefulKeymap {
 			help("↓", "down"),
 		),
 		left: k(
-			keys("left", "h"),
-			help("←", "left"),
+			keys("left"),
+			help("←", "prev page"),
 		),
 		right: k(
-			keys("right", "l"),
-			help("→", "right"),
+			keys("right"),
+			help("→", "next page"),
 		),
 		top: k(
 			keys("g"),
@@ -125,8 +126,12 @@ func newStatefulKeymap() *statefulKeymap {
 			keys("G"),
 			help("G", "bottom"),
 		),
+		vimHL: k(
+			keys(),
+			help("h/l", "back/open"),
+		),
 		showHelp: k(
-			keys("?", "h"),
+			keys("?"),
 			help("?", "help"),
 		),
 	}
@@ -157,7 +162,7 @@ func (k *statefulKeymap) help() ([]key.Binding, []key.Binding) {
 	case searchState:
 		return to2(h(k.confirm, k.acceptSearchSuggestion, k.sourceSettings, k.forceQuit))
 	case mangasState:
-		return to2(h(k.confirm, k.back, k.openURL))
+		return to2(h(k.confirm, k.back, k.openURL, k.vimHL))
 	case chaptersState:
 		download := withDescription(k.confirm, "download selected")
 		return h(k.read, k.selectOne, k.selectAll, download, k.back), h(k.read, k.selectOne, k.selectAll, k.clearSelection, k.openURL, download, k.selectVolume, k.anilistSelect, k.back)

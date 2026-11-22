@@ -29,6 +29,8 @@ import (
 func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
+	msg = b.vimHL(msg)
+
 	switch msg := msg.(type) {
 	case error:
 		b.raiseError(msg)

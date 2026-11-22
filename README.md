@@ -46,6 +46,12 @@ Environment variables use the `MANGAZ_` prefix (was `MANGAL_`), for example
 `MANGAZ_CONFIG_PATH`. Run `mangaz env` to list them, and `mangaz where` for
 paths.
 
+## TUI keys
+
+On list screens `j`/`k` move, `l` opens (same as enter) and `h` goes back
+(same as esc). In the search box and while filtering they type normally.
+Arrow keys left/right page through long lists.
+
 ## Sources
 
 Built in: **Mangapill** (default) and **MangaDex** (fallback). Manganato and
