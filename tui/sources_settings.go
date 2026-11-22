@@ -10,6 +10,7 @@ import (
 	"github.com/hongnoul/mangaz/color"
 	key2 "github.com/hongnoul/mangaz/key"
 	"github.com/hongnoul/mangaz/provider"
+	"github.com/hongnoul/mangaz/provider/mangadex"
 	"github.com/hongnoul/mangaz/source"
 	"github.com/hongnoul/mangaz/style"
 	"github.com/hongnoul/mangaz/util"
@@ -29,6 +30,89 @@ type sourceSettings struct {
 	cursor int
 	auto   bool
 	status string
+	lang   int // index into languages
+}
+
+// language is a selectable MangaDex translation language.
+type language struct{ code, name string }
+
+// languages are common MangaDex translatedLanguage codes. Mangapill is
+// English only, so this preference affects MangaDex.
+var languages = []language{
+	{"en", "English"},
+	{"any", "Any language"},
+	{"ja", "Japanese"},
+	{"ko", "Korean"},
+	{"zh", "Chinese (simplified)"},
+	{"zh-hk", "Chinese (traditional)"},
+	{"es", "Spanish"},
+	{"es-la", "Spanish (Latin America)"},
+	{"pt-br", "Portuguese (Brazil)"},
+	{"pt", "Portuguese"},
+	{"fr", "French"},
+	{"de", "German"},
+	{"it", "Italian"},
+	{"ru", "Russian"},
+	{"uk", "Ukrainian"},
+	{"pl", "Polish"},
+	{"tr", "Turkish"},
+	{"ar", "Arabic"},
+	{"id", "Indonesian"},
+	{"vi", "Vietnamese"},
+	{"th", "Thai"},
+}
+
+// languageIndex finds code in languages, appending unknown codes from the
+// config so they are preserved.
+func languageIndex(code string) int {
+	code = strings.ToLower(strings.TrimSpace(code))
+	if code == "" {
+		code = "en"
+	}
+	for i, l := range languages {
+		if l.code == code {
+			return i
+		}
+	}
+	languages = append(languages, language{code, code})
+	return len(languages) - 1
+}
+
+func (ss *sourceSettings) cycleLang(d int) {
+	n := len(languages)
+	ss.lang = ((ss.lang+d)%n + n) % n
+}
+
+// langWarning explains when the language choice will not take effect.
+func (ss *sourceSettings) langWarning() string {
+	if languages[ss.lang].code == "en" {
+		return ""
+	}
+	for _, r := range ss.rows {
+		if !r.enabled {
+			continue
+		}
+		if r.p.ID == mangadex.ID {
+			return ""
+		}
+		if ss.auto {
+			return r.p.Name + " is English only and ranks above MangaDex (press p to fix)"
+		}
+	}
+	return "MangaDex is disabled, so this language is unused (press p to fix)"
+}
+
+// preferMangadex enables MangaDex and moves it to the top.
+func (ss *sourceSettings) preferMangadex() {
+	for i, r := range ss.rows {
+		if r.p.ID == mangadex.ID {
+			r.enabled = true
+			ss.rows = append(ss.rows[:i], ss.rows[i+1:]...)
+			ss.rows = append([]sourceRow{r}, ss.rows...)
+			ss.cursor = 0
+			return
+		}
+	}
 }
 
 // newSourceSettings loads rows in priority order: sources.order first,
@@ -39,7 +123,10 @@ func newSourceSettings() *sourceSettings {
 		enabled[p.Name] = true
 	}
 
-	ss := &sourceSettings{auto: provider.IsAuto()}
+	ss := &sourceSettings{
+		auto: provider.IsAuto(),
+		lang: languageIndex(viper.GetString(key2.MangadexLanguage)),
+	}
 	seen := map[string]bool{}
 	add := func(p *provider.Provider) {
 		if seen[p.Name] {
@@ -89,6 +176,7 @@ func (ss *sourceSettings) save() error {
 	if !ss.auto {
 		mode = "manual"
 	}
+	viper.Set(key2.MangadexLanguage, languages[ss.lang].code)
 	return provider.SaveSourcePrefs(mode, order, disabled)
 }
 
@@ -121,6 +209,12 @@ func (b *statefulBubble) updateSourceSettings(msg tea.Msg) (tea.Model, tea.Cmd) 
 		ss.rows[ss.cursor].enabled = !ss.rows[ss.cursor].enabled
 	case "m", "tab":
 		ss.auto = !ss.auto
+	case "l", "right":
+		ss.cycleLang(1)
+	case "h", "left":
+		ss.cycleLang(-1)
+	case "p":
+		ss.preferMangadex()
 	case "enter":
 		n := 0
 		for _, r := range ss.rows {
@@ -176,9 +270,14 @@ func (b *statefulBubble) viewSourceSettings() string {
 	lines := []string{
 		style.Title("Sources"),
 		"",
-		"Mode  " + mode,
-		"",
+		"Mode      " + mode,
+		"Language  " + style.Fg(color.Green)(languages[ss.lang].name) +
+			style.Faint(fmt.Sprintf(" (%s): MangaDex only, Mangapill is English", languages[ss.lang].code)),
 	}
+	if w := ss.langWarning(); w != "" {
+		lines = append(lines, style.Fg(color.Orange)("          "+w))
+	}
+	lines = append(lines, "")
 
 	rank := 0
 	for i, r := range ss.rows {
@@ -211,7 +310,7 @@ func (b *statefulBubble) viewSourceSettings() string {
 	}
 	lines = append(lines,
 		style.Faint(strings.Join([]string{
-			"j/k move", "J/K reorder", "space toggle", "m mode", "enter save", "esc cancel",
+			"j/k move", "J/K reorder", "space toggle", "m mode", "h/l language", "p prefer MangaDex", "enter save", "esc cancel",
 		}, " • ")),
 	)
 
