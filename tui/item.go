@@ -114,7 +114,7 @@ func (t *listItem) FilterValue() string {
 	}
 }
 
-// urlOrEmpty hides URLs unless tui.show_urls is set. "o" still opens them.
+// urlOrEmpty hides URLs unless tui.show_urls is set.
 func urlOrEmpty(u string) string {
 	if viper.GetBool(key.TUIShowURLs) {
 		return u
