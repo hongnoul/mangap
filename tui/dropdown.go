@@ -28,6 +28,10 @@ type dropdown struct {
 const dropdownMaxRows = 10
 
 func (b *statefulBubble) openDropdown(kind dropdownKind) {
+	if kind == languageDropdown && b.languageLocked() {
+		b.dropdown = nil // Mangapill is English only, nothing to pick
+		return
+	}
 	d := &dropdown{kind: kind}
 	if kind == sourceDropdown {
 		d.cursor = b.sourceIdx

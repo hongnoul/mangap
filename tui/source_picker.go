@@ -70,9 +70,13 @@ func (b *statefulBubble) sourcePicker(w int) string {
 		gap := imax(inner-lipgloss.Width(label)-lipgloss.Width(hint), 1)
 		return label + strings.Repeat(" ", gap) + style.Faint(hint)
 	}
+	langRow := row(style.Faint("Language  ")+bold.Render(lang.name), "ctrl+l")
+	if b.languageLocked() {
+		langRow = row(style.Faint("Language  ")+bold.Render("English"), n+" is English only")
+	}
 	lines := []string{
 		row(srcLabel, "ctrl+s"),
-		row(style.Faint("Language  ")+bold.Render(lang.name), "ctrl+l"),
+		langRow,
 	}
 	word := "show"
 	if b.showKeys {
