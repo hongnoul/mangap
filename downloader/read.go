@@ -103,6 +103,7 @@ func Read(chapter *source.Chapter, progress func(string)) error {
 	defer src.Close()
 
 	SaveReadHistory(chapter)
-	_, err = reader.Run(src, ReaderOptions())
+	opt, _ := ReaderOptionsFor(chapter)
+	_, err = reader.Run(src, opt)
 	return err
 }

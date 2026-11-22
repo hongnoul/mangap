@@ -10,7 +10,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hongnoul/mangaz/anilist"
-	"github.com/hongnoul/mangaz/color"
 	"github.com/hongnoul/mangaz/history"
 	"github.com/hongnoul/mangaz/installer"
 	key2 "github.com/hongnoul/mangaz/key"
@@ -206,8 +205,7 @@ func newBubble() *statefulBubble {
 		delegate.SetSpacing(viper.GetInt(key2.TUIItemSpacing))
 		delegate.ShowDescription = description
 		highlight := lipgloss.NewStyle().
-			Background(color.Purple).
-			Foreground(lipgloss.Color("#ffffff")).
+			Reverse(true).
 			Padding(0, 1)
 		delegate.Styles.SelectedTitle = highlight.Copy().Bold(true)
 		delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Copy().Padding(0, 1)

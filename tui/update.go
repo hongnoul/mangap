@@ -684,15 +684,26 @@ func (b *statefulBubble) updateRead(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case readyToReadMsg:
 		downloader.SaveReadHistory(msg.chapter)
+		opt, nb := downloader.ReaderOptionsFor(msg.chapter)
 		return b, tea.Exec(
-			reader.NewCommand(msg.src, downloader.ReaderOptions()),
-			func(err error) tea.Msg { return readFinishedMsg{err: err} },
+			reader.NewCommand(msg.src, opt),
+			func(err error) tea.Msg {
+				last := msg.chapter
+				if nb != nil {
+					last = nb.Current
+				}
+				return readFinishedMsg{err: err, chapter: last}
+			},
 		)
 	case readFinishedMsg:
 		b.stopLoading()
 		b.previousState()
 		if msg.err != nil {
 			b.raiseError(msg.err)
+		}
+		// Crossing chapters in the reader moves the list cursor along.
+		if last := msg.chapter; last != nil && b.state == chaptersState {
+			return b, b.selectChapterBy(func(c *source.Chapter) bool { return c == last })
 		}
 		return b, nil
 	}

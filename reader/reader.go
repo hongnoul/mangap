@@ -42,11 +42,16 @@ type Options struct {
 	In, Out *os.File
 	// Trace receives timing lines (never the terminal).
 	Trace io.Writer
+	// Chapters, if set, lets j/k cross into the neighbor chapters.
+	Chapters Chapters
 }
 
 // Result reports where the reader stopped.
 type Result struct {
 	Page int // 0-based
+	// Chapter is the chapter position the reader stopped in, relative to
+	// the one it opened (0 unless Options.Chapters crossed an edge).
+	Chapter int
 }
 
 // Open reads the chapter at path (directory or .cbz/.zip).
@@ -91,6 +96,20 @@ type session struct {
 	// must not re-demand or rewrite the same stretch frame.
 	awaiting string
 
+	// Chapter crossing: cur is the chapter shown (relative position),
+	// chapters the loaded ones (cur and its neighbors).
+	cur          int
+	chapters     map[int]*chapter
+	loading      map[int]bool
+	failed       map[int]error
+	loaded       chan loadResult
+	ready        chan struct{}
+	done         chan struct{}
+	pendingCross int
+	toast        string
+	toastT       *time.Timer
+	repaint      bool
+
 	gotoDigits string
 	gotoOrigin int
 	inGoto     bool
@@ -113,11 +132,12 @@ func newSession(src pages.Source, opt Options) *session {
 		opt: opt, src: src, state: st,
 		cache: viewer.NewCache(), kt: kitty.New(),
 		out: opt.Out, t0: time.Now(),
+		chapters: map[int]*chapter{}, loading: map[int]bool{},
+		failed: map[int]error{}, loaded: make(chan loadResult, 4),
+		ready: make(chan struct{}, 1), done: make(chan struct{}),
 	}
-	s.pf = viewer.NewPrefetcher(src, opt.Lanes)
-	if opt.Trace != nil {
-		s.pf.Trace = s.trace
-	}
+	s.pf = s.newPrefetcher(src)
+	s.chapters[0] = &chapter{src: src, pf: s.pf}
 	s.acquire = func() (func([]byte), error) {
 		t, err := term.Acquire(opt.In, opt.Out)
 		if err != nil {
@@ -143,7 +163,15 @@ func (s *session) run() (res Result, err error) {
 	if err != nil {
 		return Result{}, err
 	}
-	defer s.pf.Close()
+	defer func() {
+		close(s.done)
+		for _, c := range s.chapters {
+			s.closeChapter(c)
+		}
+		if s.toastT != nil {
+			s.toastT.Stop()
+		}
+	}()
 	// Restore on every path, including panics: a reader that dies in raw
 	// mode on the alternate screen leaves the user's shell unusable.
 	defer func() {
@@ -194,7 +222,7 @@ func (s *session) run() (res Result, err error) {
 		select {
 		case b, ok := <-keys:
 			if !ok {
-				return Result{Page: s.state.Page}, nil
+				return s.result(), nil
 			}
 			// Coalesce: fold every byte already queued into this pass.
 			ks := parser.Feed(b)
@@ -211,19 +239,28 @@ func (s *session) run() (res Result, err error) {
 				}
 			}
 			if s.apply(ks) {
-				return Result{Page: s.state.Page}, nil
+				return s.result(), nil
 			}
 		case <-resize:
-		case <-s.pf.Ready:
+		case <-s.ready:
+		case r := <-s.loaded:
+			s.onLoaded(r)
+		case <-s.toastC():
+			s.toastT = nil
+			s.clearToast()
 		}
 		s.present()
 	}
 }
 
+func (s *session) result() Result {
+	return Result{Page: s.state.Page, Chapter: s.cur}
+}
+
 // apply folds a key batch into the state. Reports quit.
 func (s *session) apply(ks []input.Key) bool {
-	st := s.state
 	for _, k := range ks {
+		st := s.state
 		if s.inGoto {
 			switch k.Action {
 			case input.Digit:
@@ -250,13 +287,13 @@ func (s *session) apply(ks []input.Key) bool {
 		case input.Quit:
 			return true
 		case input.Next:
-			st.Flip(1)
+			s.flip(1)
 		case input.Prev:
-			st.Flip(-1)
+			s.flip(-1)
 		case input.Left:
-			st.Physical(true)
+			s.flip(s.state.PhysicalDelta(true))
 		case input.Right:
-			st.Physical(false)
+			s.flip(s.state.PhysicalDelta(false))
 		case input.First:
 			st.GoTo(0)
 		case input.Last:
@@ -331,9 +368,13 @@ func (s *session) hit(t viewer.Target) bool {
 func (s *session) present() {
 	g := s.grid()
 	t := s.state.Target(g)
+	s.warmNeighbors(g)
 	if s.shown != nil && s.shown.Key() == t.Key() {
 		s.pf.ClearAwait()
 		s.pf.Want(s.warm(t))
+		if s.repaint {
+			s.show(t, nil)
+		}
 		return
 	}
 	if s.hit(t) {
@@ -356,7 +397,7 @@ func (s *session) present() {
 	// Scroll bridge: a held key moves the target faster than renders land.
 	// Show the nearest ready page between the shown one and the target so
 	// the pane keeps moving instead of freezing until release.
-	if sh := s.shown; sh != nil && sh.Grid == t.Grid && sh.Rotation == t.Rotation &&
+	if sh := s.shown; sh != nil && sh.Chapter == t.Chapter && sh.Grid == t.Grid && sh.Rotation == t.Rotation &&
 		sh.Spread == t.Spread && sh.RTL == t.RTL && sh.Page != t.Page {
 		dir := 1
 		if t.Page < sh.Page {
@@ -384,7 +425,7 @@ func (s *session) present() {
 	// Resize stretch: same content at a new grid. Re-span the on-screen
 	// image to the new cells (zero image bytes); the crisp frame replaces
 	// it when it lands.
-	if sh := s.shown; sh != nil && sh.Grid != t.Grid && sh.Page == t.Page &&
+	if sh := s.shown; sh != nil && sh.Chapter == t.Chapter && sh.Grid != t.Grid && sh.Page == t.Page &&
 		sh.Rotation == t.Rotation && sh.Spread == t.Spread && sh.RTL == t.RTL {
 		if id, ok := s.cache.Lookup(sh.Key()); ok && s.kt.Transmitted(id) {
 			out := []byte("\x1b[?2026h")
@@ -423,7 +464,9 @@ func (s *session) show(t viewer.Target, r *render.Result) {
 	out = s.kt.EnsurePlacement(out, id, t.Grid.Cols, t.Grid.Rows)
 	out = append(out, "\x1b[?2026h\x1b[H"...)
 	out = append(out, s.kt.PlaceholderFrame(id, t.Grid.Cols, t.Grid.Rows)...)
+	out = s.toastBytes(out)
 	out = append(out, "\x1b[?2026l"...)
+	s.repaint = false
 	t0 := time.Now()
 	s.write(out)
 	s.trace("show %s %dB %.1fms", t.Key(), len(out), float64(time.Since(t0).Microseconds())/1000)

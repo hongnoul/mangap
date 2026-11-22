@@ -24,6 +24,7 @@ or gwae.
 
 Keys:
   j / space / down   next page        k / up        previous page
+                     (past the last/first page: next/previous chapter)
   h / left           page to the left l / right     page to the right
                      (right-to-left: left is the next page)
   g / G              first / last     f <digits>    go to page
@@ -45,6 +46,9 @@ MANGAZ_TRACE=1 writes timing lines to stderr.`,
 		}
 		if os.Getenv("MANGAZ_TRACE") == "1" {
 			opt.Trace = os.Stderr
+		}
+		if s := reader.NewSiblings(args[0]); s != nil {
+			opt.Chapters = s
 		}
 		_, err := reader.Open(args[0], opt)
 		handleErr(err)

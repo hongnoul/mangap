@@ -198,8 +198,7 @@ func (b *statefulBubble) viewSourceSettings() string {
 		line := fmt.Sprintf("%s %s %s %s", num, box, r.p.Name, style.Faint(kind))
 		if i == ss.cursor {
 			line = lipgloss.NewStyle().
-				Background(color.Purple).
-				Foreground(lipgloss.Color("#ffffff")).
+				Reverse(true).
 				Bold(true).
 				Render(fmt.Sprintf("%s [%s] %s %s", num, map[bool]string{true: "x", false: " "}[r.enabled], r.p.Name, kind))
 		}

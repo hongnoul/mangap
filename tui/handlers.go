@@ -352,5 +352,6 @@ type readyToReadMsg struct {
 
 // readFinishedMsg is sent when the reader returns the terminal.
 type readFinishedMsg struct {
-	err error
+	err     error
+	chapter *source.Chapter // the chapter the reader was in when it quit
 }

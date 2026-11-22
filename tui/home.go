@@ -94,8 +94,7 @@ func (b *statefulBubble) searchBox(boxW int) string {
 			var line string
 			if i == b.suggestionIdx {
 				line = lipgloss.NewStyle().
-					Background(color.Purple).
-					Foreground(lipgloss.Color("#ffffff")).
+					Reverse(true).
 					Bold(true).
 					Width(inner).
 					Render(s)
