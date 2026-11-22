@@ -44,11 +44,20 @@ func (b *statefulBubble) viewHome() string {
 		h = 24
 	}
 
+	keys := keysGrid(w)
+
+	// Narrow pane (e.g. a quarter of the screen): the centered layout
+	// cannot fit, so show only the search bar, full width, at the top.
+	if w+4 < lipgloss.Width(keys)+4 || w < 56 {
+		boxW := imax(w, 12)
+		b.inputC.Width = imax(boxW-6-lipgloss.Width(b.inputC.Prompt), 4)
+		box := b.searchBox(boxW)
+		return lipgloss.NewStyle().Padding(1, 2).Render(box)
+	}
+
 	boxW := imin(60, w-4)
 	b.inputC.Width = imax(boxW-6-lipgloss.Width(b.inputC.Prompt), 10)
 	box := b.searchBox(boxW)
-
-	keys := keysGrid(w)
 	art := strings.Join(homeArt, "\n")
 
 	// Fit what we can in the full terminal height: box always, then keys,
@@ -124,9 +133,6 @@ func keysGrid(width int) string {
 	}
 	cellW := keyW + 2 + descW + 4
 	cols := imax(1, imin(3, width/cellW))
-	if cols == 1 && len(homeKeys) > 10 {
-		cols = 2 // two tight columns beat a list taller than the screen
-	}
 	rows := (len(homeKeys) + cols - 1) / cols
 
 	var columns []string
