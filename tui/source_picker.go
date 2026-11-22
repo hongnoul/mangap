@@ -70,13 +70,9 @@ func (b *statefulBubble) sourcePicker(w int) string {
 		gap := imax(inner-lipgloss.Width(label)-lipgloss.Width(hint), 1)
 		return label + strings.Repeat(" ", gap) + style.Faint(hint)
 	}
-	langRow := row(style.Faint("Language  ")+bold.Render(lang.name), "ctrl+l")
-	if b.languageLocked() {
-		langRow = row(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("Language  English"), "ctrl+l")
-	}
-	lines := []string{
-		row(srcLabel, "ctrl+s"),
-		langRow,
+	lines := []string{row(srcLabel, "ctrl+s")}
+	if !b.languageLocked() { // Mangapill is English only, hide the row
+		lines = append(lines, row(style.Faint("Language  ")+bold.Render(lang.name), "ctrl+l"))
 	}
 	word := "show"
 	if b.showKeys {
