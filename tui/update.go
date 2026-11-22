@@ -19,7 +19,6 @@ import (
 	"github.com/hongnoul/mangap/util"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
-	"golang.org/x/exp/slices"
 	"time"
 )
 
@@ -29,6 +28,14 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	msg = b.vimHL(msg)
 	if _, ok := msg.(thumbReadyMsg); ok {
 		return b, nil // a cover landed: the repaint after Update shows it
+	}
+	if t, ok := msg.(loaderTickMsg); ok {
+		switch b.state {
+		case loadingState, readState, downloadState:
+			return b, b.loaderC.update(t)
+		}
+		b.loaderC.stop() // left the loading screens: stop repainting
+		return b, nil
 	}
 	if km, ok := msg.(tea.KeyMsg); ok {
 		if l := b.gridList(); l != nil && l.FilterState() != list.Filtering {
@@ -535,7 +542,7 @@ func (b *statefulBubble) updateConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return b, tea.Quit
 		case key.Matches(msg, b.keymap.confirm):
 			chapters := lo.Keys(b.selectedChapters)
-			slices.SortFunc(chapters, func(a, b *source.Chapter) bool {
+			util.SortFunc(chapters, func(a, b *source.Chapter) bool {
 				return a.Index > b.Index
 			})
 

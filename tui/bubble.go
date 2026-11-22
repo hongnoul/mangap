@@ -18,7 +18,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/samber/mo"
 	"github.com/spf13/viper"
-	"golang.org/x/exp/slices"
 	"strings"
 	"time"
 )
@@ -32,6 +31,7 @@ type statefulBubble struct {
 
 	// components
 	spinnerC         spinner.Model
+	loaderC          loader
 	inputC           textinput.Model
 	scrapersInstallC list.Model
 	historyC         list.Model
@@ -159,11 +159,12 @@ func (b *statefulBubble) resize(width, height int) {
 
 func (b *statefulBubble) startLoading() tea.Cmd {
 	b.loading = true
-	return tea.Batch(b.mangasC.StartSpinner(), b.chaptersC.StartSpinner())
+	return tea.Batch(b.loaderC.start(), b.mangasC.StartSpinner(), b.chaptersC.StartSpinner())
 }
 
 func (b *statefulBubble) stopLoading() tea.Cmd {
 	b.loading = false
+	b.loaderC.stop()
 	b.mangasC.StopSpinner()
 	b.chaptersC.StopSpinner()
 	return nil
@@ -240,6 +241,7 @@ func newBubble() *statefulBubble {
 	bubble.spinnerC = spinner.New()
 	bubble.spinnerC.Spinner = spinner.Dot
 	bubble.spinnerC.Style = lipgloss.NewStyle()
+	bubble.loaderC = newLoader()
 
 	bubble.inputC = textinput.New()
 	bubble.inputC.Placeholder = "Search"
@@ -306,7 +308,7 @@ func (b *statefulBubble) loadProviders() tea.Cmd {
 			internal: p,
 		})
 	}
-	slices.SortFunc(items, func(a, b list.Item) bool {
+	util.SortFunc(items, func(a, b list.Item) bool {
 		// temporary workaround for placing mangadex second because it is not stable for now
 		// but, you know, there is nothing more permanent than a temporary solution
 		return strings.Compare(a.FilterValue(), b.FilterValue()) > 0
@@ -318,7 +320,7 @@ func (b *statefulBubble) loadProviders() tea.Cmd {
 			internal: p,
 		})
 	}
-	slices.SortFunc(customItems, func(a, b list.Item) bool {
+	util.SortFunc(customItems, func(a, b list.Item) bool {
 		return strings.Compare(a.FilterValue(), b.FilterValue()) < 0
 	})
 
@@ -333,7 +335,7 @@ func (b *statefulBubble) loadHistory() (tea.Cmd, error) {
 	}
 
 	chapters := lo.Values(saved)
-	slices.SortFunc(chapters, func(a, b *history.SavedChapter) bool {
+	util.SortFunc(chapters, func(a, b *history.SavedChapter) bool {
 		if a.MangaName == b.MangaName {
 			return a.Name < b.Name
 		}

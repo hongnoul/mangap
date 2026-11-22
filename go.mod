@@ -7,6 +7,7 @@ require (
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.23.1
 	github.com/charmbracelet/lipgloss v0.6.0
+	github.com/codewandler/spinners v0.1.1
 	github.com/darylhjd/mangodex v0.0.0-20211231093527-e4a91c518fa0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/gocolly/colly/v2 v2.1.0
@@ -28,13 +29,15 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.14.0
 	github.com/yuin/gopher-lua v1.0.0
-	golang.org/x/exp v0.0.0-20230113213754-f9f960f08ad4
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	golang.org/x/image v0.3.0
 	golang.org/x/sys v0.42.0
 	golang.org/x/term v0.4.0
 )
 
 require (
+	charm.land/bubbletea/v2 v2.0.2 // indirect
+	charm.land/lipgloss/v2 v2.0.2 // indirect
 	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/antchfx/htmlquery v1.2.6 // indirect
@@ -43,7 +46,14 @@ require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52 v1.2.1 // indirect
 	github.com/cbroglie/mustache v1.4.0 // indirect
+	github.com/charmbracelet/colorprofile v0.4.2 // indirect
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20260205113103-524a6607adb8 // indirect
+	github.com/charmbracelet/x/ansi v0.11.6 // indirect
+	github.com/charmbracelet/x/term v0.2.2 // indirect
+	github.com/charmbracelet/x/termios v0.1.1 // indirect
+	github.com/charmbracelet/x/windows v0.2.2 // indirect
+	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/fatih/color v1.13.0 // indirect
@@ -72,6 +82,7 @@ require (
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sahilm/fuzzy v0.1.0 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect
@@ -80,11 +91,13 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
+	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/ysmood/goob v0.4.0 // indirect
 	github.com/ysmood/gson v0.7.3 // indirect
 	github.com/ysmood/leakless v0.8.0 // indirect
 	github.com/yuin/gluamapper v0.0.0-20150323120927-d836955830e7 // indirect
 	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect

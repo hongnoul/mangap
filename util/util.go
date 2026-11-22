@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 )
 
@@ -150,4 +151,11 @@ func Delete(path string) error {
 	}
 
 	return filesystem.Api().Remove(path)
+}
+
+// SortFunc sorts s in place by a less function. It keeps the bool-returning
+// signature the codebase was written against (x/exp/slices switched to a
+// cmp-style int comparator).
+func SortFunc[T any](s []T, less func(a, b T) bool) {
+	sort.SliceStable(s, func(i, j int) bool { return less(s[i], s[j]) })
 }

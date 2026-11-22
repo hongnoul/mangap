@@ -10,7 +10,6 @@ import (
 	"github.com/hongnoul/mangap/util"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
-	"golang.org/x/exp/slices"
 	"regexp"
 	"strconv"
 	"strings"
@@ -52,7 +51,7 @@ func (m *mini) handleSourceSelectState() error {
 		providers = append(providers, provider.Builtins()...)
 		providers = append(providers, provider.Customs()...)
 
-		slices.SortFunc(providers, func(a *provider.Provider, b *provider.Provider) bool {
+		util.SortFunc(providers, func(a *provider.Provider, b *provider.Provider) bool {
 			return strings.Compare(a.String(), b.String()) < 0
 		})
 

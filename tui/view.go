@@ -57,7 +57,9 @@ func (b *statefulBubble) viewLoading() string {
 		[]string{
 			style.Title("Loading"),
 			"",
-			b.spinnerC.View() + b.progressStatus,
+			b.loaderC.view(b.width),
+			"",
+			style.Truncate(b.width)(style.Faint(b.progressStatus)),
 		},
 	)
 }
@@ -243,7 +245,8 @@ func (b *statefulBubble) viewRead() string {
 			"",
 			style.Truncate(b.width)(fmt.Sprintf(icon.Get(icon.Progress)+" Downloading %s", style.Fg(color.Purple)(chapterName))),
 			"",
-			style.Truncate(b.width)(b.spinnerC.View() + b.progressStatus),
+			b.loaderC.view(b.width),
+			style.Truncate(b.width)(style.Faint(b.progressStatus)),
 			"",
 			style.Truncate(b.width)(b.downloadingChapterMetainfo()),
 		},
@@ -267,7 +270,8 @@ func (b *statefulBubble) viewDownload() string {
 			"",
 			b.progressC.View(),
 			"",
-			style.Truncate(b.width)(b.spinnerC.View() + b.progressStatus),
+			b.loaderC.view(b.width),
+			style.Truncate(b.width)(style.Faint(b.progressStatus)),
 			"",
 			style.Truncate(b.width)(b.downloadingChapterMetainfo()),
 		},

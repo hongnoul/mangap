@@ -2,11 +2,11 @@ package query
 
 import (
 	"github.com/hongnoul/mangap/key"
+	"github.com/hongnoul/mangap/util"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/samber/lo"
 	"github.com/samber/mo"
 	"github.com/spf13/viper"
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -36,7 +36,7 @@ func SuggestMany(query string) []string {
 			}
 		}
 
-		slices.SortFunc(records, func(a, b *queryRecord) bool {
+		util.SortFunc(records, func(a, b *queryRecord) bool {
 			return a.Rank > b.Rank
 		})
 

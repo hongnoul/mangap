@@ -14,7 +14,6 @@ import (
 	"github.com/hongnoul/mangap/source"
 	"github.com/hongnoul/mangap/util"
 	"github.com/spf13/viper"
-	"golang.org/x/exp/slices"
 	"strings"
 	"sync"
 )
@@ -30,7 +29,7 @@ func (b *statefulBubble) loadScrapers() tea.Cmd {
 		}
 		b.progressStatus = "Scrapers Loaded"
 
-		slices.SortFunc(scrapers, func(a, b *installer.Scraper) bool {
+		util.SortFunc(scrapers, func(a, b *installer.Scraper) bool {
 			return strings.Compare(a.Name, b.Name) < 0
 		})
 
