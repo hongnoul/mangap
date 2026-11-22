@@ -37,7 +37,18 @@ var homeKeys = [][2]string{
 
 // searchBox renders the search bar as a single bordered input row.
 func (b *statefulBubble) searchBox(boxW int) string {
-	rows := []string{b.inputC.View()}
+	row := b.inputC.View()
+	// A faint dot at the end of the bar while the network answer for the
+	// typed text is on its way (the results shown are provisional). The
+	// cell is always reserved so the bar never shifts.
+	if w := lipgloss.Width(row); w+2 <= boxW-2 {
+		mark := " "
+		if b.livePending() {
+			mark = style.Faint("•")
+		}
+		row += strings.Repeat(" ", boxW-2-w-1) + mark
+	}
+	rows := []string{row}
 
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).

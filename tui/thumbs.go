@@ -319,8 +319,18 @@ func fetchSource(key string, locate func() (string, string, error)) ([]byte, err
 	if err != nil {
 		return nil, err
 	}
+	// Atomic: a live-search cover prefetch and a thumbnail worker may
+	// fetch the same image, and a reader must never see half a file.
 	_ = os.MkdirAll(filepath.Dir(path), 0o755)
-	_ = os.WriteFile(path, data, 0o644)
+	if tmp, err := os.CreateTemp(filepath.Dir(path), ".dl-*"); err == nil {
+		_, werr := tmp.Write(data)
+		cerr := tmp.Close()
+		if werr == nil && cerr == nil {
+			_ = os.Rename(tmp.Name(), path)
+		} else {
+			_ = os.Remove(tmp.Name())
+		}
+	}
 	return data, nil
 }
 

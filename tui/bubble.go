@@ -84,6 +84,7 @@ type statefulBubble struct {
 
 	// live search (see live.go)
 	liveSeq int
+	live    liveState
 
 	thumbs  *thumbs
 	preview *thumbs // large image of the selected item, right pane

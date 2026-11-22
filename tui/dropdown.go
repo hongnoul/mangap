@@ -121,7 +121,7 @@ func (b *statefulBubble) updateDropdown(km tea.KeyMsg) (tea.Model, tea.Cmd) {
 			b.raiseError(err)
 			return b, nil
 		}
-		return b, b.scheduleLive()
+		return b, tea.Batch(b.scheduleLive(), b.warmSources())
 	case "esc", "q", "h", "left":
 		b.dropdown = nil
 	case "ctrl+c":

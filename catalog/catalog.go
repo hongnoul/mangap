@@ -41,7 +41,8 @@ type Entry struct {
 	Seen int   `json:"z,omitempty"`
 	Last int64 `json:"t"`
 
-	norm []string // normalized Name + Alt, built on load/insert
+	norm  []string   // normalized Name + Alt, built on load/insert
+	words [][]string // fields of each norm, for multi-word queries
 }
 
 // queryEntry is one cached result list, by manga URL.
@@ -144,6 +145,10 @@ func (e *Entry) index() {
 			e.norm = append(e.norm, n)
 		}
 	}
+	e.words = make([][]string, len(e.norm))
+	for i, n := range e.norm {
+		e.words[i] = strings.Fields(n)
+	}
 }
 
 // Add records mangas as returned by a source for query. They become
@@ -220,10 +225,10 @@ func (c *Catalog) Cached(sourceID, query string) (entries []Entry, fresh, ok boo
 	return entries, time.Since(time.Unix(q.At, 0)) < FreshFor, true
 }
 
-// match is a scored local hit, copied out under the read lock.
+// match is a scored local hit. Only the top ones are copied out.
 type match struct {
-	entry Entry
-	Score int
+	entry *Entry
+	score int
 }
 
 // Search returns up to limit entries from sourceID whose name or alternative
@@ -239,14 +244,22 @@ func (c *Catalog) Search(sourceID, query string, limit int) []Entry {
 	}
 	words := strings.Fields(q)
 	c.mu.RLock()
-	var hits []match
+	defer c.mu.RUnlock()
+	// Bounded top-k (k is small): keep hits sorted, drop the worst.
+	hits := make([]match, 0, limit+1)
+	better := func(a, b match) bool {
+		if a.score != b.score {
+			return a.score > b.score
+		}
+		return a.entry.Name < b.entry.Name
+	}
 	for _, e := range c.data.Entries {
 		if e.SourceID != sourceID {
 			continue
 		}
 		best := 0
-		for _, n := range e.norm {
-			if s := score(n, q, words); s > best {
+		for i, n := range e.norm {
+			if s := score(n, e.words[i], q, words); s > best {
 				best = s
 			}
 		}
@@ -255,28 +268,28 @@ func (c *Catalog) Search(sourceID, query string, limit int) []Entry {
 		}
 		best += imin(e.Hits, 20) * 15
 		best += imin(e.Seen, 20)
-		hits = append(hits, match{*e, best})
-	}
-	c.mu.RUnlock()
-	sort.Slice(hits, func(i, j int) bool {
-		if hits[i].Score != hits[j].Score {
-			return hits[i].Score > hits[j].Score
+		m := match{e, best}
+		if len(hits) == limit && !better(m, hits[limit-1]) {
+			continue
 		}
-		return hits[i].entry.Name < hits[j].entry.Name
-	})
-	if len(hits) > limit {
-		hits = hits[:limit]
+		i := sort.Search(len(hits), func(i int) bool { return better(m, hits[i]) })
+		hits = append(hits, match{})
+		copy(hits[i+1:], hits[i:])
+		hits[i] = m
+		if len(hits) > limit {
+			hits = hits[:limit]
+		}
 	}
 	out := make([]Entry, len(hits))
 	for i, h := range hits {
-		out[i] = h.entry
+		out[i] = *h.entry
 	}
 	return out
 }
 
-// score rates how well normalized name n matches query q (words = fields
-// of q). 0 means no match.
-func score(n, q string, words []string) int {
+// score rates how well normalized name n (nw = its fields) matches query q
+// (words = its fields). 0 means no match.
+func score(n string, nw []string, q string, words []string) int {
 	switch {
 	case n == q:
 		return 1000
@@ -292,7 +305,6 @@ func score(n, q string, words []string) int {
 	}
 	// Every query word prefixes some word of the name, in any order.
 	if len(words) > 1 {
-		nw := strings.Fields(n)
 		for _, w := range words {
 			found := false
 			for _, x := range nw {
@@ -318,11 +330,13 @@ func Matches(query, name string, alt []string) bool {
 		return true
 	}
 	words := strings.Fields(q)
-	if score(Normalize(name), q, words) > 0 {
-		return true
-	}
-	for _, a := range alt {
-		if score(Normalize(a), q, words) > 0 {
+	for i := -1; i < len(alt); i++ {
+		s := name
+		if i >= 0 {
+			s = alt[i]
+		}
+		n := Normalize(s)
+		if score(n, strings.Fields(n), q, words) > 0 {
 			return true
 		}
 	}
@@ -398,4 +412,24 @@ func imin(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// Seed adds a manga known from elsewhere (reading history) if it is not in
+// the catalog yet. It counts as opened once so it ranks above strangers.
+func (c *Catalog) Seed(sourceID, name, url, id string) {
+	if c == nil || sourceID == "" || name == "" || url == "" {
+		return
+	}
+	k := entryKey(sourceID, url)
+	c.mu.Lock()
+	if _, ok := c.data.Entries[k]; ok {
+		c.mu.Unlock()
+		return
+	}
+	e := &Entry{SourceID: sourceID, Name: name, URL: url, ID: id, Hits: 1, Last: time.Now().Unix()}
+	e.index()
+	c.data.Entries[k] = e
+	c.dirty = true
+	c.mu.Unlock()
+	c.scheduleSave()
 }

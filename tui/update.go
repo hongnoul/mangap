@@ -43,6 +43,18 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.pingC.update(m)
 		return b, nil
 	}
+	// Live search messages are handled in any state: late results still
+	// fill the caches and free their in-flight slot.
+	switch m := msg.(type) {
+	case liveTickMsg:
+		return b, b.runLive(m)
+	case liveResultMsg:
+		return b, b.applyLive(m)
+	case livePrefetchMsg:
+		return b, b.runPrefetch(m)
+	case liveWarmMsg:
+		return b, b.handleWarm()
+	}
 	if km, ok := msg.(tea.KeyMsg); ok {
 		if l := b.gridList(); l != nil && l.FilterState() != list.Filtering {
 			if b.grid.key(km.String()) || b.grid.nav(l, km.String()) {
@@ -369,8 +381,10 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 			b.liveSeq++
+			b.cancelAll()
 			b.clearSuggestions()
 			b.selectedManga = m
+			go liveCatalog().Opened(m)
 			go query.Remember(b.inputC.Value(), 1)
 			go query.Remember(m.Name, 2)
 			b.newState(loadingState)
@@ -418,7 +432,7 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 				b.raiseError(err)
 				return b, nil
 			}
-			return b, b.scheduleLive()
+			return b, tea.Batch(b.scheduleLive(), b.warmSources())
 		case len(b.mangasC.Items()) > 0 && lo.Contains([]string{"ctrl+j", "ctrl+k", "tab", "shift+tab"}, msg.String()):
 			// Walk the live results while typing stays in the bar.
 			n, i := len(b.mangasC.Items()), b.mangasC.Index()
@@ -428,7 +442,8 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 				i = (i - 1 + n) % n
 			}
 			b.mangasC.Select(i)
-			return b, nil
+			b.live.picked = true
+			return b, b.schedulePrefetch()
 		case msg.String() == "down" || msg.String() == "ctrl+n":
 			if n := len(b.searchSuggestions); n > 0 {
 				b.suggestionIdx = (b.suggestionIdx+2)%(n+1) - 1
@@ -448,13 +463,6 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	switch msg := msg.(type) {
-	case liveTickMsg:
-		return b, b.runLive(msg)
-	case liveResultMsg:
-		return b, b.applyLive(msg)
-	}
-
 	prev := b.inputC.Value()
 	b.inputC, cmd = b.inputC.Update(msg)
 
@@ -470,13 +478,6 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (b *statefulBubble) updateMangas(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-
-	switch m := msg.(type) {
-	case liveResultMsg:
-		return b, b.applyLive(m)
-	case liveTickMsg:
-		return b, b.runLive(m)
-	}
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:

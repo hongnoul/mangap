@@ -144,7 +144,10 @@ func (b *statefulBubble) searchManga(query string) tea.Cmd {
 		log.Info("searching for " + query)
 		b.progressStatus = "Searching " + sourceNames(b.selectedSources)
 
-		var mangas = make([]*source.Manga, 0)
+		var (
+			mangas = make([]*source.Manga, 0)
+			mu     sync.Mutex
+		)
 
 		wg := sync.WaitGroup{}
 		wg.Add(len(b.selectedSources))
@@ -159,7 +162,9 @@ func (b *statefulBubble) searchManga(query string) tea.Cmd {
 				}
 
 				log.Infof("found %s from source %s", util.Quantify(len(sourceMangas), "manga", "mangas"), s.Name())
+				mu.Lock()
 				mangas = append(mangas, sourceMangas...)
+				mu.Unlock()
 			}(s)
 		}
 
