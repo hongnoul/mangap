@@ -38,7 +38,7 @@ func (m *Mangadex) ChaptersOf(manga *source.Manga) ([]*source.Chapter, error) {
 	// scanlation group for the chapter
 	params.Add("includes[]", mangodex.ScanlationGroupRel)
 	params.Set("order[chapter]", "asc")
-	if language != "any" {
+	if filterLanguage(language) {
 		// Filter server side. Client side filtering paged incorrectly.
 		params.Add("translatedLanguage[]", language)
 	}
@@ -61,7 +61,7 @@ func (m *Mangadex) ChaptersOf(manga *source.Manga) ([]*source.Chapter, error) {
 				continue
 			}
 
-			if language != "any" && chapter.Attributes.TranslatedLanguage != language {
+			if filterLanguage(language) && chapter.Attributes.TranslatedLanguage != language {
 				continue
 			}
 

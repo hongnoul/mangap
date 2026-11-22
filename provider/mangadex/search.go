@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"net/url"
+	"regexp"
 	"strconv"
 )
 
@@ -39,7 +40,7 @@ func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
 
 	params.Set("order[followedCount]", "desc")
 	params.Set("title", query)
-	if language != "any" {
+	if filterLanguage(language) {
 		// Only manga that actually have chapters in the preferred language.
 		params.Add("availableTranslatedLanguage[]", language)
 	}
@@ -75,6 +76,12 @@ func (m *Mangadex) Search(query string) ([]*source.Manga, error) {
 	_ = m.cache.mangas.Set(cacheKey, mangas)
 	return mangas, nil
 }
+
+var langCodeRe = regexp.MustCompile(`^[a-z]{2}(-[a-z]{2})?$`)
+
+// filterLanguage reports whether lang is a real MangaDex language code to
+// filter by. "any", empty and malformed values disable filtering.
+func filterLanguage(lang string) bool { return langCodeRe.MatchString(lang) }
 
 // mangaTitle prefers a title in lang, then English, then any title.
 func mangaTitle(manga *mangodex.Manga, lang string) string {
