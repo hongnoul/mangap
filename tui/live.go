@@ -132,6 +132,16 @@ func (b *statefulBubble) viewLiveBase(header string, full, pickerW int) string {
 		if footer == "" {
 			return header + "\n" + b.homeBody(full, H)
 		}
+		// Downloaded box stacks above the status box, unless it would
+		// push the art off a screen where the art otherwise fits.
+		if dl := lipgloss.PlaceHorizontal(full, lipgloss.Center, b.downloadedBox(pickerW)); dl != "" {
+			artH := len(homeArt)
+			withDl := H - lipgloss.Height(footer) - lipgloss.Height(dl) - 1
+			withoutDl := H - lipgloss.Height(footer) - 1
+			if withDl >= artH || withoutDl < artH {
+				footer = dl + "\n" + footer
+			}
+		}
 		bodyH := H - lipgloss.Height(footer) - 1
 		return header + "\n" + b.homeBody(full, imax(bodyH, 0)) + "\n" + footer
 	}

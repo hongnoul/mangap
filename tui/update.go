@@ -649,6 +649,7 @@ func (b *statefulBubble) updateDownload(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case struct{}:
 		inc := 1 / float64(len(b.selectedChapters))
 
+		invalidateDownloaded()
 		if b.chaptersToDownload.Len() == 0 {
 			// a little hack to make the progress render to the end
 			go func() {
