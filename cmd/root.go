@@ -76,7 +76,7 @@ func init() {
 var rootCmd = &cobra.Command{
 	Use:   constant.App,
 	Short: "The ultimate manga downloader",
-	Long: constant.AsciiArtLogo + "\n" +
+	Long: coloredLogo() + "\n" +
 		style.New().Italic(true).Foreground(color.HiRed).Render("    - The ultimate cli manga downloader"),
 	PreRun: func(cmd *cobra.Command, args []string) {
 		if _, err := converter.Get(viper.GetString(key.FormatsUse)); err != nil {
