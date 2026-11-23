@@ -518,10 +518,10 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return b, nil
 			}
 			return b, tea.Batch(b.scheduleLive(), b.warmSources())
-		case len(b.mangasC.Items()) > 0 && lo.Contains([]string{"ctrl+k", "tab", "shift+tab"}, msg.String()):
+		case len(b.mangasC.Items()) > 0 && lo.Contains([]string{"ctrl+j", "ctrl+k", "tab", "shift+tab"}, msg.String()):
 			// Walk the live results while typing stays in the bar.
 			n, i := len(b.mangasC.Items()), b.mangasC.Index()
-			if s := msg.String(); s == "tab" {
+			if s := msg.String(); s == "tab" || s == "ctrl+j" {
 				i = (i + 1) % n
 			} else {
 				i = (i - 1 + n) % n

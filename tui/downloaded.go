@@ -98,11 +98,11 @@ func (b *statefulBubble) downloadedBox(w int) string {
 		Width(imax(w-2, 4)).
 		Render(strings.Join(lines, "\n"))
 
-	// Top border carries the label: ╭─ Downloaded ──── ctrl+j ─╮
+	// Top border carries the label: ╭─ Downloaded ──── ctrl+x ─╮
 	bw := lipgloss.Width(body)
 	bc := lipgloss.NewStyle().Foreground(border)
 	label := " " + bold.Render("Downloaded") + " "
-	hint := " " + faint.Render("ctrl+j") + " "
+	hint := " " + faint.Render("ctrl+x") + " "
 	fill := imax(bw-2-1-1-lipgloss.Width(label)-lipgloss.Width(hint), 1)
 	top := bc.Render("╭─") + label + bc.Render(strings.Repeat("─", fill)) + hint + bc.Render("─╮")
 	return top + "\n" + body

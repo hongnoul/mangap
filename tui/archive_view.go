@@ -181,7 +181,7 @@ func (b *statefulBubble) updateArchiveKeys(km tea.KeyMsg) (tea.Cmd, bool) {
 	case s == "shift+tab" || s == "ctrl+p" || s == "up":
 		b.grid.nav(&b.mangasC, "k")
 		return nil, true
-	case lo.Contains([]string{"ctrl+k", "pgup", "pgdown"}, s):
+	case lo.Contains([]string{"ctrl+j", "ctrl+k", "pgup", "pgdown"}, s):
 		b.grid.nav(&b.mangasC, s)
 		return nil, true
 	case s == "ctrl+c":

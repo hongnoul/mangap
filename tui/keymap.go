@@ -100,7 +100,7 @@ func newStatefulKeymap() *statefulKeymap {
 			help("←", "prev page"),
 		),
 		right: k(
-			keys("right"),
+			keys("right", "ctrl+j"),
 			help("→", "next page"),
 		),
 		vimHL: k(

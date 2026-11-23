@@ -295,7 +295,7 @@ func chapterCard(it list.Item) card {
 }
 
 // nav moves the list cursor through the grid: h/j/k/l go left, down, up,
-// right one card (up/down arrows too), ctrl+k or left/right arrows
+// right one card (up/down arrows too), ctrl+j/ctrl+k or left/right arrows
 // flip a page, g/G jump to the ends. esc/enter (back/open) fall through.
 // Returns true when the key was handled.
 func (g *grid) nav(l *list.Model, k string) bool {
@@ -318,7 +318,7 @@ func (g *grid) nav(l *list.Model, k string) bool {
 		}
 	case "tab":
 		return false
-	case "right", "pgdown":
+	case "right", "ctrl+j", "pgdown":
 		to = imin(cur+g.perPage(), n-1)
 	case "left", "ctrl+k", "pgup":
 		to = imax(cur-g.perPage(), 0)

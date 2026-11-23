@@ -23,7 +23,7 @@ func TestArchiveDeleteMangas(t *testing.T) {
 	b := newBubble()
 	b.resize(100, 40)
 	b.state = searchState
-	b.Update(tea.KeyMsg{Type: tea.KeyCtrlJ})
+	b.Update(tea.KeyMsg{Type: tea.KeyCtrlX})
 	b.Update(runeKey("d"))
 	if !b.del.on || !strings.Contains(b.View(), "from disk?") {
 		t.Fatal("d should prompt")
@@ -59,7 +59,7 @@ func TestArchiveDeleteChapter(t *testing.T) {
 	b := newBubble()
 	b.resize(100, 40)
 	b.state = searchState
-	b.Update(tea.KeyMsg{Type: tea.KeyCtrlJ})
+	b.Update(tea.KeyMsg{Type: tea.KeyCtrlX})
 	m := b.mangasC.SelectedItem().(*listItem).internal.(*source.Manga)
 	b.selectedManga = m
 	chs, _ := m.Source.ChaptersOf(m)

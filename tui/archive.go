@@ -5,8 +5,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// isArchiveKey matches ctrl+j, which opens the downloads archive.
-func isArchiveKey(km tea.KeyMsg) bool { return km.String() == "ctrl+j" }
+// isArchiveKey matches ctrl+x, which opens the downloads archive.
+func isArchiveKey(km tea.KeyMsg) bool { return km.String() == "ctrl+x" }
 
 // inArchive reports whether the manga grid is showing the archive.
 func (b *statefulBubble) inArchive() bool {
@@ -44,7 +44,7 @@ func (b *statefulBubble) openArchive() tea.Cmd {
 	return cmd
 }
 
-// canOpenArchive limits ctrl+j to the browsing screens, never while a
+// canOpenArchive limits ctrl+x to the browsing screens, never while a
 // list filter is being typed.
 func (b *statefulBubble) canOpenArchive() bool {
 	switch b.state {

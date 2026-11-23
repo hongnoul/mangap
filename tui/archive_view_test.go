@@ -30,7 +30,7 @@ func TestArchiveFilterAndDir(t *testing.T) {
 	b := newBubble()
 	b.resize(100, 40)
 	b.state = searchState
-	b.Update(tea.KeyMsg{Type: tea.KeyCtrlJ})
+	b.Update(tea.KeyMsg{Type: tea.KeyCtrlX})
 	if !b.inArchive() || len(b.mangasC.Items()) != 2 {
 		t.Fatalf("archive items %d", len(b.mangasC.Items()))
 	}
