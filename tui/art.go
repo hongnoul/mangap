@@ -146,13 +146,21 @@ func overlayLogo(art []string) []string {
 					}
 				}
 			}
+			// Original dots outside the ring and P, so the girl shows
+			// through the hole.
+			var orig rune
+			if c >= blankCell && c <= blankCell+0xFF {
+				orig = (c - blankCell) &^ (ringBits | pBits)
+			}
 			switch {
 			case !touched:
 				sb.WriteRune(c)
 			case pBits != 0:
 				sb.WriteString(white.Render(string(blankCell + pBits)))
-			default:
+			case ringBits != 0:
 				sb.WriteString(red.Render(string(blankCell + ringBits)))
+			default:
+				sb.WriteRune(blankCell + orig)
 			}
 		}
 		out[i] = sb.String()
