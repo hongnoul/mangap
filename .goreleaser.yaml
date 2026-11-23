@@ -1,9 +1,10 @@
+version: 2
+
 project_name: mangap
 
 before:
   hooks:
     - go mod tidy
-    - go generate ./...
 
 builds:
   - env:
@@ -18,36 +19,67 @@ builds:
     flags:
       - -trimpath
     ldflags:
+      - -X 'github.com/hongnoul/mangap/constant.Version={{ .Version }}'
       - -X 'github.com/hongnoul/mangap/constant.BuiltAt={{ .Date }}'
-      - -X 'github.com/hongnoul/mangap/constant.BuiltBy={{ .Env.USER }}'
+      - -X 'github.com/hongnoul/mangap/constant.BuiltBy=goreleaser'
       - -X 'github.com/hongnoul/mangap/constant.Revision={{ .ShortCommit }}'
       - -s
       - -w
 
 archives:
-  - format_overrides:
+  - formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
     files:
       - completions/*
       - README.md
       - LICENSE
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
   use: github
   filters:
     exclude:
-      - '^test'
-      - '^chore'
+      - "^test"
+      - "^chore"
+      - "^docs"
       - Merge pull request
       - Merge branch
+
+# brew install hongnoul/tap/mangap
+# Needs the TAP_PAT secret (a token with push access to hongnoul/homebrew-tap).
+# Skipped when it is unset so releases still go out.
+brews:
+  - name: mangap
+    skip_upload: '{{ if index .Env "TAP_PAT" }}false{{ else }}true{{ end }}'
+    repository:
+      owner: hongnoul
+      name: homebrew-tap
+      token: '{{ index .Env "TAP_PAT" }}'
+    directory: Formula
+    homepage: https://github.com/hongnoul/mangap
+    description: Read manga in your terminal with real images (kitty graphics)
+    license: MIT
+    commit_author:
+      name: goreleaser
+      email: bot@goreleaser.com
+    commit_msg_template: "mangap {{ .Tag }}"
+    install: |
+      bin.install "mangap"
+      bash_completion.install "completions/mangap.bash" => "mangap"
+      zsh_completion.install "completions/mangap.zsh" => "_mangap"
+      fish_completion.install "completions/mangap.fish"
+    test: |
+      assert_match version.to_s, shell_output("#{bin}/mangap version --short")
 
 release:
   github:
