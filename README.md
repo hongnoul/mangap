@@ -1,7 +1,7 @@
 # mangap
 
 <p align="center">
-  <img src="assets/logo.svg" alt="mangap" width="200" />
+  <img src="assets/mangap-logo.png" alt="mangap" width="200" />
 </p>
 
 <p align="center">
