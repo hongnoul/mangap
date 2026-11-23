@@ -13,7 +13,7 @@
 <p align="center"><img src="assets/demo.gif" alt="mangap: search, open a chapter, and read pages in the terminal" width="100%" /></p>
 <p align="center">Running in <a href="https://github.com/hongnoul/gwae">gwae</a> on <a href="https://github.com/ghostty-org/ghostty">Ghostty</a>, MacBook Pro M4</p>
 
-Maintained fork of [mangal](https://github.com/metafates/mangal).
+Maintained fork of [mangal](https://github.com/metafates/mangal), which is archived. Your mangal config, history, and Lua scrapers carry over on first run.
 
 Runs on macOS, Linux, and Windows, in any terminal that supports the kitty graphics protocol.
 
@@ -52,6 +52,20 @@ Binaries for macOS, Linux, and Windows are on [Releases](https://github.com/hong
 List screens use `j`/`k` to move, `l` to open, `h` to go back. `q` leaves the reader. `ctrl+g` shows keybinds.
 
 Downloaded chapters open with `mangap view <folder|file.cbz>`.
+
+## Compared to
+
+| | mangap | [mangal](https://github.com/metafates/mangal) | [manga-tui](https://github.com/josueBarretogit/manga-tui) |
+| --- | --- | --- | --- |
+| Status | Maintained | Archived | Maintained |
+| Reads pages in the terminal | Yes, kitty graphics | No, hands off to an external viewer | Yes, kitty / iTerm2 / sixel |
+| Search | Live per keystroke with covers | Submit then list | Advanced filters |
+| Custom Lua scrapers | Yes (mangal-compatible) | Yes | No |
+| Download formats | cbz, pdf, zip, images | cbz, pdf, zip, images | cbz, epub, pdf, images |
+| Anilist sync | Yes | Yes | Yes |
+| Language | Go, single static binary | Go | Rust |
+
+Pick manga-tui if you need iTerm2 or sixel terminals. Pick mangap if you are on kitty, Ghostty, or WezTerm, or have a mangal setup you want to keep.
 
 ## Sources
 
