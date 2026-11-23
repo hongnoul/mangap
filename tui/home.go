@@ -112,7 +112,7 @@ func (b *statefulBubble) homeBody(w, h int) string {
 	h = imax(h, 1)
 	art := ""
 	if len(homeArt) <= h && w >= lipgloss.Width(homeArt[0]) {
-		art = strings.Join(homeArt, "\n")
+		art = strings.Join(homeArtStyled, "\n")
 	}
 	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, art)
 }
