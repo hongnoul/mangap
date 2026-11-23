@@ -1,6 +1,10 @@
 # mangap
 
 <p align="center">
+  <img src="assets/logo.svg" alt="mangap" width="100" />
+</p>
+
+<p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-white?labelColor=black" alt="MIT license" /></a>
   <a href="https://github.com/hongnoul/mangap/stargazers"><img src="https://img.shields.io/github/stars/hongnoul/mangap?labelColor=black&color=white&logo=github&logoColor=black" alt="GitHub stars" /></a>
   <a href="https://github.com/hongnoul/mangap/releases/latest"><img src="https://img.shields.io/github/v/release/hongnoul/mangap?label=release&labelColor=black&color=white" alt="latest stable release" /></a>
