@@ -57,7 +57,7 @@ func (m *Mangadex) FirstPageURL(chapter *source.Chapter) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("User-Agent", constant.HonestUserAgent)
+	req.Header.Set("User-Agent", constant.HonestUserAgent())
 	resp, err := network.Client.Do(req)
 	if err != nil {
 		return "", err

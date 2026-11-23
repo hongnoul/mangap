@@ -1,6 +1,9 @@
 MAKEFLAGS += --silent
 
+version := $(or $(patsubst v%,%,$(shell git describe --tags --abbrev=0 2>/dev/null)),0.1.0)
+
 ldflags := -X 'github.com/hongnoul/mangap/constant.BuiltAt=$(shell date -u)'
+ldflags += -X 'github.com/hongnoul/mangap/constant.Version=$(version)'
 ldflags += -X 'github.com/hongnoul/mangap/constant.BuiltBy=$(shell whoami)'
 ldflags += -X 'github.com/hongnoul/mangap/constant.Revision=$(shell git rev-parse --short HEAD)'
 ldflags += -s
