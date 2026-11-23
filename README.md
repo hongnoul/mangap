@@ -9,9 +9,7 @@
 <p align="center"><img src="assets/demo.gif" alt="mangap: search, open a chapter, and read pages in the terminal" width="100%" /></p>
 <p align="center">Running in <a href="https://github.com/hongnoul/gwae">gwae</a> on <a href="https://github.com/ghostty-org/ghostty">Ghostty</a>, MacBook Pro M4</p>
 
-Read manga in your terminal. Pages render as real images over the kitty graphics protocol. No browser, no external viewer.
-
-Maintained fork of [mangal](https://github.com/metafates/mangal) (MIT, unmaintained since April 2025). Sources, Lua scrapers, downloader, and TUI base come from mangal.
+Maintained fork of [mangal](https://github.com/metafates/mangal).
 
 ## Install
 
