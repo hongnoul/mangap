@@ -216,8 +216,11 @@ func (s *session) run() (res Result, err error) {
 	// leftover reader would steal the caller's next keystrokes (bubbletea
 	// resumes reading stdin right after us).
 	defer func() {
-		cr.Cancel()
-		<-readDone
+		// Wait only when the read was actually interrupted. Readers that
+		// cannot be cancelled (pipes on Windows) would block here forever.
+		if cr.Cancel() {
+			<-readDone
+		}
 		_ = cr.Close()
 	}()
 

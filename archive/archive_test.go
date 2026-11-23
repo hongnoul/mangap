@@ -61,6 +61,7 @@ func TestScanAndRead(t *testing.T) {
 	if err != nil || src.Len() != 1 {
 		t.Fatalf("open: %v", err)
 	}
+	_ = src.Close() // Windows cannot remove the temp dir while it is open
 	if res, _ := s.Search("bet"); len(res) != 1 || res[0].Name != "Beta" {
 		t.Fatalf("search %v", res)
 	}
