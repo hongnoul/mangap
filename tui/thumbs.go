@@ -47,6 +47,11 @@ const (
 	cacheDir = "thumbs"
 )
 
+// rasters is shared by every thumbs instance: rendered PNGs (low and full)
+// survive Clear and Retain evictions, so a thumbnail coming back into view
+// is re-sent from memory without reading, decoding or resizing again.
+var rasters = newRasterCache(128 << 20)
+
 // syncOut serializes writes to the terminal: bubbletea's frames and the
 // background thumbnail transfers share stdout, and an interleaved escape
 // sequence would corrupt both.
@@ -257,7 +262,20 @@ func (t *thumbs) want(key string, prio int, locate func() (url, referer string, 
 		st = &thumbState{}
 		t.state[key] = st
 	}
+	if st.low == nil && !st.fail {
+		w, h := t.pixels(t.cols, t.rows, true)
+		if png, pw, ph, ok := rasters.get(rasterKey(key, w, h, t.fill)); ok {
+			st.low, st.lowW, st.lowH = png, pw, ph
+		}
+	}
+	var buf []byte
+	if t.hot[key] && st.level < 2 && !st.busy {
+		buf = t.appendCachedFull(buf, key, st)
+	}
 	need := !st.fail && (st.low == nil || (st.level < 2 && t.hot[key]))
+	if len(buf) > 0 {
+		defer t.write(buf)
+	}
 	if !need || (st.busy && (st.running || prio <= st.queued)) {
 		t.mu.Unlock()
 		return
@@ -338,6 +356,19 @@ func fetchSource(key string, locate func() (string, string, error)) ([]byte, err
 }
 
 func (t *thumbs) work(key string, st *thumbState, locate func() (string, string, error)) {
+	// Fast path: everything needed is already rendered in memory.
+	t.mu.Lock()
+	var pre []byte
+	if t.hot[key] && st.level < 2 {
+		pre = t.appendCachedFull(nil, key, st)
+	}
+	done := st.low != nil && (!t.hot[key] || st.level == 2)
+	t.mu.Unlock()
+	t.write(pre)
+	if done {
+		return
+	}
+
 	data, err := fetchSource(key, locate)
 	var img image.Image
 	if err == nil {
@@ -356,7 +387,7 @@ func (t *thumbs) work(key string, st *thumbState, locate func() (string, string,
 	needLow := st.low == nil
 	t.mu.Unlock()
 	if needLow {
-		t.makeLow(st, img)
+		t.makeLow(key, st, img)
 	}
 	t.mu.Lock()
 	hot := t.hot[key]
@@ -390,7 +421,7 @@ func (t *thumbs) pixels(cols, rows int, low bool) (int, int) {
 
 // makeLow renders the low-res raster into memory. It reaches the terminal
 // only while the key is hot (see work and Retain).
-func (t *thumbs) makeLow(st *thumbState, img image.Image) {
+func (t *thumbs) makeLow(key string, st *thumbState, img image.Image) {
 	t.mu.Lock()
 	cols, rows := t.cols, t.rows
 	t.mu.Unlock()
@@ -399,6 +430,7 @@ func (t *thumbs) makeLow(st *thumbState, img image.Image) {
 	if err != nil {
 		return
 	}
+	rasters.put(rasterKey(key, w, h, t.fill), res.PNG, res.W, res.H)
 	t.mu.Lock()
 	st.low, st.lowW, st.lowH = res.PNG, res.W, res.H
 	t.mu.Unlock()
@@ -413,6 +445,7 @@ func (t *thumbs) sendFull(key string, st *thumbState, img image.Image) {
 	if err != nil {
 		return
 	}
+	rasters.put(rasterKey(key, w, h, t.fill), res.PNG, res.W, res.H)
 	t.mu.Lock()
 	if cols != t.cols || rows != t.rows || !t.hot[key] {
 		t.mu.Unlock()
@@ -454,6 +487,23 @@ func cropToFill(img image.Image, w, h int) image.Image {
 		return sub.SubImage(image.Rect(b.Min.X, y, b.Max.X, y+nh))
 	}
 	return img
+}
+
+// appendCachedFull appends a transmit of key's full raster at the current
+// span if it is in the memory cache, and marks it resident. Caller holds mu.
+func (t *thumbs) appendCachedFull(buf []byte, key string, st *thumbState) []byte {
+	w, h := t.pixels(t.cols, t.rows, false)
+	png, pw, ph, ok := rasters.get(rasterKey(key, w, h, t.fill))
+	if !ok {
+		return buf
+	}
+	st.level = 2
+	return t.appendTransmit(buf, st, png, pw, ph)
+}
+
+func (t *thumbs) cachedFull(key string, w, h int) bool {
+	_, _, _, ok := rasters.get(rasterKey(key, w, h, t.fill))
+	return ok
 }
 
 // appendLow appends st's low-res raster at the current span. Caller holds mu.
@@ -595,6 +645,7 @@ func (t *thumbs) Retain(keep map[string]bool) {
 	}
 	t.mu.Lock()
 	t.hot = keep
+	fw, fh := t.pixels(t.cols, t.rows, false)
 	// Frees go first: a delete in the middle of a transfer aborts it.
 	var del, buf []byte
 	for key, st := range t.state {
@@ -604,6 +655,9 @@ func (t *thumbs) Retain(keep map[string]bool) {
 			del = strconv.AppendInt(del, int64(st.id), 10)
 			del = append(del, ",q=2\x1b\\"...)
 			st.level = 0
+		case st.level < 2 && keep[key] && !st.busy && t.cachedFull(key, fw, fh):
+			// Scrolling back: the full raster is still in memory.
+			buf = t.appendCachedFull(buf, key, st)
 		case st.level == 0 && keep[key] && st.low != nil:
 			st.level = 1
 			buf = t.appendLow(buf, st)
