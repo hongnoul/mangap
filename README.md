@@ -11,6 +11,8 @@
 
 Maintained fork of [mangal](https://github.com/metafates/mangal).
 
+Runs on macOS, Linux, and Windows, in any terminal that supports the kitty graphics protocol.
+
 ## Install
 
 > Requires a terminal with kitty graphics: kitty, Ghostty, or WezTerm.
