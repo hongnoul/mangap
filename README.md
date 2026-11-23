@@ -9,10 +9,24 @@ TUI. The in-terminal reader follows the design of pdfpane.
 
 ## Requirements
 
-- A terminal with kitty graphics: kitty, ghostty, wezterm, or gwae.
-- Go (version in `go.mod`) to build.
+A terminal with kitty graphics: kitty, ghostty, wezterm, or gwae.
 
-## Build
+## Install
+
+```sh
+# Homebrew (macOS, Linux)
+brew install hongnoul/tap/mangap
+
+# Go
+go install github.com/hongnoul/mangap@latest
+```
+
+Or grab a binary for macOS, Linux, or Windows from
+[Releases](https://github.com/hongnoul/mangap/releases).
+
+## Build from source
+
+Needs Go (version in `go.mod`).
 
 ```sh
 make build      # ./mangap
