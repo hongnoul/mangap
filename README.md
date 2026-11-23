@@ -6,8 +6,8 @@
   <a href="https://github.com/hongnoul/mangap/releases/latest"><img src="https://img.shields.io/github/v/release/hongnoul/mangap?label=release&labelColor=black&color=white" alt="latest stable release" /></a>
 </p>
 
-<!-- Demo: drag a copyright-free mangap-demo.mp4 into the GitHub editor and paste the user-attachments URL here, plus the caption below. -->
-<!-- <p align="center">Running in <a href="https://github.com/hongnoul/gwae">gwae</a> on <a href="https://github.com/ghostty-org/ghostty">Ghostty</a>, MacBook Pro M4</p> -->
+<p align="center"><img src="assets/demo.gif" alt="mangap: search, open a chapter, and read pages in the terminal" width="760" /></p>
+<p align="center">Running in <a href="https://github.com/hongnoul/gwae">gwae</a> on <a href="https://github.com/ghostty-org/ghostty">Ghostty</a>, MacBook Pro M4</p>
 
 Read manga in your terminal. Pages render as real images over the kitty graphics protocol. No browser, no external viewer.
 
