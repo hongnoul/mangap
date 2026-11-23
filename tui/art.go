@@ -125,24 +125,13 @@ func overlayLogo(art []string) []string {
 		d2 := dx*dx + dy*dy
 		return d2 <= bowlR*bowlR && !(d2 < holeR*holeR && x > stemR+0.06*r)
 	}
-	// nearP is a 2-dot halo around the P, cleared so the girl's lines do
-	// not merge into the letter.
-	nearP := func(x, y float64) bool {
-		for _, o := range [][2]float64{{-2, 0}, {2, 0}, {0, -2}, {0, 2}, {-1.5, -1.5}, {1.5, -1.5}, {-1.5, 1.5}, {1.5, 1.5}} {
-			if pDot(x+o[0], y+o[1]) {
-				return true
-			}
-		}
-		return false
-	}
 	red := lipgloss.NewStyle().Foreground(color.Red)
-	dim := lipgloss.NewStyle().Foreground(color.New("8"))
 	white := lipgloss.NewStyle().Foreground(color.White)
 	out := make([]string, len(rows))
 	for i, row := range rows {
 		var sb strings.Builder
 		for j, c := range row {
-			var ringBits, pBits, haloBits rune
+			var ringBits, pBits rune
 			touched := false
 			for dy := 0; dy < 4; dy++ {
 				for dx := 0; dx < 2; dx++ {
@@ -154,8 +143,6 @@ func overlayLogo(art []string) []string {
 						ringBits |= brailleBit[dy][dx]
 					} else if pDot(x, y) {
 						pBits |= brailleBit[dy][dx]
-					} else if nearP(x, y) {
-						haloBits |= brailleBit[dy][dx]
 					}
 				}
 			}
@@ -163,7 +150,7 @@ func overlayLogo(art []string) []string {
 			// through the hole.
 			var orig rune
 			if c >= blankCell && c <= blankCell+0xFF {
-				orig = (c - blankCell) &^ (ringBits | pBits | haloBits)
+				orig = (c - blankCell) &^ (ringBits | pBits)
 			}
 			switch {
 			case !touched:
@@ -173,7 +160,7 @@ func overlayLogo(art []string) []string {
 			case ringBits != 0:
 				sb.WriteString(red.Render(string(blankCell + ringBits)))
 			default:
-				sb.WriteString(dim.Render(string(blankCell + orig)))
+				sb.WriteRune(blankCell + orig)
 			}
 		}
 		out[i] = sb.String()
