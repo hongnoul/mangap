@@ -78,7 +78,7 @@ func trimArt(raw string) []string {
 	return out
 }
 
-// homeArtStyled is homeArt with a red disk and a knocked-out "P" drawn
+// homeArtStyled is homeArt with a red ring and a white capital "P" drawn
 // over the figure. Braille cells are 2x4 dots, and dots are roughly square,
 // so the circle is computed in dot space.
 var homeArtStyled = overlayLogo(homeArt)
@@ -96,47 +96,63 @@ func overlayLogo(art []string) []string {
 	wDots, hDots := float64(len(rows[0])*2), float64(len(rows)*4)
 	cx, cy := wDots/2, hDots/2
 	r := min(wDots, hDots) / 2 * 0.86
-	in := func(x, y float64) bool {
-		dx, dy := x-cx, y-cy
-		if dx*dx+dy*dy > r*r {
+	inner := r * 0.78
+	// ring is the red donut band.
+	ring := func(x, y float64) bool {
+		d2 := (x-cx)*(x-cx) + (y-cy)*(y-cy)
+		return d2 <= r*r && d2 >= inner*inner
+	}
+	// pDot is a solid capital P: a full-height stem plus a bowl on the
+	// upper half with a counter cut out.
+	top, bot := cy-0.5*r, cy+0.5*r
+	stemL, stemR := cx-0.30*r, cx-0.08*r
+	bowlCY, bowlR, holeR := cy-0.22*r, 0.28*r, 0.11*r
+	pDot := func(x, y float64) bool {
+		if y < top || y > bot {
 			return false
 		}
-		// The P is cut out of the disk.
-		stemL, stemR := cx-0.38*r, cx-0.14*r
-		if x >= stemL && x <= stemR && y >= cy-0.58*r && y <= cy+0.58*r {
+		if x >= stemL && x <= stemR {
+			return true
+		}
+		if x < stemR || y > bowlCY+bowlR {
 			return false
 		}
-		bx, by := cx-0.02*r, cy-0.24*r
-		ox, oy := x-bx, y-by
-		d2 := ox*ox + oy*oy
-		if x >= stemR-0.01*r && d2 <= (0.34*r)*(0.34*r) && d2 >= (0.14*r)*(0.14*r) {
-			return false
+		bx := cx + 0.02*r // bowl center, flat side joins the stem
+		dx, dy := x-bx, y-bowlCY
+		if x < bx {
+			dx = 0
 		}
-		return true
+		d2 := dx*dx + dy*dy
+		return d2 <= bowlR*bowlR && !(d2 < holeR*holeR && x > stemR+0.06*r)
 	}
 	red := lipgloss.NewStyle().Foreground(color.Red)
+	white := lipgloss.NewStyle().Foreground(color.White)
 	out := make([]string, len(rows))
 	for i, row := range rows {
 		var sb strings.Builder
 		for j, c := range row {
-			var bits rune
+			var ringBits, pBits rune
 			touched := false
 			for dy := 0; dy < 4; dy++ {
 				for dx := 0; dx < 2; dx++ {
 					x, y := float64(j*2+dx)+0.5, float64(i*4+dy)+0.5
-					ddx, ddy := x-cx, y-cy
-					if ddx*ddx+ddy*ddy <= r*r {
+					if (x-cx)*(x-cx)+(y-cy)*(y-cy) <= r*r {
 						touched = true
 					}
-					if in(x, y) {
-						bits |= brailleBit[dy][dx]
+					if ring(x, y) {
+						ringBits |= brailleBit[dy][dx]
+					} else if pDot(x, y) {
+						pBits |= brailleBit[dy][dx]
 					}
 				}
 			}
-			if touched {
-				sb.WriteString(red.Render(string(blankCell + bits)))
-			} else {
+			switch {
+			case !touched:
 				sb.WriteRune(c)
+			case pBits != 0:
+				sb.WriteString(white.Render(string(blankCell + pBits)))
+			default:
+				sb.WriteString(red.Render(string(blankCell + ringBits)))
 			}
 		}
 		out[i] = sb.String()
