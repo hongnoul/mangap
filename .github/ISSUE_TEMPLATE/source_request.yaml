@@ -1,5 +1,6 @@
 name: Source Request
 description: Request for a new built-in source
+labels: [ "source" ]
 body:
   - type: input
     attributes:
