@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hongnoul/mangap/downloader"
 	"github.com/hongnoul/mangap/history"
@@ -18,13 +19,40 @@ import (
 	"github.com/hongnoul/mangap/util"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
-	"time"
 )
 
 func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
+	// The downloads viewer: / types into its filter box, otherwise
+	// hjkl and the grid keys browse.
+	if km, ok := msg.(tea.KeyMsg); ok && b.del.on {
+		return b, b.updateArchiveDelete(km)
+	}
+	if km, ok := msg.(tea.KeyMsg); ok && b.inArchive() && !isArchiveKey(km) {
+		if c, handled := b.updateArchiveKeys(km); handled {
+			return b, c
+		}
+	}
 	msg = b.vimHL(msg)
+	if m, ok := msg.(dlFinishedMsg); ok {
+		b.dlDone++
+		invalidateDownloaded()
+		next := b.nextDownload()
+		if m.err != nil && viper.GetBool(key2.DownloaderStopOnError) {
+			b.chaptersToDownload.Clear()
+			b.dlCurrent = nil
+			b.dlDone, b.dlTotal = 0, 0
+			b.raiseError(m.err)
+			return b, nil
+		}
+		return b, next
+	}
+	if t, ok := msg.(spinner.TickMsg); ok && b.dlCurrent != nil {
+		var c tea.Cmd
+		b.spinnerC, c = b.spinnerC.Update(t)
+		return b, c
+	}
 	if _, ok := msg.(thumbReadyMsg); ok {
 		return b, nil // a cover landed: the repaint after Update shows it
 	}
@@ -64,6 +92,25 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	if chs, ok := msg.([]*source.Chapter); ok && b.wholePending {
+		b.wholePending = false
+		b.stopLoading()
+		if len(chs) == 0 {
+			return b, nil
+		}
+		b.visualAnchor = -1
+		b.selectedChapters = make(map[*source.Chapter]struct{})
+		for _, c := range chs {
+			b.selectedChapters[c] = struct{}{}
+		}
+		b.confirmAll = true
+		b.newState(confirmState)
+		return b, nil
+	}
+	if _, ok := msg.(error); ok {
+		b.wholePending = false
+	}
+
 	switch msg := msg.(type) {
 	case error:
 		b.raiseError(msg)
@@ -71,7 +118,22 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.resize(msg.Width, msg.Height)
 	case tea.KeyMsg:
 		switch {
-		case isArchiveKey(msg) && b.state == chaptersState && b.chaptersC.FilterState() != list.Filtering && !b.inArchiveChapters():
+		case msg.String() == "ctrl+d" && b.dropdown == nil && !b.inArchive() &&
+			(b.state == searchState || (b.state == mangasState && b.mangasC.FilterState() != list.Filtering)):
+			// ctrl+d on a search result: fetch its chapters, then confirm
+			// downloading all of them.
+			it := b.mangasC.SelectedItem()
+			if it == nil {
+				return b, nil
+			}
+			m, ok := it.(*listItem).internal.(*source.Manga)
+			if !ok {
+				return b, nil
+			}
+			b.selectedManga = m
+			b.wholePending = true
+			return b, tea.Batch(b.getChapters(m), b.waitForChapters(), b.startLoading(), b.spinnerC.Tick)
+		case msg.String() == "ctrl+d" && b.state == chaptersState && b.chaptersC.FilterState() != list.Filtering && !b.inArchiveChapters():
 			// ctrl+d on a comic's chapters downloads the whole comic.
 			if len(b.chaptersC.Items()) == 0 {
 				return b, nil
@@ -130,6 +192,7 @@ func (b *statefulBubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				if b.inArchive() {
 					// Back to search: the live results were replaced, redo them.
+					b.arch.on = false
 					b.mangasC.SetItems(nil)
 					b.thumbs.Clear()
 					b.preview.Clear()
@@ -254,6 +317,7 @@ func (b *statefulBubble) updateLoading(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		cmds = append(cmds, b.mangasC.SetItems(items))
+		b.arch.on = false
 		b.thumbs.Clear()
 		b.preview.Clear()
 		b.recent.Clear()
@@ -454,10 +518,10 @@ func (b *statefulBubble) updateSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return b, nil
 			}
 			return b, tea.Batch(b.scheduleLive(), b.warmSources())
-		case len(b.mangasC.Items()) > 0 && lo.Contains([]string{"ctrl+j", "ctrl+k", "tab", "shift+tab"}, msg.String()):
+		case len(b.mangasC.Items()) > 0 && lo.Contains([]string{"ctrl+k", "tab", "shift+tab"}, msg.String()):
 			// Walk the live results while typing stays in the bar.
 			n, i := len(b.mangasC.Items()), b.mangasC.Index()
-			if s := msg.String(); s == "ctrl+j" || s == "tab" {
+			if s := msg.String(); s == "tab" {
 				i = (i + 1) % n
 			} else {
 				i = (i - 1 + n) % n
@@ -542,7 +606,8 @@ func (b *statefulBubble) updateChapters(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return b, nil
 		case key.Matches(msg, b.keymap.download):
 			if b.inArchiveChapters() {
-				return b, nil // already on disk
+				b.askDeleteChapters() // d in the archive deletes from disk
+				return b, nil
 			}
 			if len(b.selectedChapters) == 0 {
 				it := b.chaptersC.SelectedItem()
@@ -621,14 +686,16 @@ func (b *statefulBubble) updateConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 			b.confirmAll = false
 			chapters := lo.Keys(b.selectedChapters)
 			util.SortFunc(chapters, func(a, b *source.Chapter) bool {
-				return a.Index > b.Index
+				return a.Index < b.Index
 			})
-
-			for _, chapter := range chapters {
-				b.chaptersToDownload.Push(chapter)
+			// Downloads run in the background: back to where we were.
+			b.previousState()
+			if b.state == chaptersState {
+				b.clearChapterSelection()
+			} else {
+				b.selectedChapters = make(map[*source.Chapter]struct{})
 			}
-			b.newState(downloadState)
-			return b, tea.Batch(b.startLoading(), b.downloadChapter(b.chaptersToDownload.Pop()), b.waitForChapterDownload(), b.progressC.SetPercent(0), b.spinnerC.Tick)
+			return b, b.enqueueDownloads(chapters)
 		case key.Matches(msg, b.keymap.back):
 			if b.confirmAll {
 				b.confirmAll = false
@@ -715,13 +782,18 @@ func (b *statefulBubble) updateDownload(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		invalidateDownloaded()
 		if b.chaptersToDownload.Len() == 0 {
-			// a little hack to make the progress render to the end
-			go func() {
-				time.Sleep(time.Millisecond * 400)
-				b.newState(downloadDoneState)
-			}()
-
-			return b, b.progressC.IncrPercent(inc)
+			// Done: no summary page, the Downloaded box shows the result.
+			b.stopLoading()
+			b.currentDownloadingChapter = nil
+			b.failedChapters = make([]*source.Chapter, 0)
+			b.succededChapters = make([]*source.Chapter, 0)
+			b.previousState()
+			if b.state == chaptersState {
+				b.clearChapterSelection()
+			} else {
+				b.selectedChapters = make(map[*source.Chapter]struct{})
+			}
+			return b, nil
 		}
 
 		return b, tea.Batch(b.progressC.IncrPercent(inc), b.downloadChapter(b.chaptersToDownload.Pop()), b.waitForChapterDownload())
@@ -771,6 +843,9 @@ func (b *statefulBubble) updateError(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, b.keymap.quit):
 			return b, tea.Quit
+		case key.Matches(msg, b.keymap.confirm):
+			b.stopLoading()
+			b.previousState()
 		}
 	}
 

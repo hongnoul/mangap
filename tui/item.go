@@ -46,11 +46,6 @@ func (t *listItem) Title() (title string) {
 			sb.WriteString(style.Faint(e.Volume))
 		}
 
-		if !source.IsLocal(e) && e.IsDownloaded() {
-			sb.WriteString(" ")
-			sb.WriteString(icon.Get(icon.Downloaded))
-		}
-
 		if t.bookmark != "" {
 			sb.WriteString(" ")
 			sb.WriteString("(last read: " + t.bookmark + ")")

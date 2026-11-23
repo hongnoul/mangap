@@ -10,6 +10,7 @@ import (
 	"github.com/hongnoul/mangap/source"
 	"github.com/hongnoul/mangap/style"
 	"github.com/hongnoul/mangap/util"
+	"github.com/mattn/go-runewidth"
 	"github.com/muesli/reflow/truncate"
 	"github.com/muesli/reflow/wrap"
 	"github.com/spf13/viper"
@@ -19,6 +20,13 @@ import (
 )
 
 func (b *statefulBubble) View() string {
+	if b.del.on {
+		on := b.del
+		b.del.on = false
+		base := b.View()
+		b.del = on
+		return b.viewArchiveDelete(base)
+	}
 	switch b.state {
 	case scrapersInstallState:
 		return b.viewScrapersInstallState()
@@ -31,6 +39,9 @@ func (b *statefulBubble) View() string {
 	case searchState:
 		return b.viewLive()
 	case mangasState:
+		if b.arch.on {
+			return b.viewArchive()
+		}
 		return b.viewMangas()
 	case chaptersState:
 		return b.viewChapters()
@@ -199,24 +210,94 @@ func (b *statefulBubble) gridList() *list.Model {
 }
 
 func (b *statefulBubble) viewConfirm() string {
-	return b.renderLines(
-		true,
-		[]string{
-			style.Title("Confirm"),
-			"",
-			b.confirmQuestion(),
-			"",
-			style.Faint("enter confirm · esc cancel"),
-		},
-	)
+	q := b.confirmQuestion()
+	hint := style.Faint("enter confirm · esc cancel")
+	maxW := imax(b.width-4, 20)
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("5")).
+		Padding(1, 3).
+		Align(lipgloss.Center).
+		Width(imin(imax(lipgloss.Width(q), lipgloss.Width(hint))+8, maxW)).
+		Render(q + "\n\n" + hint)
+	return b.popup(box)
+}
+
+// popup draws box centered over the screen that led to the current state.
+func (b *statefulBubble) popup(box string) string {
+	var base string
+	if b.statesHistory.Len() > 0 {
+		if prev := b.statesHistory.Peek(); prev != b.state && prev != 0 {
+			cur := b.state
+			b.state = prev
+			base = b.View()
+			b.state = cur
+		}
+	}
+	if base == "" {
+		return lipgloss.Place(b.width+4, b.height+2, lipgloss.Center, lipgloss.Center, box)
+	}
+	return overlayCenter(base, box)
+}
+
+// skipCells drops the first n printable cells of s, keeping escape codes
+// so the remainder keeps its colors.
+func skipCells(s string, n int) string {
+	var out strings.Builder
+	w, inEsc := 0, false
+	for _, r := range s {
+		switch {
+		case r == '\x1b':
+			inEsc = true
+			out.WriteRune(r)
+		case inEsc:
+			out.WriteRune(r)
+			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
+				inEsc = false
+			}
+		case w >= n:
+			out.WriteRune(r)
+		default:
+			w += runewidth.RuneWidth(r)
+			if w > n {
+				out.WriteRune(' ') // half of a wide rune
+			}
+		}
+	}
+	return out.String()
+}
+
+// overlayCenter draws top centered over base, keeping base visible around it.
+func overlayCenter(base, top string) string {
+	bl := strings.Split(base, "\n")
+	tl := strings.Split(top, "\n")
+	bw := 0
+	for _, l := range bl {
+		bw = imax(bw, lipgloss.Width(l))
+	}
+	tw := lipgloss.Width(top)
+	x := imax((bw-tw)/2, 0)
+	y := imax((len(bl)-len(tl))/2, 0)
+	for i, l := range tl {
+		r := y + i
+		for r >= len(bl) {
+			bl = append(bl, "")
+		}
+		line := bl[r]
+		if w := lipgloss.Width(line); w < x+tw {
+			line += strings.Repeat(" ", x+tw-w)
+		}
+		bl[r] = truncate.String(line, uint(x)) + "\x1b[0m" + l + "\x1b[0m" + skipCells(line, x+tw)
+	}
+	return strings.Join(bl, "\n")
 }
 
 func (b *statefulBubble) confirmQuestion() string {
 	n := util.Quantify(len(b.selectedChapters), "chapter", "chapters")
 	if b.confirmAll && b.selectedManga != nil {
-		return fmt.Sprintf("%s Download all of %s (%s)?", icon.Get(icon.Question), style.Fg(color.Purple)(b.selectedManga.Name), n)
+		return fmt.Sprintf("Download all of %s (%s)?", style.Fg(color.Purple)(b.selectedManga.Name), n)
 	}
-	return fmt.Sprintf("%s Download %s?", icon.Get(icon.Question), n)
+	return fmt.Sprintf("Download %s?", n)
 }
 
 func (b *statefulBubble) downloadingChapterMetainfo() string {
@@ -327,18 +408,22 @@ func (b *statefulBubble) viewDownloadDone() string {
 }
 
 func (b *statefulBubble) viewError() string {
-	errorMsg := wrap.String(style.New().Italic(true).Foreground(color.Red).Render(b.lastError.Error()), b.width)
-	return b.renderLines(
-		true,
-		append([]string{
-			style.ErrorTitle("Error"),
-			"",
-			icon.Get(icon.Fail) + " Uggh, something went wrong. Maybe try again?",
-			"",
-		},
-			strings.Split(wrap.String(style.Italic(b.errorPlot), b.width)+"\n\n"+errorMsg, "\n")...,
-		),
-	)
+	msg := ""
+	if b.lastError != nil {
+		msg = b.lastError.Error()
+	}
+	w := imin(imax(lipgloss.Width(msg), 30)+6, imax(b.width-4, 20))
+	body := style.ErrorTitle("Error") + "\n\n" +
+		wrap.String(style.New().Foreground(color.Red).Render(msg), w-6) + "\n\n" +
+		style.Faint("enter / esc close")
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(color.Red).
+		Padding(1, 2).
+		Align(lipgloss.Center).
+		Width(w).
+		Render(body)
+	return b.popup(box)
 }
 
 func (b *statefulBubble) viewScrapersInstallState() string {

@@ -50,6 +50,12 @@ type statefulBubble struct {
 	visualAnchor int
 	// confirmAll is set while confirming a whole-comic download (ctrl+d).
 	confirmAll bool
+	// Background downloads: dlCurrent is being fetched, chaptersToDownload
+	// waits, dlDone/dlTotal count the batch. Browsing and reading go on.
+	dlCurrent       *source.Chapter
+	dlDone, dlTotal int
+	// wholePending: chapters are loading for a ctrl+d on a search result.
+	wholePending bool
 
 	scrapersLoadedChannel   chan []*installer.Scraper
 	scraperInstalledChannel chan *installer.Scraper
@@ -94,6 +100,8 @@ type statefulBubble struct {
 	preview *thumbs // large image of the selected item, right pane
 	recent  *thumbs // cover of the newest download, home Downloaded box
 	grid    *grid
+	arch    archiveView   // downloads viewer (see archive_view.go)
+	del     archiveDelete // pending delete-from-disk confirmation
 }
 
 func (b *statefulBubble) raiseError(err error) {
@@ -262,6 +270,7 @@ func newBubble() *statefulBubble {
 	bubble.inputC.Placeholder = "Search"
 	bubble.inputC.CharLimit = 60
 	bubble.inputC.Prompt = ""
+	bubble.arch = newArchiveView()
 
 	bubble.progressC = progress.New(progress.WithDefaultGradient())
 

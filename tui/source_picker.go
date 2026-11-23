@@ -75,7 +75,7 @@ func (b *statefulBubble) sourcePicker(w int) string {
 	if !b.languageLocked() { // Mangapill is English only, hide the row
 		lines = append(lines, row(style.Faint("Language  ")+bold.Render(lang.name), "ctrl+l"))
 	}
-	viewer := "in terminal"
+	viewer := "mangap terminal"
 	if !useTerminalViewer() {
 		viewer = "external"
 	}
@@ -85,11 +85,11 @@ func (b *statefulBubble) sourcePicker(w int) string {
 		lines = append(lines, row(style.Faint("Viewer    ")+bold.Render(viewer), "no kitty graphics"))
 	}
 	if b.thumbs.enabled {
-		th := "on"
+		th := "show"
 		if !viper.GetBool(key2.TUIThumbnails) {
-			th = "off"
+			th = "hide"
 		}
-		lines = append(lines, row(style.Faint("Thumbs    ")+bold.Render(th), "ctrl+t"))
+		lines = append(lines, row(style.Faint("Thumbnail ")+bold.Render(th), "ctrl+t"))
 	}
 	word := "show"
 	if b.showKeys {

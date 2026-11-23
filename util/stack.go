@@ -45,3 +45,12 @@ func (s *Stack[T]) Clear() {
 	s.items = nil
 	s.length = 0
 }
+
+// Items returns the stack contents, top first.
+func (s *Stack[T]) Items() []T {
+	out := make([]T, 0, s.length)
+	for i := s.length - 1; i >= 0; i-- {
+		out = append(out, s.items[i])
+	}
+	return out
+}

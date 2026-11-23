@@ -44,9 +44,13 @@ func Run(options *Options) error {
 	bubble.thumbs.fill = true
 	*bubble.preview = *newThumbs(out)
 	bubble.preview.next = previewBaseID
+	*bubble.recent = *newThumbs(out)
+	bubble.recent.next = recentBaseID
 	p := tea.NewProgram(bubble, tea.WithAltScreen(), tea.WithOutput(out))
 	bubble.thumbs.send = p.Send
 	bubble.preview.send = p.Send
+	bubble.recent.send = p.Send
+	defer bubble.recent.Clear()
 	defer bubble.preview.Clear()
 	defer bubble.thumbs.Clear()
 	// Flush the live-search catalog: its save is debounced, and results

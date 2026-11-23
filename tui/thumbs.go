@@ -36,6 +36,9 @@ const thumbBaseID = 1 << 16
 // previewBaseID keeps the preview pane's ids apart from the list's.
 const previewBaseID = 1 << 22
 
+// recentBaseID is for the Downloaded box cover on the home screen.
+const recentBaseID = 1 << 23
+
 // Raster sizes. The preview is tiny (a few KB of PNG) so it reaches the
 // terminal almost as soon as the bytes arrive; the terminal stretches it
 // to the cell box. The full raster then replaces it under the same id.

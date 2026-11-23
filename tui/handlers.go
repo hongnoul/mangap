@@ -7,13 +7,11 @@ import (
 	"github.com/hongnoul/mangap/downloader"
 	"github.com/hongnoul/mangap/history"
 	"github.com/hongnoul/mangap/installer"
-	"github.com/hongnoul/mangap/key"
 	"github.com/hongnoul/mangap/log"
 	"github.com/hongnoul/mangap/provider"
 	"github.com/hongnoul/mangap/reader/pages"
 	"github.com/hongnoul/mangap/source"
 	"github.com/hongnoul/mangap/util"
-	"github.com/spf13/viper"
 	"strings"
 	"sync"
 )
@@ -247,27 +245,58 @@ func (b *statefulBubble) waitForChapterRead() tea.Cmd {
 	}
 }
 
+// dlFinishedMsg reports one background chapter download.
+type dlFinishedMsg struct {
+	chapter *source.Chapter
+	err     error
+}
+
+// downloadChapter fetches chapter off the UI loop. It touches no bubble
+// state: the result comes back as a dlFinishedMsg.
 func (b *statefulBubble) downloadChapter(chapter *source.Chapter) tea.Cmd {
 	return func() tea.Msg {
-		b.currentDownloadingChapter = chapter
-		_, err := downloader.Download(chapter, func(s string) {
-			b.progressStatus = s
-		})
+		_, err := downloader.Download(chapter, func(string) {})
+		return dlFinishedMsg{chapter: chapter, err: err}
+	}
+}
 
-		if err != nil {
-			if viper.GetBool(key.DownloaderStopOnError) {
-				b.errorChannel <- err
-			} else {
-				b.failedChapters = append(b.failedChapters, chapter)
-				b.chapterDownloadChannel <- struct{}{}
-			}
-		} else {
-			b.succededChapters = append(b.succededChapters, chapter)
-			b.chapterDownloadChannel <- struct{}{}
+// enqueueDownloads adds chapters to the background queue, starting it if
+// idle. Chapters already queued or downloading are skipped.
+func (b *statefulBubble) enqueueDownloads(chapters []*source.Chapter) tea.Cmd {
+	queued := map[*source.Chapter]bool{b.dlCurrent: true}
+	for _, c := range b.chaptersToDownload.Items() {
+		queued[c] = true
+	}
+	// The stack pops last-pushed first: push in reverse so the first
+	// chapter downloads first, and new batches go behind the current one.
+	rest := b.chaptersToDownload.Items()
+	b.chaptersToDownload.Clear()
+	add := make([]*source.Chapter, 0, len(chapters))
+	for _, c := range chapters {
+		if !queued[c] {
+			add = append(add, c)
 		}
-
+	}
+	all := append(rest, add...)
+	for i := len(all) - 1; i >= 0; i-- {
+		b.chaptersToDownload.Push(all[i])
+	}
+	b.dlTotal += len(add)
+	if b.dlCurrent != nil || b.chaptersToDownload.Len() == 0 {
 		return nil
 	}
+	return b.nextDownload()
+}
+
+// nextDownload starts the next queued chapter, or ends the batch.
+func (b *statefulBubble) nextDownload() tea.Cmd {
+	if b.chaptersToDownload.Len() == 0 {
+		b.dlCurrent = nil
+		b.dlDone, b.dlTotal = 0, 0
+		return nil
+	}
+	b.dlCurrent = b.chaptersToDownload.Pop()
+	return tea.Batch(b.downloadChapter(b.dlCurrent), b.spinnerC.Tick)
 }
 
 func (b *statefulBubble) waitForChapterDownload() tea.Cmd {

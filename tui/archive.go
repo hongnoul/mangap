@@ -3,21 +3,14 @@ package tui
 import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hongnoul/mangap/archive"
-	"github.com/hongnoul/mangap/source"
-	"github.com/hongnoul/mangap/where"
 )
 
-// isArchiveKey matches ctrl+d, which opens the downloads archive.
-func isArchiveKey(km tea.KeyMsg) bool { return km.String() == "ctrl+d" }
+// isArchiveKey matches ctrl+j, which opens the downloads archive.
+func isArchiveKey(km tea.KeyMsg) bool { return km.String() == "ctrl+j" }
 
 // inArchive reports whether the manga grid is showing the archive.
 func (b *statefulBubble) inArchive() bool {
-	if b.state != mangasState || len(b.mangasC.Items()) == 0 {
-		return false
-	}
-	m, ok := b.mangasC.Items()[0].(*listItem).internal.(*source.Manga)
-	return ok && m.Source != nil && m.Source.ID() == "downloads"
+	return b.state == mangasState && b.arch.on
 }
 
 // openArchive shows the downloaded manga in the same grid as search
@@ -28,13 +21,16 @@ func (b *statefulBubble) openArchive() tea.Cmd {
 	b.dropdown = nil
 	b.showKeys = false
 
-	mangas := archive.New(where.Downloads()).Mangas()
-	items := make([]list.Item, len(mangas))
-	for i, m := range mangas {
-		items[i] = &listItem{internal: m}
-	}
-	cmd := b.mangasC.SetItems(items)
-	b.mangasC.ResetSelected()
+	b.arch.on = true
+	b.arch.anchor = -1
+	b.arch.editDir = false
+	b.arch.dirErr = ""
+	b.arch.dir.Blur()
+	b.arch.filter.SetValue("")
+	b.arch.typing = false
+	b.arch.filter.Blur()
+	b.loadArchiveItems()
+	cmd := b.applyArchiveFilter()
 	b.mangasC.ResetFilter()
 	b.thumbs.Clear()
 	b.preview.Clear()
@@ -48,7 +44,7 @@ func (b *statefulBubble) openArchive() tea.Cmd {
 	return cmd
 }
 
-// canOpenArchive limits ctrl+d to the browsing screens, never while a
+// canOpenArchive limits ctrl+j to the browsing screens, never while a
 // list filter is being typed.
 func (b *statefulBubble) canOpenArchive() bool {
 	switch b.state {

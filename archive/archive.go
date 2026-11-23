@@ -3,6 +3,8 @@
 package archive
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -22,6 +24,8 @@ type Entry struct {
 	Cover    string // cover image path, "" if none was saved
 	Chapters []ChapterFile
 	ModTime  time.Time // newest chapter
+	Latest   string    // path of the most recently downloaded chapter
+	Size     int64     // total bytes on disk under Dir
 }
 
 // ChapterFile is one downloaded chapter: a pdf/cbz/zip or a folder of images.
@@ -50,7 +54,7 @@ func hasImages(dir string) bool {
 
 // chaptersIn lists the chapters directly in dir. A subfolder with images
 // is a plain-format chapter; one without is read as a volume folder.
-func chaptersIn(dir, volume string, depth int, latest *time.Time) []ChapterFile {
+func chaptersIn(dir, volume string, depth int, latest *time.Time, newest *string) []ChapterFile {
 	subs, err := filesystem.Api().ReadDir(dir)
 	if err != nil {
 		return nil
@@ -66,7 +70,7 @@ func chaptersIn(dir, volume string, depth int, latest *time.Time) []ChapterFile 
 		case s.IsDir() && hasImages(path):
 			out = append(out, ChapterFile{Path: path, Volume: volume})
 		case s.IsDir() && depth == 0:
-			out = append(out, chaptersIn(path, name, 1, latest)...)
+			out = append(out, chaptersIn(path, name, 1, latest, newest)...)
 			continue
 		case !s.IsDir() && archiveExt[strings.ToLower(filepath.Ext(name))]:
 			out = append(out, ChapterFile{Path: path, Volume: volume})
@@ -75,6 +79,7 @@ func chaptersIn(dir, volume string, depth int, latest *time.Time) []ChapterFile 
 		}
 		if s.ModTime().After(*latest) {
 			*latest = s.ModTime()
+			*newest = path
 		}
 	}
 	return out
@@ -108,8 +113,11 @@ func Scan(dir string) []Entry {
 			continue
 		}
 		path := filepath.Join(dir, e.Name())
-		latest := e.ModTime()
-		chs := chaptersIn(path, "", 0, &latest)
+		// Order by chapter files only: the folder's own mtime also moves
+		// when metadata (series.json, cover) is rewritten.
+		var latest time.Time
+		var newest string
+		chs := chaptersIn(path, "", 0, &latest, &newest)
 		if len(chs) == 0 {
 			continue
 		}
@@ -119,10 +127,36 @@ func Scan(dir string) []Entry {
 			}
 			return pages.NaturalLess(filepath.Base(chs[a].Path), filepath.Base(chs[b].Path))
 		})
-		out = append(out, Entry{Name: e.Name(), Dir: path, Cover: findCover(path), Chapters: chs, ModTime: latest})
+		out = append(out, Entry{Name: displayName(path, e.Name()), Dir: path, Cover: findCover(path), Chapters: chs, ModTime: latest, Latest: newest, Size: dirSize(path)})
 	}
 	sort.SliceStable(out, func(a, b int) bool { return out[a].ModTime.After(out[b].ModTime) })
 	return out
+}
+
+// dirSize sums the sizes of the regular files under dir.
+func dirSize(dir string) int64 {
+	var n int64
+	_ = filesystem.Api().Walk(dir, func(_ string, info os.FileInfo, err error) error {
+		if err == nil && info.Mode().IsRegular() {
+			n += info.Size()
+		}
+		return nil
+	})
+	return n
+}
+
+// HumanSize formats bytes like 12.3 MB.
+func HumanSize(n int64) string {
+	const unit = 1024
+	if n < unit {
+		return fmt.Sprintf("%d B", n)
+	}
+	div, exp := int64(unit), 0
+	for m := n / unit; m >= unit; m /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
 // FileURL marks a local path as a thumbnail key.
@@ -200,8 +234,8 @@ func (s *Source) Search(query string) ([]*source.Manga, error) {
 func (s *Source) ChaptersOf(m *source.Manga) ([]*source.Chapter, error) {
 	e, ok := s.entries[m]
 	if !ok {
-		latest := time.Time{}
-		e = Entry{Dir: m.ID, Chapters: chaptersIn(m.ID, "", 0, &latest)}
+		latest, newest := time.Time{}, ""
+		e = Entry{Dir: m.ID, Chapters: chaptersIn(m.ID, "", 0, &latest, &newest)}
 	}
 	chs := make([]*source.Chapter, 0, len(e.Chapters))
 	for i, f := range e.Chapters {
@@ -230,4 +264,20 @@ func (s *Source) PathOf(c *source.Chapter) string {
 		return p
 	}
 	return c.ID
+}
+
+// displayName is the manga's real title: series.json's name when saved,
+// otherwise the folder name with the filename-safe underscores undone.
+func displayName(dir, folder string) string {
+	if data, err := filesystem.Api().ReadFile(filepath.Join(dir, "series.json")); err == nil {
+		var sj struct {
+			Metadata struct {
+				Name string `json:"name"`
+			} `json:"metadata"`
+		}
+		if json.Unmarshal(data, &sj) == nil && strings.TrimSpace(sj.Metadata.Name) != "" {
+			return strings.TrimSpace(sj.Metadata.Name)
+		}
+	}
+	return strings.Join(strings.Fields(strings.ReplaceAll(folder, "_", " ")), " ")
 }
