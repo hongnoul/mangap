@@ -57,14 +57,15 @@ changelog:
 
 # brew install hongnoul/tap/mangap
 # Needs the TAP_PAT secret (a token with push access to hongnoul/homebrew-tap).
-# Skipped when it is unset so releases still go out.
+# The release workflow sets TAP_PAT to "" when the secret is missing, and
+# skip_upload then skips the tap push so releases still go out.
 brews:
   - name: mangap
-    skip_upload: '{{ if index .Env "TAP_PAT" }}false{{ else }}true{{ end }}'
+    skip_upload: '{{ if .Env.TAP_PAT }}false{{ else }}true{{ end }}'
     repository:
       owner: hongnoul
       name: homebrew-tap
-      token: '{{ index .Env "TAP_PAT" }}'
+      token: "{{ .Env.TAP_PAT }}"
     directory: Formula
     homepage: https://github.com/hongnoul/mangap
     description: Read manga in your terminal with real images (kitty graphics)
