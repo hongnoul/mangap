@@ -13,7 +13,7 @@ Maintained fork of [mangal](https://github.com/metafates/mangal).
 
 ## Install
 
-> Requires a terminal with kitty graphics: kitty, Ghostty, WezTerm, or gwae.
+> Requires a terminal with kitty graphics: kitty, Ghostty, or WezTerm.
 
 ```bash
 brew install hongnoul/tap/mangap
